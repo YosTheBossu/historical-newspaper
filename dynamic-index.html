@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>העיתון של ההיסטוריה - גרסה דינמית</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- כותרת העיתון -->
+        <header class="newspaper-header">
+            <div class="date-line">
+                <span class="date" id="currentDate">טוען תאריך...</span>
+                <span class="edition">מהדורה דיגיטלית - מתעדכן אוטומטית</span>
+            </div>
+            <h1 class="newspaper-title">היום בהיסטוריה</h1>
+            <div class="subtitle">העיתון שמחיה את העבר - נתונים חיים מויקיפדיה ומקורות היסטוריים</div>
+            <div class="header-line"></div>
+            
+            <div class="controls">
+                <button onclick="changeDate(-1)" class="control-btn">
+                    <i class="fas fa-chevron-right"></i> יום אתמול
+                </button>
+                <button onclick="goToToday()" class="control-btn today-btn">
+                    <i class="fas fa-calendar-day"></i> היום
+                </button>
+                <button onclick="changeDate(1)" class="control-btn">
+                    יום מחר <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- אינדיקטור טעינה -->
+        <div id="loading" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>טוען אירועים היסטוריים...</p>
+        </div>
+
+        <!-- התוכן הדינמי יטען כאן -->
+        <div id="content" style="display: none;">
+            <!-- כותרת ראשית תוטען כאן -->
+            <section id="mainHeadline" class="main-headline"></section>
+
+            <!-- עמודות -->
+            <div class="columns">
+                <!-- עמודה שמאלית -->
+                <div class="column">
+                    <section class="news-section" id="politicsSection">
+                        <h3><i class="fas fa-landmark"></i> פוליטיקה והיסטוריה</h3>
+                        <div id="politicsContent"></div>
+                    </section>
+
+                    <section class="news-section" id="sportsSection">
+                        <h3><i class="fas fa-futbol"></i> ספורט</h3>
+                        <div id="sportsContent"></div>
+                    </section>
+                </div>
+
+                <!-- עמודה ימנית -->
+                <div class="column">
+                    <section class="news-section" id="cultureSection">
+                        <h3><i class="fas fa-music"></i> תרבות ואמנות</h3>
+                        <div id="cultureContent"></div>
+                    </section>
+
+                    <section class="news-section" id="scienceSection">
+                        <h3><i class="fas fa-flask"></i> מדע וטכנולוגיה</h3>
+                        <div id="scienceContent"></div>
+                    </section>
+
+                    <section class="news-section" id="birthdaysSection">
+                        <h3><i class="fas fa-birthday-cake"></i> ימי הולדת היום</h3>
+                        <div id="birthdaysContent"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- ציוצים היסטוריים -->
+            <section class="news-section" id="tweetsSection">
+                <h3><i class="fab fa-twitter"></i> מה היו מצייצים אז?</h3>
+                <div id="tweetsContent" class="tweets-container"></div>
+            </section>
+        </div>
+
+        <!-- פוטר -->
+        <footer class="newspaper-footer">
+            <div class="footer-line"></div>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>אודות המערכת</h4>
+                    <p>האתר משתמש בנתונים מויקיפדיה ומקורות היסטוריים נוספים. התוכן מתעדכן אוטומטית לפי התאריך.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>טכנולוגיה</h4>
+                    <p>נבנה עם HTML5, CSS3, JavaScript. משתמש ב-API של ויקיפדיה לאיסוף נתונים.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>תרומה לפרויקט</h4>
+                    <p>רוצה לעזור? יש לך רעיונות או תיקונים? צור קשר: history@newspaper.co.il</p>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2026 "היום בהיסטוריה" - פרויקט קוד פתוח. נתונים: ויקיפדיה, ארכיונים היסטוריים.
+                <br>
+                <small>אב טיפוס טכני - גרסה 0.1</small>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // משתנים גלובליים
+        let currentDate = new Date();
+        let eventsData = null;
+
+        // עדכון התאריך בתצוגה
+        function updateDateDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = currentDate.toLocaleDateString('he-IL', options);
+            document.getElementById('currentDate').textContent = dateString;
+        }
+
+        // שינוי תאריך (ימים קדימה/אחורה)
+        function changeDate(days) {
+            currentDate.setDate(currentDate.getDate() + days);
+            updateDateDisplay();
+            loadEventsForDate();
+        }
+
+        // חזרה להיום
+        function goToToday() {
+            currentDate = new Date();
+            updateDateDisplay();
+            loadEventsForDate();
+        }
+
+        // טעינת אירועים עבור התאריך הנוכחי
+        async function loadEventsForDate() {
+            // הצגת אינדיקטור טעינה
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            
+            try {
+                // בפועל, כאן תהיה קריאה ל-API אמיתי
+                // כרגע נשתמש בנתונים לדוגמה
+                await simulateAPICall();
+                
+                // הצגת התוכן
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+                // הצגת הנתונים
+                displayEvents();
+                
+            } catch (error) {
+                console.error('שגיאה בטעינת אירועים:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<p style="color: #8b0000;">❌ שגיאה בטעינת נתונים. נסה שוב מאוחר יותר.</p>';
+            }
+        }
+
+        // הדמיית קריאת API (בפועל תהיה קריאה אמיתית)
+        function simulateAPICall() {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // שימוש בנתונים לדוגמה מהקובץ
+                    eventsData = {
+                        date: currentDate.toISOString().split('T')[0],
+                        categories: {
+                            politics: [
+                                "1949 - הכנסת הראשונה של מדינת ישראל מתכנסת לישיבתה הראשונה בירושלים",
+                                "1990 - נלסון מנדלה משתחרר מכלא בדרום אפריקה אחרי 27 שנים"
+                            ],
+                            sports: [
+                                "1998 - מכבי תל אביב בכדורסל מנצחת את פנאתינאיקוס היוונית 81-78",
+                                "1978 - הפועל תל אביב זוכה בגביע המדינה בכדורגל"
+                            ],
+                            culture: [
+                                "1985 - שלום חנוך מוציא את האלבום 'חתונה לבנה'",
+                                "1993 - הסרט 'רשימת שינדלר' יוצא לאקרנים"
+                            ],
+                            science: [
+                                "2016 - גילוי גלי כבידה על ידי צוות LIGO",
+                                "1970 - יפן משגרת את הלוויין הראשון שלה"
+                            ]
+                        },
+                        birthdays: [
+                            { name: "ג'ניפר אניסטון", year: 1969, age: 57 },
+                            { name: "שרית חדד", year: 1979, age: 47 },
+                            { name: "תום הולנד", year: 1996, age: 30 }
+                        ],
+                        historicalTweets: [
+                            {
+                                author: "דוד בן-גוריון",
+                                handle: "@BenGurionOfficial",
+                                content: "היום היסטורי! הכנסת הראשונה נפתחה. 120 חברי כנסת, ייצוג לכל חלקי העם.",
+                                likes: 2300,
+                                retweets: 850
+                            },
+                            {
+                                author: "נלסון מנדלה",
+                                handle: "@NelsonMandela",
+                                content: "חירות לא ניתנת בקלות - הדור שלנו הבין זאת. הזמן לשינוי הגיע.",
+                                likes: 15000,
+                                retweets: 5200
+                            }
+                        ]
+                    };
+                    resolve();
+                }, 800); // הדמיית השהייה ברשת
+            });
+        }
+
+        // הצגת האירועים בדף
+        function displayEvents() {
+            if (!eventsData) return;
+
+            // כותרת ראשית - לוקחים את האירוע הראשון בפוליטיקה
+            const mainHeadline = eventsData.categories.politics[0] || 
+                               eventsData.categories.science[0] || 
+                               "אירוע היסטורי חשוב";
+            
+            document.getElementById('mainHeadline').innerHTML = `
+                <div class="headline-category">פוליטיקה</div>
+                <h2>${mainHeadline}</h2>
+                <div class="headline-meta">
+                    <span class="byline">דיווח: צוות "היום בהיסטוריה"</span>
+                    <span class="time">🕐 אירוע היסטורי</span>
+                </div>
+                <div class="headline-content">
+                    <p>${getDetailedDescription(mainHeadline)}</p>
+                </div>
+            `;
+
+            // הצגת קטגוריות
+            displayCategory('politics', 'פוליטיקה');
+            displayCategory('sports', 'ספורט');
+            displayCategory('culture', 'תרבות');
+            displayCategory('science', 'מדע');
+
+            // ימי הולדת
+            displayBirthdays();
+
+            // ציוצים היסטוריים
+            displayTweets();
+        }
+
+        // יצירת תיאור מפורט לאירוע
+        function getDetailedDescription(eventText) {
+            // בפועל, זה יגיע ממסד נתונים
+            // כרגע נחזיר תיאור כללי
+            const year = eventText.split(' - ')[0];
+            return `ב-${year} התרחש אירוע משמעותי זה שהשפיע על מהלך ההיסטוריה. האירוע מהווה נקודת ציון חשובה ומוזכר בספרי הלימוד ובמחקרים היסטוריים רבים.`;
+        }
+
+        // הצגת קטגוריה
+        function displayCategory(categoryId, categoryName) {
+            const events = eventsData.categories[categoryId] || [];
+            const container = document.getElementById(`${categoryId}Content`);
+            
+            if (events.length === 0) {
+                container.innerHTML = `<p class="no-events">לא נמצאו אירועים בקטגוריה זו לתאריך זה.</p>`;
+                return;
+            }
+
+            let html = '';
+            events.forEach(event => {
+                const [year, description] = event.split(' - ');
+                html += `
+                    <article class="news-item">
+                        <h4>${year} - ${description}</h4>
+                        <p>אירוע היסטורי משמעותי שהתרחש בשנת ${year}.</p>
+                    </article>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // הצגת ימי הולדת
+        function displayBirthdays() {
+            const birthdays = eventsData.birthdays || [];
+            const container = document.getElementById('birthdaysContent');
+            
+            if (birthdays.length === 0) {
+                container.innerHTML = `<p class="no-events">לא נמצאו ימי הולדת לתאריך זה.</p>`;
+                return;
+            }
+
+            let html = '<div class="birthdays">';
+            birthdays.forEach(person => {
+                html += `
+                    <div class="birthday-item">
+                        <strong>${person.name}</strong> (${person.year}) - ${person.age} שנים
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // הצגת ציוצים היסטוריים
+        function displayTweets() {
+            const tweets = eventsData.historicalTweets || [];
+            const container = document.getElementById('tweetsContent');
+            
+            if (tweets.length === 0) {
+                container.innerHTML = `<p class="no-events">לא נמצאו ציוצים היסטוריים לתאריך זה.</p>`;
+                return;
+            }
+
+            let html = '';
+            tweets.forEach(tweet => {
+                html += `
+                    <div class="historical-tweet">
+                        <div class="tweet-header">
+                            <div class="tweet-avatar-placeholder">${tweet.author.charAt(0)}</div>
+                            <div class="tweet-author">
+                                <strong>${tweet.author}</strong>
+                                <span>${tweet.handle}</span>
+                            </div>
+                            <i class="fab fa-twitter tweet-icon"></i>
+                        </div>
+                        <div class="tweet-content">
+                            ${tweet.content}
+                        </div>
+                        <div class="tweet-stats">
+                            <span>♥️ ${formatNumber(tweet.likes)}</span>
+                            <span>🔁 ${formatNumber(tweet.retweets)}</span>
+                            <span>💬 ${formatNumber(Math.floor(tweet.likes / 5))}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // פונקציות עזר
+        function formatNumber(num) {
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // אתחול ראשוני
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateDisplay();
+            loadEventsForDate();
+            
+            // הוספת עיצוב לכפתורים
+            const style = document.createElement('style');
+            style.textContent = `
+                .controls {
+                    display: flex;
+                    justify-content: center;
+                    gap: 15px;
+                    margin-top: 20px;
+                    flex-wrap: wrap;
+                }
+                
+                .control-btn {
+                    background-color: #8b0000;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-family: 'Heebo', sans-serif;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: background-color 0.3s;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                
+                .control-btn:hover {
+                    background-color: #a30000;
+                }
+                
+                .today-btn {
+                    background-color: #333;
+                }
+                
+                .today-btn:hover {
+                    background-color: #444;
+                }
+                
+                .loading-indicator {
+                    text-align: center;
+                    padding: 40px;
+                    color: #666;
+                }
+                
+                .spinner {
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #8b0000;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 20px;
+                }
+                
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                .no-events {
+                    color: #666;
+                    font-style: italic;
+                    text-align: center;
+                    padding: 20px;
+                }
+                
+                .tweets-container {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                }
+                
+                .tweet-avatar-placeholder {
+                    width: 40px;
+                    height: 40px;
+                    background-color: #1da1f2;
+                    color: white;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    margin-left: 10px;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>
