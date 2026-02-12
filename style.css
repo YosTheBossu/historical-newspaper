@@ -64,6 +64,22 @@ body {
     margin-top: 10px;
 }
 
+.date-note {
+    background-color: #fff8e1;
+    border: 1px solid #ffd54f;
+    border-radius: 5px;
+    padding: 8px 15px;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #5d4037;
+    text-align: center;
+}
+
+.date-note i {
+    color: #ff8f00;
+    margin-left: 5px;
+}
+
 /* כותרת ראשית */
 .main-headline {
     margin-bottom: 40px;
