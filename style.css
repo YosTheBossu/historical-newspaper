@@ -507,6 +507,55 @@ body {
     flex-shrink: 0;
 }
 
+/* חדשות */
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.news-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: box-shadow 0.2s;
+}
+
+.news-card:hover {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.news-card a {
+    color: #222;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.news-card a:hover {
+    color: #8b0000;
+}
+
+.news-summary {
+    color: #666;
+    font-size: 13px;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+.news-source {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #999;
+}
+
+.news-source i {
+    font-size: 10px;
+    margin-left: 3px;
+}
+
 /* טיימליין */
 .timeline {
     list-style-type: none;

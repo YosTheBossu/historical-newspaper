@@ -2,6 +2,7 @@
 FROM node:20-alpine AS collector
 WORKDIR /app
 COPY data-collector.js date-system.js ./
+# Initial collection without DeepSeek (translation happens at runtime with API key)
 RUN node data-collector.js || true
 
 # Stage 2: Production image with nginx + cron + node for daily updates
@@ -15,14 +16,15 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copy site files
 WORKDIR /usr/share/nginx/html
-COPY index.html dynamic-index.html style.css date-system.js data-collector.js ./
-COPY example-events.json ./
+COPY index.html style.css date-system.js data-collector.js ./
 
 # Copy generated data from collector stage (if available)
+COPY --from=collector /app/today.json ./today.json
 COPY --from=collector /app/example-events.json ./example-events.json
 
-# Setup cron job for daily data collection at 02:00
-RUN echo '0 2 * * * cd /usr/share/nginx/html && node data-collector.js >> /var/log/collector.log 2>&1' \
+# Setup cron job for daily data collection at 02:00 and 14:00
+# Uses environment variable for DeepSeek API key
+RUN echo '0 2,14 * * * cd /usr/share/nginx/html && node data-collector.js >> /var/log/collector.log 2>&1' \
     > /etc/crontabs/root
 
 # Entrypoint script: start cron + nginx
