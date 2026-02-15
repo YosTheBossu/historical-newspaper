@@ -17,7 +17,7 @@
                 <span class="edition">העיתון היומי של ההיסטוריה | מהדורה דיגיטלית</span>
             </div>
             <h1 class="newspaper-title">היום בהיסטוריה</h1>
-            <div class="subtitle" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים מויקיפדיה</div>
+            <div class="subtitle" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים מויקיפדיה העברית</div>
             <div class="header-line"></div>
 
             <div class="controls">
@@ -36,7 +36,7 @@
         <!-- טעינה -->
         <div id="loading" class="loading-indicator">
             <div class="spinner"></div>
-            <p>טוען אירועים היסטוריים מויקיפדיה...</p>
+            <p>טוען אירועים היסטוריים מויקיפדיה העברית...</p>
         </div>
 
         <!-- שגיאה -->
@@ -51,32 +51,35 @@
             <!-- כותרת ראשית -->
             <section id="mainHeadline" class="main-headline"></section>
 
-            <!-- עמודות -->
-            <div class="columns">
-                <div class="column">
+            <!-- אירועים + ציוצים בצד -->
+            <div class="article-with-tweet">
+                <div class="article-content">
                     <section class="news-section">
                         <h3><i class="fas fa-landmark"></i> אירועים</h3>
                         <div id="eventsContent"></div>
                     </section>
                 </div>
+                <div class="tweet-sidebar" id="tweetsSection">
+                    <h3 class="sidebar-title"><i class="fab fa-twitter"></i> מה היו מצייצים?</h3>
+                    <div id="tweetsContent"></div>
+                </div>
+            </div>
+
+            <!-- עמודות - נולדו ונפטרו -->
+            <div class="columns">
                 <div class="column">
                     <section class="news-section">
                         <h3><i class="fas fa-birthday-cake"></i> נולדו היום</h3>
                         <div id="birthsContent"></div>
                     </section>
-
+                </div>
+                <div class="column">
                     <section class="news-section">
                         <h3><i class="fas fa-star-of-life"></i> נפטרו היום</h3>
                         <div id="deathsContent"></div>
                     </section>
                 </div>
             </div>
-
-            <!-- ציוצים היסטוריים -->
-            <section class="news-section" id="tweetsSection">
-                <h3><i class="fab fa-twitter"></i> מה היו מצייצים אז?</h3>
-                <div id="tweetsContent" class="tweets-container"></div>
-            </section>
 
             <!-- ציר זמן -->
             <section class="news-section">
@@ -95,7 +98,7 @@
                 </div>
                 <div class="footer-section">
                     <h4>מקור הנתונים</h4>
-                    <p>הנתונים מגיעים מויקיפדיה העברית באמצעות Wikimedia API. התוכן מתעדכן אוטומטית.</p>
+                    <p>הנתונים מגיעים מויקיפדיה העברית. התוכן מתעדכן אוטומטית בכל יום.</p>
                 </div>
                 <div class="footer-section">
                     <h4>צרו קשר</h4>
@@ -111,11 +114,12 @@
     <script>
     // ====== State ======
     let currentDate = new Date();
-    let wikiData = null;
+    let pageData = null;
+
+    const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני',
+                           'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
     // ====== Date helpers ======
-    function pad(n) { return String(n).padStart(2, '0'); }
-
     function updateDateDisplay() {
         const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDate').textContent =
@@ -134,15 +138,73 @@
         loadEventsForDate();
     }
 
-    // ====== Fetch from Wikimedia ======
-    async function fetchWikimediaData(month, day) {
-        // Try English Wikipedia (has reliable "on this day" API)
-        const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/${month}/${day}`;
-        const resp = await fetch(url, {
-            headers: { 'Api-User-Agent': 'HistoricalNewspaper/1.0' }
-        });
+    // ====== Fetch from Hebrew Wikipedia ======
+    async function fetchHebrewWikiPage(day, month) {
+        const monthName = HEBREW_MONTHS[month];
+        const pageName = `${day}_ב${monthName}`;
+        const url = `https://he.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(pageName)}&format=json&prop=text&origin=*`;
+        const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        return resp.json();
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error.info);
+        return parseWikiHTML(data.parse.text['*']);
+    }
+
+    // ====== Parse Wikipedia HTML ======
+    function parseWikiHTML(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const result = { events: [], births: [], deaths: [] };
+        let currentSection = '';
+
+        const allElements = doc.querySelectorAll('h2, h3, ul');
+        for (const el of allElements) {
+            if (el.tagName === 'H2' || el.tagName === 'H3') {
+                const headline = el.querySelector('.mw-headline');
+                if (headline) {
+                    const text = headline.textContent.trim();
+                    if (text === 'אירועים') currentSection = 'events';
+                    else if (text === 'לידות') currentSection = 'births';
+                    else if (text === 'פטירות') currentSection = 'deaths';
+                    else if (text === 'ראו גם' || text === 'קישורים חיצוניים' || text === 'הערות שוליים') currentSection = '';
+                    else currentSection = '';
+                }
+            } else if (el.tagName === 'UL' && currentSection) {
+                const items = el.querySelectorAll(':scope > li');
+                for (const li of items) {
+                    const parsed = parseDateItem(li);
+                    if (parsed) result[currentSection].push(parsed);
+                }
+            }
+        }
+        return result;
+    }
+
+    function parseDateItem(li) {
+        const fullHTML = li.innerHTML;
+        const fullText = li.textContent.trim();
+
+        // Extract year - pattern: year – text OR year - text
+        const match = fullText.match(/^(\d{1,4})\s*[-–—]\s*(.+)/);
+        if (!match) return null;
+
+        const year = parseInt(match[1]);
+        const description = match[2].trim();
+
+        // Extract first Wikipedia link
+        const firstLink = li.querySelector('a[href^="/wiki/"]');
+        let wikiUrl = null;
+        if (firstLink) {
+            const href = firstLink.getAttribute('href');
+            wikiUrl = `https://he.wikipedia.org${href}`;
+        }
+
+        // Clean description HTML (keep links but fix them)
+        let descHTML = fullHTML.replace(/^(\d{1,4})\s*[-–—]\s*/, '');
+        descHTML = descHTML.replace(/href="\/wiki\//g, 'href="https://he.wikipedia.org/wiki/');
+
+        return { year, description, descHTML, wikiUrl };
     }
 
     // ====== Main loader ======
@@ -151,11 +213,11 @@
         document.getElementById('content').style.display = 'none';
         document.getElementById('errorMsg').style.display = 'none';
 
-        const mm = pad(currentDate.getMonth() + 1);
-        const dd = pad(currentDate.getDate());
+        const day = currentDate.getDate();
+        const month = currentDate.getMonth();
 
         try {
-            wikiData = await fetchWikimediaData(mm, dd);
+            pageData = await fetchHebrewWikiPage(day, month);
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
             renderAll();
@@ -168,7 +230,7 @@
 
     // ====== Render ======
     function renderAll() {
-        if (!wikiData) return;
+        if (!pageData) return;
         renderMainHeadline();
         renderEvents();
         renderBirths();
@@ -185,165 +247,120 @@
         return `לפני ${diff} שנים`;
     }
 
-    function getPageImage(entry) {
-        const pages = entry.pages || [];
-        for (const p of pages) {
-            if (p.thumbnail && p.thumbnail.source) return p.thumbnail.source;
-            if (p.originalimage && p.originalimage.source) return p.originalimage.source;
-        }
-        return null;
-    }
-
-    function getPageUrl(entry) {
-        const pages = entry.pages || [];
-        for (const p of pages) {
-            if (p.content_urls && p.content_urls.desktop) return p.content_urls.desktop.page;
-        }
-        return null;
-    }
-
-    function getExtract(entry) {
-        const pages = entry.pages || [];
-        for (const p of pages) {
-            if (p.extract) return p.extract;
-        }
-        return '';
-    }
-
-    // Main headline - pick the most important selected event
+    // Main headline
     function renderMainHeadline() {
-        const selected = (wikiData.selected || []).concat(wikiData.events || []);
-        if (selected.length === 0) {
+        const events = pageData.events || [];
+        if (events.length === 0) {
             document.getElementById('mainHeadline').innerHTML =
                 '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
             return;
         }
-        const ev = selected[0];
-        const img = getPageImage(ev);
-        const url = getPageUrl(ev);
-        const extract = getExtract(ev);
+
+        // Pick a significant event (prefer recent, important events)
+        const ev = events[events.length - 1]; // Most recent event
         const ago = yearsAgo(ev.year);
 
         document.getElementById('mainHeadline').innerHTML = `
             <div class="headline-category">אירוע מרכזי</div>
-            <h2>${ev.year ? ev.year + ' - ' : ''}${ev.text}</h2>
+            <h2>${ev.year} - ${ev.description}</h2>
             <div class="headline-meta">
                 <span class="byline">מקור: ויקיפדיה העברית</span>
                 <span class="time">${ago ? '&#128336; ' + ago : ''}</span>
             </div>
-            <div class="article-with-tweet">
-                <div class="article-content">
-                    <p>${extract || ev.text}</p>
-                    ${url ? `<a href="${url}" target="_blank" class="read-more">קרא עוד בויקיפדיה &larr;</a>` : ''}
-                </div>
-                ${img ? `<div class="tweet-sidebar"><img src="${img}" alt="" class="headline-image"></div>` : ''}
+            <div class="headline-content">
+                <p>${ev.descHTML}</p>
+                ${ev.wikiUrl ? `<a href="${ev.wikiUrl}" target="_blank" class="read-more">קרא עוד בויקיפדיה &larr;</a>` : ''}
             </div>
         `;
 
-        // Update subtitle
-        if (ev.year) {
-            document.getElementById('dailyHeadline').textContent =
-                `${ago} | ${ev.text.substring(0, 60)}${ev.text.length > 60 ? '...' : ''}`;
-        }
+        document.getElementById('dailyHeadline').textContent =
+            `${ago} | ${ev.description.substring(0, 70)}${ev.description.length > 70 ? '...' : ''}`;
     }
 
-    function renderEventList(items, containerId, limit) {
-        const container = document.getElementById(containerId);
-        if (!items || items.length === 0) {
-            container.innerHTML = '<p class="no-events">לא נמצאו נתונים לתאריך זה.</p>';
+    // Events list
+    function renderEvents() {
+        const events = pageData.events || [];
+        const container = document.getElementById('eventsContent');
+        if (events.length <= 1) {
+            container.innerHTML = '<p class="no-events">לא נמצאו אירועים נוספים.</p>';
             return;
         }
 
-        const shown = items.slice(0, limit || 8);
-        container.innerHTML = shown.map(item => {
-            const extract = getExtract(item);
-            const url = getPageUrl(item);
-            const shortDesc = extract
-                ? (extract.length > 150 ? extract.substring(0, 150) + '...' : extract)
-                : '';
-            return `
-                <article class="news-item">
-                    <h4>${item.year ? item.year + ' - ' : ''}${item.text}</h4>
-                    ${shortDesc ? `<p>${shortDesc}</p>` : ''}
-                    ${url ? `<a href="${url}" target="_blank" class="item-link">קרא עוד</a>` : ''}
-                </article>
-            `;
-        }).join('');
+        // Show events excluding the headline one, most recent first
+        const shown = events.slice(0, -1).reverse().slice(0, 10);
+        container.innerHTML = shown.map(ev => `
+            <article class="news-item">
+                <h4>${ev.year} - ${ev.description}</h4>
+                <p class="event-meta">${yearsAgo(ev.year)}${ev.wikiUrl ? ` | <a href="${ev.wikiUrl}" target="_blank" class="item-link">קרא עוד</a>` : ''}</p>
+            </article>
+        `).join('');
     }
 
-    function renderEvents() {
-        const events = (wikiData.selected || []).concat(wikiData.events || []);
-        // skip first since it's the main headline
-        renderEventList(events.slice(1), 'eventsContent', 8);
-    }
-
+    // Births
     function renderBirths() {
-        const births = wikiData.births || [];
+        const births = pageData.births || [];
         const container = document.getElementById('birthsContent');
         if (births.length === 0) {
             container.innerHTML = '<p class="no-events">לא נמצאו נתונים.</p>';
             return;
         }
 
+        // Show most recent births first
+        const shown = births.slice().reverse().slice(0, 12);
         container.innerHTML = '<div class="birthdays">' +
-            births.slice(0, 10).map(b => {
-                const age = b.year ? currentDate.getFullYear() - b.year : null;
-                const url = getPageUrl(b);
-                const name = b.text || '';
+            shown.map(b => {
+                const age = currentDate.getFullYear() - b.year;
                 return `<div class="birthday-item">
-                    ${url ? `<a href="${url}" target="_blank">` : ''}
-                    <strong>${name}</strong>
-                    ${url ? '</a>' : ''}
-                    ${b.year ? ` (${b.year})` : ''}
-                    ${age ? ` - ${age > 0 ? 'בן/בת ' + age : ''}` : ''}
+                    ${b.wikiUrl ? `<a href="${b.wikiUrl}" target="_blank">` : ''}
+                    <strong>${b.description}</strong>
+                    ${b.wikiUrl ? '</a>' : ''}
+                    (${b.year}) ${age > 0 ? `- בן/בת ${age}` : ''}
                 </div>`;
             }).join('') +
             '</div>';
     }
 
+    // Deaths
     function renderDeaths() {
-        const deaths = wikiData.deaths || [];
+        const deaths = pageData.deaths || [];
         const container = document.getElementById('deathsContent');
         if (deaths.length === 0) {
             container.innerHTML = '<p class="no-events">לא נמצאו נתונים.</p>';
             return;
         }
 
+        const shown = deaths.slice().reverse().slice(0, 10);
         container.innerHTML = '<div class="birthdays">' +
-            deaths.slice(0, 8).map(d => {
-                const url = getPageUrl(d);
-                const name = d.text || '';
-                return `<div class="birthday-item">
-                    ${url ? `<a href="${url}" target="_blank">` : ''}
-                    <strong>${name}</strong>
-                    ${url ? '</a>' : ''}
-                    ${d.year ? ` (${d.year})` : ''}
-                </div>`;
-            }).join('') +
+            shown.map(d => `<div class="birthday-item">
+                ${d.wikiUrl ? `<a href="${d.wikiUrl}" target="_blank">` : ''}
+                <strong>${d.description}</strong>
+                ${d.wikiUrl ? '</a>' : ''}
+                (${d.year})
+            </div>`).join('') +
             '</div>';
     }
 
-    // Historical "tweets" - pick interesting events and present as tweets
+    // Historical tweets - next to articles
     function renderTweets() {
-        const allEvents = (wikiData.selected || []).concat(wikiData.events || []);
+        const events = pageData.events || [];
         const container = document.getElementById('tweetsContent');
-        if (allEvents.length < 2) {
-            container.innerHTML = '';
+        if (events.length < 3) {
             document.getElementById('tweetsSection').style.display = 'none';
             return;
         }
         document.getElementById('tweetsSection').style.display = '';
 
-        // Pick 2-3 interesting events for tweets
-        const tweetEvents = allEvents.slice(0, 3);
-        container.innerHTML = tweetEvents.map(ev => {
-            const name = (ev.pages && ev.pages[0] && ev.pages[0].titles)
-                ? ev.pages[0].titles.normalized
-                : (ev.text ? ev.text.split(' ').slice(0, 3).join(' ') : 'אירוע');
-            const initial = name.charAt(0);
-            const tweetText = ev.text || '';
-            const yr = ev.year || '';
-            const fakeHandle = '@' + name.replace(/\s+/g, '').substring(0, 15);
+        // Pick 3 spread-out events for variety
+        const picks = [
+            events[Math.floor(events.length * 0.25)],
+            events[Math.floor(events.length * 0.5)],
+            events[Math.floor(events.length * 0.75)]
+        ].filter(Boolean);
+
+        container.innerHTML = picks.map(ev => {
+            const name = ev.description.split(' ').slice(0, 3).join(' ');
+            const initial = ev.description.charAt(0);
+            const fakeHandle = '@' + ev.description.replace(/\s+/g, '').substring(0, 12);
             const fakeLikes = Math.floor(Math.random() * 9000) + 1000;
             const fakeRT = Math.floor(fakeLikes * 0.4);
 
@@ -358,7 +375,7 @@
                         <i class="fab fa-twitter tweet-icon"></i>
                     </div>
                     <div class="tweet-content">
-                        ${yr ? `[${yr}] ` : ''}${tweetText}
+                        [${ev.year}] ${ev.description}
                     </div>
                     <div class="tweet-stats">
                         <span>&hearts; ${formatNumber(fakeLikes)}</span>
@@ -369,18 +386,24 @@
         }).join('');
     }
 
+    // Timeline
     function renderTimeline() {
-        const events = (wikiData.events || []).concat(wikiData.selected || []);
+        const events = pageData.events || [];
         const container = document.getElementById('timelineContent');
-        if (events.length <= 1) {
-            container.innerHTML = '<li>לא נמצאו אירועים נוספים.</li>';
+        if (events.length === 0) {
+            container.innerHTML = '<li>לא נמצאו אירועים.</li>';
             return;
         }
 
-        // Show events not in main content, sorted by year
-        const rest = events.slice(3, 15).sort((a, b) => (a.year || 0) - (b.year || 0));
-        container.innerHTML = rest.map(ev =>
-            `<li><strong>${ev.year || '?'}</strong> - ${ev.text}</li>`
+        // Show oldest events (not shown in main content)
+        const shown = events.slice(0, Math.min(events.length - 11, 10));
+        if (shown.length === 0) {
+            container.parentElement.style.display = 'none';
+            return;
+        }
+        container.parentElement.style.display = '';
+        container.innerHTML = shown.map(ev =>
+            `<li><strong>${ev.year}</strong> - ${ev.description}</li>`
         ).join('');
     }
 

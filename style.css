@@ -138,9 +138,36 @@ body {
 
 .tweet-sidebar {
     flex: 1;
-    min-width: 300px;
+    min-width: 280px;
+    max-width: 350px;
     position: sticky;
     top: 20px;
+}
+
+.sidebar-title {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.2rem;
+    color: #1da1f2;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #1da1f2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-title i {
+    color: #1da1f2;
+}
+
+.tweet-sidebar .historical-tweet {
+    margin-bottom: 15px;
+}
+
+.event-meta {
+    color: #888;
+    font-size: 0.85rem;
+    margin-top: 5px;
 }
 
 .historical-tweet {
