@@ -14,6 +14,7 @@
         <header class="newspaper-header">
             <div class="date-line">
                 <span class="date" id="currentDate">טוען...</span>
+                <span class="hebrew-date" id="hebrewDate"></span>
                 <span class="edition">העיתון היומי של ההיסטוריה | מהדורה דיגיטלית</span>
             </div>
             <h1 class="newspaper-title">היום בהיסטוריה</h1>
@@ -124,6 +125,22 @@
         const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDate').textContent =
             currentDate.toLocaleDateString('he-IL', opts);
+        fetchHebrewDate();
+    }
+
+    // Fetch Hebrew date from Hebcal API
+    async function fetchHebrewDate() {
+        try {
+            const y = currentDate.getFullYear();
+            const m = currentDate.getMonth() + 1;
+            const d = currentDate.getDate();
+            const url = `https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`;
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const heb = data.hebrew || '';
+            document.getElementById('hebrewDate').textContent = heb;
+        } catch (e) { /* silent fail */ }
     }
 
     function changeDate(days) {
@@ -138,73 +155,75 @@
         loadEventsForDate();
     }
 
-    // ====== Fetch from Hebrew Wikipedia ======
+    // ====== Fetch from Hebrew Wikipedia (wikitext) ======
     async function fetchHebrewWikiPage(day, month) {
         const monthName = HEBREW_MONTHS[month];
         const pageName = `${day}_ב${monthName}`;
-        const url = `https://he.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(pageName)}&format=json&prop=text&origin=*`;
+        const url = `https://he.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(pageName)}&format=json&prop=wikitext&origin=*`;
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         if (data.error) throw new Error(data.error.info);
-        return parseWikiHTML(data.parse.text['*']);
+        return parseWikitext(data.parse.wikitext['*']);
     }
 
-    // ====== Parse Wikipedia HTML ======
-    function parseWikiHTML(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
+    // ====== Parse Wikitext ======
+    function parseWikitext(wikitext) {
         const result = { events: [], births: [], deaths: [] };
         let currentSection = '';
 
-        const allElements = doc.querySelectorAll('h2, h3, ul');
-        for (const el of allElements) {
-            if (el.tagName === 'H2' || el.tagName === 'H3') {
-                const headline = el.querySelector('.mw-headline');
-                if (headline) {
-                    const text = headline.textContent.trim();
-                    if (text === 'אירועים') currentSection = 'events';
-                    else if (text === 'לידות') currentSection = 'births';
-                    else if (text === 'פטירות') currentSection = 'deaths';
-                    else if (text === 'ראו גם' || text === 'קישורים חיצוניים' || text === 'הערות שוליים') currentSection = '';
-                    else currentSection = '';
-                }
-            } else if (el.tagName === 'UL' && currentSection) {
-                const items = el.querySelectorAll(':scope > li');
-                for (const li of items) {
-                    const parsed = parseDateItem(li);
-                    if (parsed) result[currentSection].push(parsed);
-                }
+        const lines = wikitext.split('\n');
+        for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Detect section headers: == אירועים ==
+            const sectionMatch = trimmed.match(/^==\s*(.+?)\s*==$/);
+            if (sectionMatch) {
+                const name = sectionMatch[1].trim();
+                if (name === 'אירועים') currentSection = 'events';
+                else if (name === 'לידות') currentSection = 'births';
+                else if (name === 'פטירות') currentSection = 'deaths';
+                else currentSection = '';
+                continue;
+            }
+
+            // Parse list items: * [[1949]] – description
+            if (currentSection && trimmed.startsWith('*')) {
+                const parsed = parseWikitextItem(trimmed);
+                if (parsed) result[currentSection].push(parsed);
             }
         }
         return result;
     }
 
-    function parseDateItem(li) {
-        const fullHTML = li.innerHTML;
-        const fullText = li.textContent.trim();
+    function parseWikitextItem(line) {
+        // Remove leading * and whitespace
+        let text = line.replace(/^\*\s*/, '');
 
-        // Extract year - pattern: year – text OR year - text
-        const match = fullText.match(/^(\d{1,4})\s*[-–—]\s*(.+)/);
-        if (!match) return null;
+        // Extract year: [[1949]] or 1949
+        const yearMatch = text.match(/^\[?\[?(\d{1,4})\]?\]?\s*[-–—]\s*/);
+        if (!yearMatch) return null;
 
-        const year = parseInt(match[1]);
-        const description = match[2].trim();
+        const year = parseInt(yearMatch[1]);
+        text = text.substring(yearMatch[0].length);
 
-        // Extract first Wikipedia link
-        const firstLink = li.querySelector('a[href^="/wiki/"]');
+        // Convert [[link|display]] to display text and extract first link
         let wikiUrl = null;
-        if (firstLink) {
-            const href = firstLink.getAttribute('href');
-            wikiUrl = `https://he.wikipedia.org${href}`;
-        }
+        const description = text.replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, (match, target, display) => {
+            if (!wikiUrl) wikiUrl = `https://he.wikipedia.org/wiki/${encodeURIComponent(target.replace(/ /g, '_'))}`;
+            return display || target;
+        });
 
-        // Clean description HTML (keep links but fix them)
-        let descHTML = fullHTML.replace(/^(\d{1,4})\s*[-–—]\s*/, '');
-        descHTML = descHTML.replace(/href="\/wiki\//g, 'href="https://he.wikipedia.org/wiki/');
+        // Clean remaining wiki markup
+        const cleanDesc = description
+            .replace(/'''(.+?)'''/g, '$1')  // bold
+            .replace(/''(.+?)''/g, '$1')    // italic
+            .replace(/\{\{[^}]+\}\}/g, '')  // templates
+            .replace(/<ref[^>]*>.*?<\/ref>/g, '') // references
+            .replace(/<ref[^/]*\/>/g, '')    // self-closing refs
+            .trim();
 
-        return { year, description, descHTML, wikiUrl };
+        return { year, description: cleanDesc, wikiUrl };
     }
 
     // ====== Main loader ======
@@ -268,7 +287,7 @@
                 <span class="time">${ago ? '&#128336; ' + ago : ''}</span>
             </div>
             <div class="headline-content">
-                <p>${ev.descHTML}</p>
+                <p>${ev.description}</p>
                 ${ev.wikiUrl ? `<a href="${ev.wikiUrl}" target="_blank" class="read-more">קרא עוד בויקיפדיה &larr;</a>` : ''}
             </div>
         `;

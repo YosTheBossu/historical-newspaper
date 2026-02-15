@@ -35,10 +35,22 @@ body {
 .date-line {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 14px;
     color: #666;
     margin-bottom: 10px;
     font-family: 'Frank Ruhl Libre', serif;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.hebrew-date {
+    background-color: #f0e6d0;
+    padding: 3px 12px;
+    border-radius: 3px;
+    font-weight: 700;
+    color: #5d4037;
+    font-size: 13px;
 }
 
 .newspaper-title {
