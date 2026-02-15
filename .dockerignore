@@ -1,0 +1,10 @@
+.git
+.gitignore
+*.md
+*.tar.gz
+scripts/
+node_modules/
+daily-digest-*.json
+.dockerignore
+Dockerfile
+docker-compose.yml
