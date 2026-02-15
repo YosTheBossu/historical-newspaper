@@ -1,5 +1,6 @@
 // data-collector.js — Daily data pipeline
 // Fetches from HE + EN Wikipedia, translates with DeepSeek, generates social posts
+// Classifies events into categories, prioritizes Israeli content
 // Runs server-side via cron — no API keys exposed to client
 
 const https = require('https');
@@ -15,10 +16,83 @@ const CONFIG = {
     YNET_RSS: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
     USER_AGENT: 'HistoricalNewspaperBot/1.0 (educational project)',
     TRANSLATE_BATCH_SIZE: 25,
-    MAX_EVENTS: 40,
+    MAX_EVENTS: 50,
     MAX_BIRTHS: 30,
     MAX_DEATHS: 25
 };
+
+// ====== Category Classification ======
+const CATEGORY_KEYWORDS = {
+    israel: {
+        keywords: ['ישראל', 'ירושלים', 'תל אביב', 'תל-אביב', 'חיפה', 'צה"ל', 'צהל',
+            'כנסת', 'ציונ', 'יהוד', 'עברי', 'מנדט', 'פלשתינ', 'גולן', 'נגב', 'גליל',
+            'יהודה', 'שומרון', 'באר שבע', 'אילת', 'רמת גן', 'בני ברק', 'נתניה',
+            'הגנה', 'אצ"ל', 'לח"י', 'מוסד', 'שב"כ', 'שואה', 'עליי',
+            'israel', 'jerusalem', 'tel aviv', 'haifa', 'idf', 'knesset', 'zion',
+            'jewish', 'hebrew', 'palestine', 'mandate', 'kibbutz', 'mossad',
+            'holocaust', 'yishuv', 'aliyah', 'israeli', 'judea', 'samaria', 'negev',
+            'galilee', 'golan', 'eilat', 'beersheba', 'nazareth', 'bethlehem', 'jaffa'],
+        label: 'ישראל'
+    },
+    politics: {
+        keywords: ['ממשל', 'נשיא', 'ראש ממשלה', 'בחירות', 'מפלג', 'פרלמנט', 'קונגרס',
+            'חוק', 'חוקה', 'דמוקרט', 'דיפלומט', 'הסכם', 'אמנה', 'מלך', 'קיסר',
+            'ממלכ', 'שגריר', 'עצמאות', 'מהפכ', 'הכרז', 'חתימ',
+            'president', 'prime minister', 'election', 'parliament', 'congress',
+            'treaty', 'governor', 'political', 'kingdom', 'empire', 'republic',
+            'constitution', 'independence', 'revolution', 'monarchy', 'ambassador',
+            'chancellor', 'senator', 'legislation', 'sovereign', 'coronation'],
+        label: 'פוליטיקה'
+    },
+    military: {
+        keywords: ['מלחמ', 'צבא', 'קרב', 'לחימ', 'חייל', 'צבאי', 'פלישה', 'הפצצ',
+            'כיבוש', 'מבצע', 'חזית', 'ביטחון', 'טרור', 'פיגוע', 'התקפ', 'הגנ',
+            'war', 'battle', 'army', 'military', 'invasion', 'bombing', 'attack',
+            'siege', 'troops', 'naval', 'combat', 'terror', 'warfare', 'soldier',
+            'artillery', 'fleet', 'offensive', 'surrender', 'armistice', 'massacre'],
+        label: 'ביטחון'
+    },
+    sports: {
+        keywords: ['ספורט', 'אולימפ', 'כדורגל', 'כדורסל', 'שיא עולמי', 'אליפות',
+            'גביע', 'טורניר', 'מונדיאל', 'שחקן', 'קבוצ', 'ליגה', 'טניס',
+            'olympic', 'football', 'soccer', 'basketball', 'championship',
+            'world record', 'tournament', 'world cup', 'super bowl', 'athlete',
+            'medal', 'tennis', 'baseball', 'cricket', 'rugby', 'marathon',
+            'fifa', 'uefa', 'nba', 'nfl', 'boxing', 'wrestling', 'swimming'],
+        label: 'ספורט'
+    },
+    culture: {
+        keywords: ['אמנ', 'ציור', 'סרט', 'שיר', 'מוסיקה', 'סופר', 'ספרות',
+            'תיאטרון', 'אוניברסיט', 'פרס נובל', 'אוסקר', 'אופרה', 'זמר',
+            'artist', 'film', 'movie', 'music', 'author', 'book', 'theater',
+            'theatre', 'nobel', 'oscar', 'grammy', 'singer', 'actor', 'actress',
+            'opera', 'composer', 'poet', 'novel', 'painting', 'sculpture',
+            'museum', 'gallery', 'broadway', 'concert', 'album', 'literary'],
+        label: 'תרבות'
+    },
+    science: {
+        keywords: ['מדע', 'המצא', 'גילוי', 'חלל', 'מחשב', 'רפוא', 'פיזיק',
+            'כימי', 'טכנולוג', 'אסטרונ', 'לוויין', 'מעבד', 'אינטרנט',
+            'science', 'invent', 'discover', 'space', 'computer', 'medical',
+            'physics', 'chemistry', 'technology', 'nasa', 'satellite', 'astronaut',
+            'vaccine', 'patent', 'laboratory', 'genome', 'nuclear', 'atomic',
+            'telescope', 'rocket', 'spacecraft', 'engineering', 'experiment'],
+        label: 'מדע וטכנולוגיה'
+    }
+};
+
+function classifyEvent(event) {
+    const text = ((event.text || '') + ' ' + (event.extract || '') + ' ' + (event.pageTitle || '')).toLowerCase();
+
+    for (const [cat, config] of Object.entries(CATEGORY_KEYWORDS)) {
+        for (const kw of config.keywords) {
+            if (text.includes(kw.toLowerCase())) {
+                return cat;
+            }
+        }
+    }
+    return 'general';
+}
 
 // ====== HTTP Helpers ======
 function httpGet(url, headers = {}, expectJson = true) {
@@ -97,10 +171,10 @@ function processWikiEntry(entry, lang) {
         year: entry.year || 0,
         text: entry.text || '',
         lang,
-        url: (page.content_urls && page.content_urls.desktop && page.content_urls.desktop.page) || null,
         extract: page.extract || null,
         thumbnail: (page.thumbnail && page.thumbnail.source) || null,
-        pageTitle: page.title || ''
+        pageTitle: page.title || '',
+        category: 'general'
     };
 }
 
@@ -141,7 +215,7 @@ function parseRssItems(xmlText) {
 }
 
 // ====== DeepSeek API ======
-async function callDeepSeek(systemPrompt, userPrompt) {
+async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
     if (!CONFIG.DEEPSEEK_API_KEY) {
         console.log('  ⏭️  DeepSeek API key not set, skipping');
         return null;
@@ -154,7 +228,7 @@ async function callDeepSeek(systemPrompt, userPrompt) {
             { role: 'user', content: userPrompt }
         ],
         temperature: 0.3,
-        max_tokens: 4096
+        max_tokens: maxTokens
     };
 
     const result = await httpPost('https://api.deepseek.com/v1/chat/completions', body, {
@@ -167,13 +241,11 @@ async function callDeepSeek(systemPrompt, userPrompt) {
 
 function extractJsonFromResponse(text) {
     if (!text) return null;
-    // Try to extract JSON from markdown code blocks or raw text
     const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     const jsonStr = codeBlockMatch ? codeBlockMatch[1].trim() : text.trim();
     try {
         return JSON.parse(jsonStr);
     } catch (e) {
-        // Try to find array or object in the text
         const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
         const objMatch = jsonStr.match(/\{[\s\S]*\}/);
         try {
@@ -188,7 +260,11 @@ function extractJsonFromResponse(text) {
 async function translateBatch(entries) {
     if (entries.length === 0) return entries;
 
-    const textsToTranslate = entries.map((e, i) => ({ id: i, text: e.text }));
+    const textsToTranslate = entries.map((e, i) => ({
+        id: i,
+        text: e.text,
+        extract: e.extract || ''
+    }));
 
     const systemPrompt = `You are a professional Hebrew translator specializing in historical content.
 Translate the given entries from English to Hebrew.
@@ -196,8 +272,9 @@ Rules:
 - Use formal newspaper Hebrew style
 - Transliterate well-known proper nouns to Hebrew (e.g., "Abraham Lincoln" → "אברהם לינקולן")
 - Keep year numbers as-is
-- Be concise
-- Return ONLY a valid JSON array with objects: {"id": number, "text": "Hebrew translation"}`;
+- Be concise but accurate
+- Translate BOTH the "text" field AND the "extract" field
+- Return ONLY a valid JSON array with objects: {"id": number, "text": "Hebrew translation", "extract": "Hebrew translation of extract"}`;
 
     const userPrompt = `Translate these ${entries.length} historical entries to Hebrew:\n${JSON.stringify(textsToTranslate)}`;
 
@@ -211,21 +288,23 @@ Rules:
                     entries[t.id].text = t.text;
                     entries[t.id].originalLang = 'en';
                     entries[t.id].lang = 'he';
+                    if (t.extract && entries[t.id].extract) {
+                        entries[t.id].extract = t.extract;
+                    }
                 }
             }
-            console.log(`    ✅ Translated ${translated.length}/${entries.length} entries`);
+            console.log(`    Translated ${translated.length}/${entries.length} entries`);
         } else {
-            console.log(`    ⚠️ Could not parse translation response`);
+            console.log(`    Could not parse translation response`);
         }
     } catch (err) {
-        console.error(`    ⚠️ Translation batch failed: ${err.message}`);
+        console.error(`    Translation batch failed: ${err.message}`);
     }
 
     return entries;
 }
 
 async function translateAllEnglishEntries(data) {
-    // Collect all English entries across categories
     const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
     let totalEN = 0;
 
@@ -234,16 +313,31 @@ async function translateAllEnglishEntries(data) {
         if (enEntries.length === 0) continue;
 
         totalEN += enEntries.length;
-        console.log(`  📝 Translating ${enEntries.length} English ${cat}...`);
+        console.log(`  Translating ${enEntries.length} English ${cat}...`);
 
-        // Translate in batches
         for (let i = 0; i < enEntries.length; i += CONFIG.TRANSLATE_BATCH_SIZE) {
             const batch = enEntries.slice(i, i + CONFIG.TRANSLATE_BATCH_SIZE);
             await translateBatch(batch);
         }
     }
 
-    console.log(`  📊 Total translated: ${totalEN} entries`);
+    // Retry any entries that failed translation
+    let untranslated = 0;
+    for (const cat of categories) {
+        const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
+        untranslated += stillEN.length;
+    }
+    if (untranslated > 0 && CONFIG.DEEPSEEK_API_KEY) {
+        console.log(`  Retrying ${untranslated} untranslated entries...`);
+        for (const cat of categories) {
+            const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
+            if (stillEN.length > 0) {
+                await translateBatch(stillEN);
+            }
+        }
+    }
+
+    console.log(`  Total processed for translation: ${totalEN} entries`);
     return data;
 }
 
@@ -251,53 +345,62 @@ async function translateAllEnglishEntries(data) {
 async function generateSocialPosts(data) {
     if (!CONFIG.DEEPSEEK_API_KEY) return [];
 
-    // Gather material
-    const topEvents = (data.selected || []).slice(0, 3)
-        .concat((data.events || []).slice(0, 5))
-        .slice(0, 5);
-    const topBirths = (data.births || []).slice(0, 3);
+    // Prefer Israeli events, then selected, then general events
+    const israelEvents = (data.events || []).filter(e => e.category === 'israel').slice(0, 3);
+    const topSelected = (data.selected || []).slice(0, 2);
+    const topEvents = (data.events || []).slice(0, 4);
+    const topBirths = (data.births || []).filter(e => e.category === 'israel').slice(0, 2)
+        .concat((data.births || []).slice(0, 2));
 
-    if (topEvents.length === 0) return [];
+    const allSources = [...israelEvents, ...topSelected, ...topEvents, ...topBirths];
+    // Deduplicate by year
+    const seen = new Set();
+    const uniqueSources = allSources.filter(e => {
+        if (seen.has(e.year)) return false;
+        seen.add(e.year);
+        return true;
+    }).slice(0, 6);
 
-    const eventsText = topEvents.map(e => `${e.year}: ${e.text}`).join('\n');
-    const birthsText = topBirths.map(b => `${b.year}: ${b.text}`).join('\n');
+    if (uniqueSources.length === 0) return [];
+
+    const eventsText = uniqueSources.map(e => `${e.year}: ${e.text}`).join('\n');
 
     const systemPrompt = `You are a creative Hebrew social media content writer for a historical newspaper.
 Create engaging social media posts as if historical figures were posting on modern platforms.
+Each post MUST be tied to a specific event year from the list.
+All content MUST be in Hebrew.
 Return ONLY a valid JSON array.`;
 
     const userPrompt = `Based on these historical events that happened on this day:
 
-Events:
 ${eventsText}
 
-Births:
-${birthsText}
-
-Create exactly 4 social media posts. Each post should be from the perspective of a relevant historical figure.
+Create exactly 5 social media posts. Each post should be from the perspective of a relevant historical figure.
+Prefer Israeli/Jewish historical figures when relevant.
 Return a JSON array with objects:
 {
     "author": "name in Hebrew",
     "handle": "@HandleInEnglish",
     "platform": "twitter" or "facebook" or "instagram",
     "content": "post content in Hebrew, max 200 chars, with relevant hashtags",
-    "year": relevant year number,
+    "year": the exact year number from the event this post references,
+    "eventYear": same year number (used to link to the event),
     "likes": random number between 500-15000,
     "retweets": random number between 100-5000,
     "replies": random number between 50-2000
 }
 
-Make them creative, witty, and historically accurate. All content MUST be in Hebrew.`;
+Make them creative, witty, and historically accurate. ALL content MUST be in Hebrew.`;
 
     try {
         const response = await callDeepSeek(systemPrompt, userPrompt);
         const posts = extractJsonFromResponse(response);
         if (Array.isArray(posts) && posts.length > 0) {
-            console.log(`  ✅ Generated ${posts.length} social posts`);
+            console.log(`  Generated ${posts.length} social posts`);
             return posts;
         }
     } catch (err) {
-        console.error(`  ⚠️ Social post generation failed: ${err.message}`);
+        console.error(`  Social post generation failed: ${err.message}`);
     }
 
     return [];
@@ -307,8 +410,8 @@ Make them creative, witty, and historically accurate. All content MUST be in Heb
 async function collectDailyData() {
     const { isoDate, year, month, day } = getTodayParts();
     console.log(`\n========================================`);
-    console.log(`📰 Historical Newspaper — Data Collection`);
-    console.log(`📅 Date: ${isoDate}`);
+    console.log(`Historical Newspaper — Data Collection`);
+    console.log(`Date: ${isoDate}`);
     console.log(`========================================\n`);
 
     const data = {
@@ -322,11 +425,12 @@ async function collectDailyData() {
         holidays: [],
         socialPosts: [],
         news: [],
-        stats: { he: 0, en: 0, translated: 0, total: 0 }
+        categories: {},
+        stats: { he: 0, en: 0, translated: 0, total: 0, israelEvents: 0 }
     };
 
     // --- Step 1: Fetch Hebrew Wikipedia ---
-    console.log('1️⃣  Fetching Hebrew Wikipedia...');
+    console.log('1. Fetching Hebrew Wikipedia...');
     try {
         const heData = await fetchWikiData('he', month, day);
         const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
@@ -335,13 +439,13 @@ async function collectDailyData() {
             data[cat].push(...items);
             data.stats.he += items.length;
         }
-        console.log(`  ✅ Hebrew: ${data.stats.he} items`);
+        console.log(`  Hebrew: ${data.stats.he} items`);
     } catch (err) {
-        console.error(`  ⚠️ Hebrew Wikipedia failed: ${err.message}`);
+        console.error(`  Hebrew Wikipedia failed: ${err.message}`);
     }
 
     // --- Step 2: Fetch English Wikipedia ---
-    console.log('2️⃣  Fetching English Wikipedia...');
+    console.log('2. Fetching English Wikipedia...');
     try {
         const enData = await fetchWikiData('en', month, day);
         const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
@@ -353,34 +457,59 @@ async function collectDailyData() {
             data[cat].push(...newItems);
             data.stats.en += newItems.length;
         }
-        console.log(`  ✅ English: ${data.stats.en} new items`);
+        console.log(`  English: ${data.stats.en} new items`);
     } catch (err) {
-        console.error(`  ⚠️ English Wikipedia failed: ${err.message}`);
+        console.error(`  English Wikipedia failed: ${err.message}`);
     }
 
     // --- Step 3: Fetch Hebrew Date ---
-    console.log('3️⃣  Fetching Hebrew date...');
+    console.log('3. Fetching Hebrew date...');
     try {
         const hebDate = await fetchHebrewDate(year, month, day);
         data.hebrewDate = hebDate.hebrew || '';
-        console.log(`  ✅ Hebrew date: ${data.hebrewDate}`);
+        console.log(`  Hebrew date: ${data.hebrewDate}`);
     } catch (err) {
-        console.error(`  ⚠️ Hebrew date failed: ${err.message}`);
+        console.error(`  Hebrew date failed: ${err.message}`);
     }
 
     // --- Step 4: Fetch YNET News ---
-    console.log('4️⃣  Fetching YNET news...');
+    console.log('4. Fetching YNET news...');
     try {
         const xml = await httpGet(CONFIG.YNET_RSS, {}, false);
         data.news = parseRssItems(xml).slice(0, 10);
-        console.log(`  ✅ YNET: ${data.news.length} articles`);
+        console.log(`  YNET: ${data.news.length} articles`);
     } catch (err) {
-        console.error(`  ⚠️ YNET failed: ${err.message}`);
+        console.error(`  YNET failed: ${err.message}`);
     }
 
-    // Sort by year (most recent first)
-    data.events.sort((a, b) => b.year - a.year);
-    data.births.sort((a, b) => b.year - a.year);
+    // --- Step 5: Translate English entries with DeepSeek ---
+    console.log('5. Translating English content with DeepSeek...');
+    await translateAllEnglishEntries(data);
+
+    // --- Step 6: Classify events into categories ---
+    console.log('6. Classifying events into categories...');
+    const catCounts = {};
+    for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
+        for (const entry of (data[cat] || [])) {
+            entry.category = classifyEvent(entry);
+            catCounts[entry.category] = (catCounts[entry.category] || 0) + 1;
+        }
+    }
+    data.categories = catCounts;
+    data.stats.israelEvents = catCounts.israel || 0;
+    console.log(`  Categories: ${JSON.stringify(catCounts)}`);
+
+    // Sort: Israeli events first, then by year (most recent first)
+    data.events.sort((a, b) => {
+        if (a.category === 'israel' && b.category !== 'israel') return -1;
+        if (a.category !== 'israel' && b.category === 'israel') return 1;
+        return b.year - a.year;
+    });
+    data.births.sort((a, b) => {
+        if (a.category === 'israel' && b.category !== 'israel') return -1;
+        if (a.category !== 'israel' && b.category === 'israel') return 1;
+        return b.year - a.year;
+    });
     data.deaths.sort((a, b) => b.year - a.year);
 
     // Trim to limits
@@ -388,12 +517,8 @@ async function collectDailyData() {
     data.births = data.births.slice(0, CONFIG.MAX_BIRTHS);
     data.deaths = data.deaths.slice(0, CONFIG.MAX_DEATHS);
 
-    // --- Step 5: Translate English entries with DeepSeek ---
-    console.log('5️⃣  Translating English content with DeepSeek...');
-    await translateAllEnglishEntries(data);
-
-    // --- Step 6: Generate social media posts with DeepSeek ---
-    console.log('6️⃣  Generating social media posts with DeepSeek...');
+    // --- Step 7: Generate social media posts with DeepSeek ---
+    console.log('7. Generating social media posts with DeepSeek...');
     data.socialPosts = await generateSocialPosts(data);
 
     // --- Final stats ---
@@ -411,9 +536,6 @@ function saveData(data) {
     fs.writeFileSync(todayFile, JSON.stringify(data, null, 2), 'utf8');
     fs.writeFileSync(archiveFile, JSON.stringify(data, null, 2), 'utf8');
 
-    // Also write the old format for backwards compatibility
-    fs.writeFileSync('example-events.json', JSON.stringify(data, null, 2), 'utf8');
-
     return { todayFile, archiveFile };
 }
 
@@ -423,9 +545,9 @@ async function main() {
         const { todayFile, archiveFile } = saveData(data);
 
         console.log(`\n========================================`);
-        console.log(`✅ Collection complete!`);
-        console.log(`📄 Files: ${todayFile}, ${archiveFile}`);
-        console.log(`📊 Stats:`);
+        console.log(`Collection complete!`);
+        console.log(`Files: ${todayFile}, ${archiveFile}`);
+        console.log(`Stats:`);
         console.log(`   Events: ${data.events.length}`);
         console.log(`   Births: ${data.births.length}`);
         console.log(`   Deaths: ${data.deaths.length}`);
@@ -433,9 +555,11 @@ async function main() {
         console.log(`   News: ${data.news.length}`);
         console.log(`   Sources: ${data.stats.he} HE + ${data.stats.en} EN`);
         console.log(`   Translated: ${data.stats.translated}`);
+        console.log(`   Israeli events: ${data.stats.israelEvents}`);
+        console.log(`   Categories: ${JSON.stringify(data.categories)}`);
         console.log(`========================================\n`);
     } catch (err) {
-        console.error(`\n❌ Fatal error: ${err.message}`);
+        console.error(`\nFatal error: ${err.message}`);
         console.error(err.stack);
         process.exitCode = 1;
     }
