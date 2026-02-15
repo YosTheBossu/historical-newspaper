@@ -136,7 +136,8 @@
 
     // ====== Fetch from Wikimedia ======
     async function fetchWikimediaData(month, day) {
-        const url = `https://he.wikipedia.org/api/rest_v1/feed/onthisday/all/${month}/${day}`;
+        // Try English Wikipedia (has reliable "on this day" API)
+        const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/all/${month}/${day}`;
         const resp = await fetch(url, {
             headers: { 'Api-User-Agent': 'HistoricalNewspaper/1.0' }
         });
