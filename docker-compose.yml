@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    container_name: historical-newspaper
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      # Persist collected data between container restarts
+      - newspaper-data:/usr/share/nginx/html/data
+    environment:
+      - TZ=Asia/Jerusalem
+    networks:
+      - default
+
+volumes:
+  newspaper-data:
+
+# To connect to an existing reverse-proxy network, uncomment below:
+# networks:
+#   default:
+#     external: true
+#     name: proxy-network  # Replace with your actual network name
