@@ -94,6 +94,12 @@
                 </div>
             </div>
 
+            <!-- חדשות היום -->
+            <section id="newsSection" class="news-section" style="display:none;">
+                <h3><i class="fas fa-newspaper"></i> חדשות היום</h3>
+                <div id="newsContent"></div>
+            </section>
+
             <!-- ציר זמן -->
             <section class="news-section" id="timelineSection">
                 <h3><i class="fas fa-calendar-alt"></i> עוד היום בהיסטוריה</h3>
@@ -187,6 +193,24 @@
     }
 
     // ====== Data Fetching ======
+
+    // Strategy: Try pre-built today.json first (server-side enriched data),
+    // then fall back to live Wikipedia API calls
+
+    async function loadFromCachedJson() {
+        const todayStr = currentDate.toISOString().slice(0, 10);
+        const resp = await fetch('today.json?_=' + Date.now());
+        if (!resp.ok) throw new Error('No cached data');
+        const data = await resp.json();
+        if (data.date !== todayStr) throw new Error('Cached data is stale');
+        // Normalize format for renderer
+        if (!data.sourceStats) {
+            data.sourceStats = data.stats || { he: 0, en: 0 };
+        }
+        console.log('Loaded from today.json (server-enriched data)');
+        return data;
+    }
+
     async function fetchWikiAPI(baseUrl, month, day) {
         const url = `${baseUrl}/${pad2(month)}/${pad2(day)}`;
         const resp = await fetch(url, {
@@ -209,12 +233,11 @@
         };
     }
 
-    async function loadData() {
+    async function loadFromLiveAPIs() {
         const m = currentDate.getMonth() + 1;
         const d = currentDate.getDate();
         const y = currentDate.getFullYear();
 
-        // Fetch in parallel: HE wiki, EN wiki, Hebrew date
         const [heRes, enRes, hebRes] = await Promise.allSettled([
             fetchWikiAPI(API.HE, m, d),
             fetchWikiAPI(API.EN, m, d),
@@ -229,12 +252,11 @@
 
         const data = {
             events: [], births: [], deaths: [],
-            selected: [], holidays: [],
+            selected: [], holidays: [], socialPosts: [], news: [],
             hebrewDate: (heb && heb.hebrew) || '',
             sourceStats: { he: 0, en: 0 }
         };
 
-        // Helper to add entries without year duplicates
         function addUnique(target, source, lang) {
             const existingYears = new Set(target.map(e => e.year));
             let added = 0;
@@ -248,33 +270,38 @@
             return added;
         }
 
-        // Hebrew data (primary)
         if (he) {
-            const cats = ['events', 'births', 'deaths', 'selected', 'holidays'];
-            for (const cat of cats) {
-                const items = (he[cat] || []);
-                for (const item of items) {
+            for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
+                for (const item of (he[cat] || [])) {
                     data[cat].push(processEntry(item, 'he'));
                     data.sourceStats.he++;
                 }
             }
         }
 
-        // English data (fill gaps)
         if (en) {
-            const cats = ['events', 'births', 'deaths', 'selected', 'holidays'];
-            for (const cat of cats) {
-                const added = addUnique(data[cat], en[cat] || [], 'en');
-                data.sourceStats.en += added;
+            for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
+                data.sourceStats.en += addUnique(data[cat], en[cat] || [], 'en');
             }
         }
 
-        // Sort by year descending (most recent first)
         data.events.sort((a, b) => b.year - a.year);
         data.births.sort((a, b) => b.year - a.year);
         data.deaths.sort((a, b) => b.year - a.year);
 
+        console.log('Loaded from live Wikipedia APIs (fallback)');
         return data;
+    }
+
+    async function loadData() {
+        // Try cached server-enriched data first (translated, with social posts)
+        try {
+            return await loadFromCachedJson();
+        } catch (e) {
+            console.log('Cached data unavailable, trying live APIs...', e.message);
+        }
+        // Fallback to live Wikipedia API calls
+        return await loadFromLiveAPIs();
     }
 
     // ====== Date Display ======
@@ -350,6 +377,7 @@
         renderDeaths();
         renderTweets();
         renderHolidays();
+        renderNews();
         renderTimeline();
     }
 
@@ -501,17 +529,51 @@
         const container = document.getElementById('tweetsContent');
         const section = document.getElementById('tweetsSection');
 
-        // Gather material for social posts
+        // Use server-generated social posts if available (from DeepSeek)
+        const serverPosts = allData.socialPosts || [];
+        if (serverPosts.length > 0) {
+            section.style.display = '';
+            const platformIcons = {
+                twitter: { icon: 'fab fa-x-twitter', color: '#000' },
+                facebook: { icon: 'fab fa-facebook', color: '#1877f2' },
+                instagram: { icon: 'fab fa-instagram', color: '#e4405f' }
+            };
+            container.innerHTML = serverPosts.slice(0, LIMITS.TWEETS).map(post => {
+                const p = platformIcons[post.platform] || platformIcons.twitter;
+                const initial = (post.author || '?').charAt(0);
+                const ago = yearsAgo(post.year);
+                return `
+                    <div class="historical-tweet">
+                        <div class="tweet-header">
+                            <div class="tweet-avatar-placeholder" style="background-color:${p.color}">${escapeHtml(initial)}</div>
+                            <div class="tweet-author">
+                                <strong>${escapeHtml(post.author || '')}</strong>
+                                <span>${escapeHtml(post.handle || '')}</span>
+                            </div>
+                            <i class="${p.icon} tweet-icon" style="color:${p.color}"></i>
+                        </div>
+                        <div class="tweet-content">
+                            ${escapeHtml(post.content || '')}
+                            ${ago ? `<div class="tweet-ago">${ago}</div>` : ''}
+                        </div>
+                        <div class="tweet-stats">
+                            <span><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
+                            <span><i class="fas fa-retweet"></i> ${formatNumber(post.retweets || 0)}</span>
+                            <span><i class="fas fa-comment"></i> ${formatNumber(post.replies || 0)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            return;
+        }
+
+        // Fallback: generate posts from event data (client-side)
         const sources = [
             ...allData.selected.slice(0, 2),
             ...allData.events.filter(e => e.lang === 'he').slice(0, 4),
-            ...allData.births.filter(b => b.lang === 'he').slice(0, 2)
+            ...allData.births.filter(b => b.lang === 'he').slice(0, 2),
+            ...allData.events.slice(0, 4)
         ];
-
-        if (sources.length < 2) {
-            // Fallback to English entries
-            sources.push(...allData.events.slice(0, 4));
-        }
 
         if (sources.length < 2) {
             section.style.display = 'none';
@@ -519,7 +581,6 @@
         }
         section.style.display = '';
 
-        // Pick diverse entries (no year duplicates)
         const picks = [];
         const usedYears = new Set();
         for (const s of sources) {
@@ -593,6 +654,28 @@
                     ${h.url ? `<a href="${escapeHtml(h.url)}" target="_blank" rel="noopener" class="item-link">פרטים</a>` : ''}
                 </div>`;
             }).join('') +
+            '</div>';
+    }
+
+    function renderNews() {
+        const section = document.getElementById('newsSection');
+        const container = document.getElementById('newsContent');
+        const news = allData.news || [];
+        if (news.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = '';
+        container.innerHTML = '<div class="news-list">' +
+            news.slice(0, 6).map(n => `
+                <div class="news-card">
+                    <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
+                        <strong>${escapeHtml(n.title)}</strong>
+                    </a>
+                    ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 120))}${n.summary.length > 120 ? '...' : ''}</p>` : ''}
+                    <span class="news-source"><i class="fas fa-external-link-alt"></i> ${escapeHtml(n.source || 'ynet')}</span>
+                </div>
+            `).join('') +
             '</div>';
     }
 

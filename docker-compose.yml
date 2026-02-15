@@ -1,9 +1,14 @@
 services:
   web:
-    image: nginx:alpine
+    build: .
     container_name: historical-newspaper-web
     restart: unless-stopped
     ports:
       - "8080:80"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     volumes:
-      - ./:/usr/share/nginx/html:ro
+      - newspaper-data:/usr/share/nginx/html/data
+
+volumes:
+  newspaper-data:

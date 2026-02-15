@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Generated data files
+today.json
+daily-digest-*.json
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
