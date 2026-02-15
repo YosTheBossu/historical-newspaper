@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>העיתון של ההיסטוריה - 11 בפברואר</title>
+    <title>היום בהיסטוריה - העיתון היומי</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,124 +13,76 @@
         <!-- כותרת העיתון -->
         <header class="newspaper-header">
             <div class="date-line">
-                <span class="date" id="current-date">יום רביעי, 11 בפברואר 2026</span>
-                <span class="edition">העיתון היומי של ההיסטוריה</span>
+                <span class="date" id="currentDate">טוען...</span>
+                <span class="edition">העיתון היומי של ההיסטוריה | מהדורה דיגיטלית</span>
             </div>
             <h1 class="newspaper-title">היום בהיסטוריה</h1>
-            <div class="subtitle" id="daily-headline">העיתון של היום - גיליון יומי חד פעמי</div>
-            <div class="date-note">
-                <i class="fas fa-info-circle"></i>
-                העיתון הזה זמין רק היום. מחר - עיתון חדש עם אירועים חדשים.
-            </div>
+            <div class="subtitle" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים מויקיפדיה</div>
             <div class="header-line"></div>
+
+            <div class="controls">
+                <button onclick="changeDate(-1)" class="control-btn">
+                    <i class="fas fa-chevron-right"></i> אתמול
+                </button>
+                <button onclick="goToToday()" class="control-btn today-btn">
+                    <i class="fas fa-calendar-day"></i> היום
+                </button>
+                <button onclick="changeDate(1)" class="control-btn">
+                    מחר <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
         </header>
 
-        <!-- כותרת ראשית -->
-        <section class="main-headline">
-            <div class="headline-category">פוליטיקה</div>
-            <h2>11 בפברואר 1949: הכנסת הראשונה מתכנסת לישיבתה הראשונה</h2>
-            <div class="headline-meta">
-                <span class="byline">דיווח: צוות "היום בהיסטוריה"</span>
-                <span class="time">🕐 לפני 77 שנים בדיוק</span>
-            </div>
-            <div class="article-with-tweet">
-                <div class="article-content">
-                    <p>ירושלים, 11 בפברואר 1949 - היום לפני 77 שנים התכנסה הכנסת הראשונה של מדינת ישראל לישיבתה הראשונה. דוד בן-גוריון, ראש הממשלה הראשון, נשא נאום היסטורי בו הכריז: "זוהי תחילתה של דמוקרטיה חדשה במזרח התיכון".</p>
-                    <p>האולם המרכזי בירושלים היה מלא עד אפס מקום. 120 חברי כנסת נבחרים ישבו זה לצד זה, מייצגים את כל גוני הקשת הפוליטית של המדינה הצעירה. בן-גוריון, בעיניים בורקות, הכריז: "אנו מקימים היום לא רק בית מחוקקים, אלא מוסד שילווה את המדינה בדרכה אל העתיד".</p>
+        <!-- טעינה -->
+        <div id="loading" class="loading-indicator">
+            <div class="spinner"></div>
+            <p>טוען אירועים היסטוריים מויקיפדיה...</p>
+        </div>
+
+        <!-- שגיאה -->
+        <div id="errorMsg" class="error-message" style="display:none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>לא הצלחנו לטעון נתונים. נסה לרענן את הדף.</p>
+            <button onclick="loadEventsForDate()" class="control-btn">נסה שוב</button>
+        </div>
+
+        <!-- תוכן דינמי -->
+        <div id="content" style="display: none;">
+            <!-- כותרת ראשית -->
+            <section id="mainHeadline" class="main-headline"></section>
+
+            <!-- עמודות -->
+            <div class="columns">
+                <div class="column">
+                    <section class="news-section">
+                        <h3><i class="fas fa-landmark"></i> אירועים</h3>
+                        <div id="eventsContent"></div>
+                    </section>
                 </div>
-                <div class="tweet-sidebar">
-                    <div class="historical-tweet">
-                        <div class="tweet-header">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Ben_Gurion_1967b.jpg/100px-Ben_Gurion_1967b.jpg" alt="דוד בן-גוריון" class="tweet-avatar">
-                            <div class="tweet-author">
-                                <strong>דוד בן-גוריון</strong>
-                                <span>@BenGurionOfficial</span>
-                            </div>
-                            <i class="fab fa-twitter tweet-icon"></i>
-                        </div>
-                        <div class="tweet-content">
-                            היום היסטורי! הכנסת הראשונה נפתחה. 120 חברי כנסת, ייצוג לכל חלקי העם. תחילתה של דמוקרטיה אמיתית. #כנסתראשונה #מדינתישראל
-                        </div>
-                        <div class="tweet-stats">
-                            <span>♥️ 2.3K</span>
-                            <span>🔁 850</span>
-                            <span>💬 420</span>
-                        </div>
-                    </div>
+                <div class="column">
+                    <section class="news-section">
+                        <h3><i class="fas fa-birthday-cake"></i> נולדו היום</h3>
+                        <div id="birthsContent"></div>
+                    </section>
+
+                    <section class="news-section">
+                        <h3><i class="fas fa-star-of-life"></i> נפטרו היום</h3>
+                        <div id="deathsContent"></div>
+                    </section>
                 </div>
             </div>
-        </section>
 
-        <!-- עמודה ראשונה -->
-        <div class="columns">
-            <!-- עמודה שמאלית -->
-            <div class="column">
-                <section class="news-section">
-                    <h3><i class="fas fa-futbol"></i> ספורט</h3>
-                    <article class="news-item">
-                        <h4>11 בפברואר 1998: מכבי תל אביב מנצחת את פנאתינאיקוס 81-78</h4>
-                        <p>במשחק דרמטי ביורוליג, מכבי תל אביב גברה על פנאתינאיקוס היוונית. דורון שפר קלע 24 נקודות והוביל את הקבוצה לניצחון קריטי בדרך לשלב הבא.</p>
-                    </article>
-                    
-                    <article class="news-item">
-                        <h4>11 בפברואר 1978: הפועל תל אביב זוכה בגביע המדינה</h4>
-                        <p>בגמר הגביע נגד בני יהודה, ניצחה הפועל תל אביב 2-1 משערים של משה סיני ואורי מלמיליאן. אלפי אוהדים חגגו באצטדיון בלומפילד.</p>
-                    </article>
-                </section>
+            <!-- ציוצים היסטוריים -->
+            <section class="news-section" id="tweetsSection">
+                <h3><i class="fab fa-twitter"></i> מה היו מצייצים אז?</h3>
+                <div id="tweetsContent" class="tweets-container"></div>
+            </section>
 
-                <section class="news-section">
-                    <h3><i class="fas fa-music"></i> תרבות</h3>
-                    <article class="news-item">
-                        <h4>11 בפברואר 1985: שלום חנוך מוציא את האלבום "חתונה לבנה"</h4>
-                        <p>אחד האלבומים המשפיעים ביותר במוזיקה הישראלית יוצא לאור. השירים "חתונה לבנה" ו"אני אוהב אותך" הופכים ללהיטים מיידיים.</p>
-                    </article>
-                </section>
-            </div>
-
-            <!-- עמודה ימנית -->
-            <div class="column">
-                <section class="news-section">
-                    <h3><i class="fas fa-globe"></i> בעולם</h3>
-                    <article class="news-item">
-                        <h4>11 בפברואר 1990: נלסון מנדלה משתחרר מהכלא</h4>
-                        <p>אחרי 27 שנים במאסר, מנהיג המאבק נגד האפרטהייד משתחרר מכלא ויקטור ורסטר. אלפים חיכו לו מחוץ לשערי הכלא בדרום אפריקה.</p>
-                        <div class="historical-tweet small">
-                            <div class="tweet-content">
-                                "חירות לא ניתנת בקלות - הדור שלנו הבין זאת. הזמן לשינוי הגיע." #מנדלה #חירות
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="news-item">
-                        <h4>11 בפברואר 2016: LIGO מכריז על גילוי גלי כבידה</h4>
-                        <p>צוות המדענים מכריז על תגלית היסטורית שאוששה את תחזיתו של אלברט איינשטיין מ-1916. פריצת דרך בפיזיקה המודרנית.</p>
-                    </article>
-                </section>
-
-                <section class="news-section">
-                    <h3><i class="fas fa-birthday-cake"></i> ימי הולדת היום</h3>
-                    <div class="birthdays">
-                        <div class="birthday-item">
-                            <strong>ג'ניפר אניסטון</strong> (1969) - בת 57
-                        </div>
-                        <div class="birthday-item">
-                            <strong>שרית חדד</strong> (1979) - בת 47
-                        </div>
-                        <div class="birthday-item">
-                            <strong>תום הולנד</strong> (1996) - בן 30
-                        </div>
-                    </div>
-                </section>
-
-                <section class="news-section">
-                    <h3><i class="fas fa-calendar-alt"></i> גם היום בהיסטוריה</h3>
-                    <ul class="timeline">
-                        <li><strong>660 לפנה"ס</strong> - הקיסר הראשון של יפן, ג'ימו, עולה לכס הקיסרות</li>
-                        <li><strong>1752</strong> - בית החולים הראשון בארצות הברית נפתח בפילדלפיה</li>
-                        <li><strong>1979</strong> - המהפכה האיסלאמית באיראן - האייתוללה ח'ומייני משתלט על השלטון</li>
-                    </ul>
-                </section>
-            </div>
+            <!-- ציר זמן -->
+            <section class="news-section">
+                <h3><i class="fas fa-calendar-alt"></i> עוד היום בהיסטוריה</h3>
+                <ul id="timelineContent" class="timeline"></ul>
+            </section>
         </div>
 
         <!-- פוטר -->
@@ -139,37 +91,307 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>אודות העיתון</h4>
-                    <p>"היום בהיסטוריה" מביא לכם בכל יום את האירועים החשובים שהתרחשו בתאריך הזה לאורך השנים. עבר שהופך להווה.</p>
+                    <p>"היום בהיסטוריה" מביא לכם בכל יום את האירועים החשובים שהתרחשו בתאריך הזה לאורך השנים.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>מקור הנתונים</h4>
+                    <p>הנתונים מגיעים מויקיפדיה העברית באמצעות Wikimedia API. התוכן מתעדכן אוטומטית.</p>
                 </div>
                 <div class="footer-section">
                     <h4>צרו קשר</h4>
                     <p>הצעות, תיקונים, רעיונות?<br>history@newspaper.co.il</p>
                 </div>
-                <div class="footer-section">
-                    <h4>מחר בעיתון</h4>
-                    <p>12 בפברואר: יום הולדת לדרווין, הסכם אוסלו נחתם, ועוד הפתעות היסטוריות...</p>
-                </div>
             </div>
             <div class="copyright">
-                © 2026 "היום בהיסטוריה" - כל הזכויות שמורות. האתר עודכן אוטומטית מדי יום.
+                &copy; 2026 "היום בהיסטוריה" - כל הזכויות שמורות | נתונים: ויקיפדיה העברית
             </div>
         </footer>
     </div>
 
     <script>
-        // עדכון התאריך אוטומטית
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const dateString = now.toLocaleDateString('he-IL', options);
-            document.querySelector('.date').textContent = dateString;
-            
-            // הוספת אנימציה עדינה
-            const headlines = document.querySelectorAll('.news-item h4');
-            headlines.forEach((headline, index) => {
-                headline.style.animationDelay = (index * 0.1) + 's';
-            });
+    // ====== State ======
+    let currentDate = new Date();
+    let wikiData = null;
+
+    // ====== Date helpers ======
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function updateDateDisplay() {
+        const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent =
+            currentDate.toLocaleDateString('he-IL', opts);
+    }
+
+    function changeDate(days) {
+        currentDate = new Date(currentDate.getTime() + days * 86400000);
+        updateDateDisplay();
+        loadEventsForDate();
+    }
+
+    function goToToday() {
+        currentDate = new Date();
+        updateDateDisplay();
+        loadEventsForDate();
+    }
+
+    // ====== Fetch from Wikimedia ======
+    async function fetchWikimediaData(month, day) {
+        const url = `https://he.wikipedia.org/api/rest_v1/feed/onthisday/all/${month}/${day}`;
+        const resp = await fetch(url, {
+            headers: { 'Api-User-Agent': 'HistoricalNewspaper/1.0' }
         });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return resp.json();
+    }
+
+    // ====== Main loader ======
+    async function loadEventsForDate() {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('content').style.display = 'none';
+        document.getElementById('errorMsg').style.display = 'none';
+
+        const mm = pad(currentDate.getMonth() + 1);
+        const dd = pad(currentDate.getDate());
+
+        try {
+            wikiData = await fetchWikimediaData(mm, dd);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            renderAll();
+        } catch (err) {
+            console.error('Fetch error:', err);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'flex';
+        }
+    }
+
+    // ====== Render ======
+    function renderAll() {
+        if (!wikiData) return;
+        renderMainHeadline();
+        renderEvents();
+        renderBirths();
+        renderDeaths();
+        renderTweets();
+        renderTimeline();
+    }
+
+    function yearsAgo(year) {
+        if (!year) return '';
+        const diff = currentDate.getFullYear() - year;
+        if (diff === 0) return 'השנה';
+        if (diff === 1) return 'לפני שנה';
+        return `לפני ${diff} שנים`;
+    }
+
+    function getPageImage(entry) {
+        const pages = entry.pages || [];
+        for (const p of pages) {
+            if (p.thumbnail && p.thumbnail.source) return p.thumbnail.source;
+            if (p.originalimage && p.originalimage.source) return p.originalimage.source;
+        }
+        return null;
+    }
+
+    function getPageUrl(entry) {
+        const pages = entry.pages || [];
+        for (const p of pages) {
+            if (p.content_urls && p.content_urls.desktop) return p.content_urls.desktop.page;
+        }
+        return null;
+    }
+
+    function getExtract(entry) {
+        const pages = entry.pages || [];
+        for (const p of pages) {
+            if (p.extract) return p.extract;
+        }
+        return '';
+    }
+
+    // Main headline - pick the most important selected event
+    function renderMainHeadline() {
+        const selected = (wikiData.selected || []).concat(wikiData.events || []);
+        if (selected.length === 0) {
+            document.getElementById('mainHeadline').innerHTML =
+                '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
+            return;
+        }
+        const ev = selected[0];
+        const img = getPageImage(ev);
+        const url = getPageUrl(ev);
+        const extract = getExtract(ev);
+        const ago = yearsAgo(ev.year);
+
+        document.getElementById('mainHeadline').innerHTML = `
+            <div class="headline-category">אירוע מרכזי</div>
+            <h2>${ev.year ? ev.year + ' - ' : ''}${ev.text}</h2>
+            <div class="headline-meta">
+                <span class="byline">מקור: ויקיפדיה העברית</span>
+                <span class="time">${ago ? '&#128336; ' + ago : ''}</span>
+            </div>
+            <div class="article-with-tweet">
+                <div class="article-content">
+                    <p>${extract || ev.text}</p>
+                    ${url ? `<a href="${url}" target="_blank" class="read-more">קרא עוד בויקיפדיה &larr;</a>` : ''}
+                </div>
+                ${img ? `<div class="tweet-sidebar"><img src="${img}" alt="" class="headline-image"></div>` : ''}
+            </div>
+        `;
+
+        // Update subtitle
+        if (ev.year) {
+            document.getElementById('dailyHeadline').textContent =
+                `${ago} | ${ev.text.substring(0, 60)}${ev.text.length > 60 ? '...' : ''}`;
+        }
+    }
+
+    function renderEventList(items, containerId, limit) {
+        const container = document.getElementById(containerId);
+        if (!items || items.length === 0) {
+            container.innerHTML = '<p class="no-events">לא נמצאו נתונים לתאריך זה.</p>';
+            return;
+        }
+
+        const shown = items.slice(0, limit || 8);
+        container.innerHTML = shown.map(item => {
+            const extract = getExtract(item);
+            const url = getPageUrl(item);
+            const shortDesc = extract
+                ? (extract.length > 150 ? extract.substring(0, 150) + '...' : extract)
+                : '';
+            return `
+                <article class="news-item">
+                    <h4>${item.year ? item.year + ' - ' : ''}${item.text}</h4>
+                    ${shortDesc ? `<p>${shortDesc}</p>` : ''}
+                    ${url ? `<a href="${url}" target="_blank" class="item-link">קרא עוד</a>` : ''}
+                </article>
+            `;
+        }).join('');
+    }
+
+    function renderEvents() {
+        const events = (wikiData.selected || []).concat(wikiData.events || []);
+        // skip first since it's the main headline
+        renderEventList(events.slice(1), 'eventsContent', 8);
+    }
+
+    function renderBirths() {
+        const births = wikiData.births || [];
+        const container = document.getElementById('birthsContent');
+        if (births.length === 0) {
+            container.innerHTML = '<p class="no-events">לא נמצאו נתונים.</p>';
+            return;
+        }
+
+        container.innerHTML = '<div class="birthdays">' +
+            births.slice(0, 10).map(b => {
+                const age = b.year ? currentDate.getFullYear() - b.year : null;
+                const url = getPageUrl(b);
+                const name = b.text || '';
+                return `<div class="birthday-item">
+                    ${url ? `<a href="${url}" target="_blank">` : ''}
+                    <strong>${name}</strong>
+                    ${url ? '</a>' : ''}
+                    ${b.year ? ` (${b.year})` : ''}
+                    ${age ? ` - ${age > 0 ? 'בן/בת ' + age : ''}` : ''}
+                </div>`;
+            }).join('') +
+            '</div>';
+    }
+
+    function renderDeaths() {
+        const deaths = wikiData.deaths || [];
+        const container = document.getElementById('deathsContent');
+        if (deaths.length === 0) {
+            container.innerHTML = '<p class="no-events">לא נמצאו נתונים.</p>';
+            return;
+        }
+
+        container.innerHTML = '<div class="birthdays">' +
+            deaths.slice(0, 8).map(d => {
+                const url = getPageUrl(d);
+                const name = d.text || '';
+                return `<div class="birthday-item">
+                    ${url ? `<a href="${url}" target="_blank">` : ''}
+                    <strong>${name}</strong>
+                    ${url ? '</a>' : ''}
+                    ${d.year ? ` (${d.year})` : ''}
+                </div>`;
+            }).join('') +
+            '</div>';
+    }
+
+    // Historical "tweets" - pick interesting events and present as tweets
+    function renderTweets() {
+        const allEvents = (wikiData.selected || []).concat(wikiData.events || []);
+        const container = document.getElementById('tweetsContent');
+        if (allEvents.length < 2) {
+            container.innerHTML = '';
+            document.getElementById('tweetsSection').style.display = 'none';
+            return;
+        }
+        document.getElementById('tweetsSection').style.display = '';
+
+        // Pick 2-3 interesting events for tweets
+        const tweetEvents = allEvents.slice(0, 3);
+        container.innerHTML = tweetEvents.map(ev => {
+            const name = (ev.pages && ev.pages[0] && ev.pages[0].titles)
+                ? ev.pages[0].titles.normalized
+                : (ev.text ? ev.text.split(' ').slice(0, 3).join(' ') : 'אירוע');
+            const initial = name.charAt(0);
+            const tweetText = ev.text || '';
+            const yr = ev.year || '';
+            const fakeHandle = '@' + name.replace(/\s+/g, '').substring(0, 15);
+            const fakeLikes = Math.floor(Math.random() * 9000) + 1000;
+            const fakeRT = Math.floor(fakeLikes * 0.4);
+
+            return `
+                <div class="historical-tweet">
+                    <div class="tweet-header">
+                        <div class="tweet-avatar-placeholder">${initial}</div>
+                        <div class="tweet-author">
+                            <strong>${name}</strong>
+                            <span>${fakeHandle}</span>
+                        </div>
+                        <i class="fab fa-twitter tweet-icon"></i>
+                    </div>
+                    <div class="tweet-content">
+                        ${yr ? `[${yr}] ` : ''}${tweetText}
+                    </div>
+                    <div class="tweet-stats">
+                        <span>&hearts; ${formatNumber(fakeLikes)}</span>
+                        <span>&#128257; ${formatNumber(fakeRT)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderTimeline() {
+        const events = (wikiData.events || []).concat(wikiData.selected || []);
+        const container = document.getElementById('timelineContent');
+        if (events.length <= 1) {
+            container.innerHTML = '<li>לא נמצאו אירועים נוספים.</li>';
+            return;
+        }
+
+        // Show events not in main content, sorted by year
+        const rest = events.slice(3, 15).sort((a, b) => (a.year || 0) - (b.year || 0));
+        container.innerHTML = rest.map(ev =>
+            `<li><strong>${ev.year || '?'}</strong> - ${ev.text}</li>`
+        ).join('');
+    }
+
+    function formatNumber(num) {
+        return num >= 1000 ? (num / 1000).toFixed(1) + 'K' : String(num);
+    }
+
+    // ====== Init ======
+    document.addEventListener('DOMContentLoaded', function () {
+        updateDateDisplay();
+        loadEventsForDate();
+    });
     </script>
 </body>
 </html>
