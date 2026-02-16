@@ -107,7 +107,7 @@ function httpGet(url, headers = {}, expectJson = true) {
             path: parsedUrl.pathname + parsedUrl.search,
             headers: { 'User-Agent': CONFIG.USER_AGENT, ...headers }
         };
-        https.get(options, (res) => {
+        const req = https.get(options, (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
@@ -121,7 +121,12 @@ function httpGet(url, headers = {}, expectJson = true) {
                     resolve(data);
                 }
             });
-        }).on('error', reject);
+        });
+        req.on('error', reject);
+        req.setTimeout(30000, () => {
+            req.destroy();
+            reject(new Error(`Timeout after 30s for ${url}`));
+        });
     });
 }
 
@@ -151,6 +156,10 @@ function httpPost(url, body, headers = {}) {
             });
         });
         req.on('error', reject);
+        req.setTimeout(60000, () => {
+            req.destroy();
+            reject(new Error(`Timeout after 60s for ${url}`));
+        });
         req.write(payload);
         req.end();
     });
@@ -644,8 +653,16 @@ function saveData(data) {
 }
 
 async function main() {
+    // Safety net: kill the process if collection takes longer than 5 minutes
+    const globalTimeout = setTimeout(() => {
+        console.error('Global timeout: collection exceeded 5 minutes, exiting');
+        process.exit(1);
+    }, 300000);
+    globalTimeout.unref();
+
     try {
         const data = await collectDailyData();
+        clearTimeout(globalTimeout);
         const { todayFile, archiveFile } = saveData(data);
 
         console.log(`\n========================================`);
