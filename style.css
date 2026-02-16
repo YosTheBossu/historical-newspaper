@@ -18,8 +18,8 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     background-color: white;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
-    border: 1px solid #ddd;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 56, 184, 0.1);
+    border: 1px solid #c8d8e8;
     padding: 30px;
     position: relative;
 }
@@ -28,8 +28,19 @@ body {
 .newspaper-header {
     text-align: center;
     margin-bottom: 30px;
-    border-bottom: 3px double #333;
+    border-bottom: 4px solid #0038b8;
     padding-bottom: 20px;
+    position: relative;
+}
+
+.newspaper-header::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #0038b8;
 }
 
 .date-line {
@@ -57,9 +68,9 @@ body {
     font-family: 'Frank Ruhl Libre', serif;
     font-size: 4.5rem;
     font-weight: 900;
-    color: #222;
+    color: #0038b8;
     margin: 10px 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 2px 2px 4px rgba(0, 56, 184, 0.15);
     letter-spacing: 2px;
 }
 
@@ -83,13 +94,14 @@ body {
     align-items: center;
     gap: 25px;
     flex-wrap: wrap;
-    background: linear-gradient(135deg, #f8f5f0, #ede7dd);
-    border: 1px solid #ddd;
+    background: linear-gradient(135deg, #0038b8, #1a5fd4);
+    border: none;
     border-radius: 8px;
     padding: 12px 20px;
     margin-bottom: 25px;
     font-size: 14px;
-    color: #555;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 56, 184, 0.2);
 }
 
 .stats-bar span {
@@ -99,7 +111,7 @@ body {
 }
 
 .stats-bar i {
-    color: #8b0000;
+    color: #ffd700;
     font-size: 13px;
 }
 
@@ -112,14 +124,15 @@ body {
 .main-headline {
     margin-bottom: 35px;
     padding: 25px;
-    background-color: #f8f5f0;
-    border-right: 5px solid #8b0000;
+    background: linear-gradient(135deg, #f0f4fa, #eef1f8);
+    border-right: 5px solid #0038b8;
     border-radius: 5px;
+    box-shadow: 0 3px 15px rgba(0, 56, 184, 0.08);
 }
 
 .headline-category {
     display: inline-block;
-    background-color: #8b0000;
+    background: linear-gradient(135deg, #0038b8, #1a5fd4);
     color: white;
     padding: 5px 15px;
     font-size: 14px;
@@ -215,9 +228,9 @@ body {
 }
 
 .cat-tab.active {
-    background: #8b0000;
+    background: #0038b8;
     color: white;
-    border-color: #8b0000;
+    border-color: #0038b8;
 }
 
 .cat-tab i {
@@ -236,7 +249,7 @@ body {
     vertical-align: middle;
 }
 
-/* ציוצים משובצים בתוך כתבות */
+/* ציוצים משובצים בתוך כתבות (legacy) */
 .embedded-tweet {
     background-color: #f8f9fa;
     border: 1px solid #e0e0e0;
@@ -244,6 +257,144 @@ body {
     padding: 12px;
     margin-top: 10px;
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* ====== Social Media Posts - Platform Specific ====== */
+.social-post {
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 12px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    transition: box-shadow 0.2s;
+}
+
+.social-post:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.social-post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.social-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.social-author-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.social-author-info strong {
+    display: block;
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+.social-author-info span {
+    color: #657786;
+    font-size: 13px;
+}
+
+.social-platform-badge {
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.social-post-body {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.social-post-actions {
+    display: flex;
+    gap: 24px;
+    color: #657786;
+    font-size: 13px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.social-post-actions span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+    transition: color 0.15s;
+}
+
+/* Twitter/X */
+.social-twitter {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 16px;
+}
+
+.social-twitter .social-post-actions span:hover {
+    color: #1d9bf0;
+}
+
+/* Facebook */
+.social-facebook {
+    background: #fff;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+}
+
+.social-facebook .social-post-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+.social-facebook .social-post-actions {
+    border-top: 1px solid #dddfe2;
+    padding-top: 10px;
+    justify-content: space-around;
+}
+
+.social-facebook .social-post-actions span {
+    font-weight: 600;
+    color: #65676b;
+}
+
+.social-facebook .social-post-actions span:hover {
+    color: #1877f2;
+}
+
+/* Instagram */
+.social-instagram {
+    background: #fff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+}
+
+.social-instagram .social-avatar {
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important;
+    border: 2px solid transparent;
+}
+
+.social-instagram .social-post-actions {
+    border-top: 1px solid #efefef;
+}
+
+.social-instagram .social-post-actions span:hover {
+    color: #ed4956;
 }
 
 .event-extract {
@@ -345,7 +496,7 @@ body {
 }
 
 .event-year-badge {
-    background-color: #8b0000;
+    background: linear-gradient(135deg, #0038b8, #1a5fd4);
     color: white;
     font-weight: 700;
     font-size: 14px;
@@ -354,6 +505,7 @@ body {
     white-space: nowrap;
     flex-shrink: 0;
     font-family: 'Frank Ruhl Libre', serif;
+    box-shadow: 0 2px 6px rgba(0, 56, 184, 0.2);
 }
 
 .event-body {
@@ -474,14 +626,14 @@ body {
     color: #222;
     margin-bottom: 15px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #8b0000;
+    border-bottom: 3px solid #0038b8;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .news-section h3 i {
-    color: #8b0000;
+    color: #0038b8;
 }
 
 /* ימי הולדת */
@@ -546,13 +698,15 @@ body {
 .news-card {
     background-color: #f8f9fa;
     border: 1px solid #e0e0e0;
+    border-right: 3px solid #c62828;
     border-radius: 8px;
     padding: 15px;
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .news-card:hover {
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 .news-card a {
@@ -563,7 +717,7 @@ body {
 }
 
 .news-card a:hover {
-    color: #8b0000;
+    color: #0038b8;
 }
 
 .news-summary {
@@ -585,6 +739,55 @@ body {
     margin-left: 3px;
 }
 
+/* אירועים עתיקים */
+.ancient-section h3 {
+    border-bottom-color: #8d6e37;
+}
+
+.ancient-section h3 i {
+    color: #8d6e37;
+}
+
+.ancient-events-list {
+    background: linear-gradient(135deg, #faf7f0, #f5efe3);
+    border: 1px solid #e0d5c0;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.ancient-event-item {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px dashed #d8cdb7;
+}
+
+.ancient-event-item:last-child {
+    border-bottom: none;
+}
+
+.ancient-year {
+    background: linear-gradient(135deg, #8d6e37, #b08d4f);
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'Frank Ruhl Libre', serif;
+    min-width: 80px;
+    text-align: center;
+}
+
+.ancient-text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #444;
+}
+
 /* טיימליין */
 .timeline {
     list-style-type: none;
@@ -601,7 +804,7 @@ body {
 
 .timeline li:before {
     content: "";
-    color: #8b0000;
+    color: #0038b8;
     font-size: 24px;
     position: absolute;
     right: 0;
@@ -609,7 +812,7 @@ body {
 }
 
 .timeline li strong {
-    color: #8b0000;
+    color: #0038b8;
 }
 
 /* באנר פרימיום */
@@ -703,7 +906,7 @@ body {
 }
 
 .control-btn {
-    background-color: #8b0000;
+    background-color: #0038b8;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -719,7 +922,7 @@ body {
 }
 
 .control-btn:hover {
-    background-color: #a30000;
+    background-color: #004de6;
 }
 
 .today-btn {
@@ -761,7 +964,7 @@ body {
 
 .spinner {
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #8b0000;
+    border-top: 4px solid #0038b8;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -782,7 +985,7 @@ body {
     gap: 15px;
     padding: 40px;
     text-align: center;
-    color: #8b0000;
+    color: #c62828;
 }
 
 .error-message i {
@@ -793,21 +996,21 @@ body {
 .read-more {
     display: inline-block;
     margin-top: 15px;
-    color: #8b0000;
+    color: #0038b8;
     font-weight: 700;
     text-decoration: none;
-    border-bottom: 2px solid #8b0000;
+    border-bottom: 2px solid #0038b8;
     padding-bottom: 2px;
     transition: color 0.3s;
 }
 
 .read-more:hover {
-    color: #a30000;
+    color: #004de6;
 }
 
 .item-link {
     display: inline-block;
-    color: #8b0000;
+    color: #0038b8;
     font-size: 0.9rem;
     text-decoration: none;
 }
@@ -852,7 +1055,7 @@ body {
 }
 
 .birthday-item a:hover {
-    color: #8b0000;
+    color: #0038b8;
     text-decoration: underline;
 }
 
@@ -898,7 +1101,18 @@ body::before {
 .newspaper-footer {
     margin-top: 40px;
     padding-top: 20px;
-    border-top: 3px double #333;
+    border-top: 4px solid #0038b8;
+    position: relative;
+}
+
+.newspaper-footer::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #0038b8;
 }
 
 .footer-line {

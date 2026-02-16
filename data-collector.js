@@ -13,12 +13,16 @@ const CONFIG = {
     WIKI_HE: 'https://he.wikipedia.org/api/rest_v1/feed/onthisday/all',
     WIKI_EN: 'https://en.wikipedia.org/api/rest_v1/feed/onthisday/all',
     HEBCAL: 'https://www.hebcal.com/converter',
+    // Israeli news sources
     YNET_RSS: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
+    WALLA_RSS: 'https://rss.walla.co.il/feed/1',
+    GOOGLE_NEWS_IL_RSS: 'https://news.google.com/rss?hl=he&gl=IL&ceid=IL:he',
     USER_AGENT: 'HistoricalNewspaperBot/1.0 (educational project)',
     TRANSLATE_BATCH_SIZE: 10,
-    MAX_EVENTS: 50,
+    MAX_EVENTS: 60,
     MAX_BIRTHS: 30,
-    MAX_DEATHS: 25
+    MAX_DEATHS: 25,
+    ANCIENT_EVENT_SLOTS: 8
 };
 
 // ====== Category Classification ======
@@ -405,6 +409,51 @@ Make them creative, witty, and historically accurate. ALL content MUST be in Heb
     return [];
 }
 
+// ====== Ancient/Biblical Events Generation ======
+async function generateAncientEvents(month, day) {
+    if (!CONFIG.DEEPSEEK_API_KEY) return [];
+
+    const systemPrompt = `אתה היסטוריון מומחה בהיסטוריה עתיקה, תנ"כית ויהודית.
+צור אירועים היסטוריים שהתרחשו או מיוחסים מסורתית לתאריך הנתון.
+הכל חייב להיות בעברית. החזר רק מערך JSON תקין.`;
+
+    const userPrompt = `צור 5-8 אירועים היסטוריים עתיקים עבור ${day}/${month} (או תאריכים מסורתיים קרובים):
+
+כלול מגוון תקופות:
+- אירועים תנ"כיים (תורה, נביאים, כתובים) - למשל: יציאת מצרים, מתן תורה, חורבן בית המקדש
+- תקופת בית ראשון ושני - מלכי ישראל, חשמונאים, הורדוס
+- תקופת המשנה והתלמוד - תנאים, אמוראים
+- אירועים מהעולם העתיק הקשורים לעם ישראל
+- אירועים מימי הביניים - קהילות יהודיות, רמב"ם, גירוש ספרד
+
+החזר מערך JSON:
+[{"year": -1000, "text": "תיאור קצר בעברית", "category": "israel"}]
+
+השתמש בשנים שליליות עבור לפנה"ס (למשל: -586 לחורבן בית ראשון).
+ציין "(מסורת)" כשתאריך אינו מדויק היסטורית.`;
+
+    try {
+        const response = await callDeepSeek(systemPrompt, userPrompt, 2048);
+        const events = extractJsonFromResponse(response);
+        if (Array.isArray(events) && events.length > 0) {
+            console.log(`  Generated ${events.length} ancient events`);
+            return events.map(e => ({
+                year: e.year || 0,
+                text: e.text || '',
+                lang: 'he',
+                category: e.category || 'israel',
+                isAncient: true,
+                thumbnail: null,
+                pageTitle: '',
+                extract: null
+            }));
+        }
+    } catch (err) {
+        console.error(`  Ancient events generation failed: ${err.message}`);
+    }
+    return [];
+}
+
 // ====== Main Pipeline ======
 async function collectDailyData() {
     const { isoDate, year, month, day } = getTodayParts();
@@ -485,6 +534,28 @@ async function collectDailyData() {
         console.error(`  YNET failed: ${err.message}`);
     }
 
+    // --- Step 4b: Fetch Walla News ---
+    console.log('4b. Fetching Walla news...');
+    try {
+        const xml = await httpGet(CONFIG.WALLA_RSS, {}, false);
+        const items = parseRssItems(xml).map(item => ({ ...item, source: 'וואלה' }));
+        data.news.push(...items.slice(0, 5));
+        console.log(`  Walla: ${Math.min(items.length, 5)} articles`);
+    } catch (err) {
+        console.error(`  Walla failed: ${err.message}`);
+    }
+
+    // --- Step 4c: Fetch Google News Israel ---
+    console.log('4c. Fetching Google News Israel...');
+    try {
+        const xml = await httpGet(CONFIG.GOOGLE_NEWS_IL_RSS, {}, false);
+        const items = parseRssItems(xml).map(item => ({ ...item, source: 'Google News' }));
+        data.news.push(...items.slice(0, 5));
+        console.log(`  Google News: ${Math.min(items.length, 5)} articles`);
+    } catch (err) {
+        console.error(`  Google News failed: ${err.message}`);
+    }
+
     // --- Step 5: Translate English entries with DeepSeek ---
     console.log('5. Translating English content with DeepSeek...');
     await translateAllEnglishEntries(data);
@@ -503,11 +574,22 @@ async function collectDailyData() {
     console.log(`  Categories: ${JSON.stringify(catCounts)}`);
 
     // Sort: Israeli events first, then by year (most recent first)
-    data.events.sort((a, b) => {
+    // Separate ancient events to ensure they get reserved slots
+    const modernEvents = data.events.filter(e => !e.isAncient);
+    const ancientEvts = data.events.filter(e => e.isAncient);
+
+    modernEvents.sort((a, b) => {
         if (a.category === 'israel' && b.category !== 'israel') return -1;
         if (a.category !== 'israel' && b.category === 'israel') return 1;
         return b.year - a.year;
     });
+    ancientEvts.sort((a, b) => a.year - b.year); // oldest first for ancient
+
+    data.events = [
+        ...modernEvents.slice(0, CONFIG.MAX_EVENTS - CONFIG.ANCIENT_EVENT_SLOTS),
+        ...ancientEvts.slice(0, CONFIG.ANCIENT_EVENT_SLOTS)
+    ];
+
     data.births.sort((a, b) => {
         if (a.category === 'israel' && b.category !== 'israel') return -1;
         if (a.category !== 'israel' && b.category === 'israel') return 1;
@@ -515,14 +597,33 @@ async function collectDailyData() {
     });
     data.deaths.sort((a, b) => b.year - a.year);
 
-    // Trim to limits
-    data.events = data.events.slice(0, CONFIG.MAX_EVENTS);
     data.births = data.births.slice(0, CONFIG.MAX_BIRTHS);
     data.deaths = data.deaths.slice(0, CONFIG.MAX_DEATHS);
 
     // --- Step 7: Generate social media posts with DeepSeek ---
     console.log('7. Generating social media posts with DeepSeek...');
     data.socialPosts = await generateSocialPosts(data);
+
+    // --- Step 8: Generate ancient/biblical events with DeepSeek ---
+    console.log('8. Generating ancient/biblical events...');
+    const ancientGenerated = await generateAncientEvents(month, day);
+    if (ancientGenerated.length > 0) {
+        data.ancientEvents = ancientGenerated;
+        // Also add to main events if slots available
+        const currentAncient = data.events.filter(e => e.isAncient).length;
+        const slotsLeft = CONFIG.ANCIENT_EVENT_SLOTS - currentAncient;
+        if (slotsLeft > 0) {
+            data.events.push(...ancientGenerated.slice(0, slotsLeft));
+        }
+    }
+
+    // --- Step 9: Mark Israeli headline ---
+    const israelHeadline = data.events.find(e =>
+        e.category === 'israel' && e.lang === 'he' && !e.isAncient
+    );
+    if (israelHeadline) {
+        data.headline = israelHeadline;
+    }
 
     // --- Final stats ---
     data.stats.total = data.events.length + data.births.length + data.deaths.length;
@@ -559,6 +660,7 @@ async function main() {
         console.log(`   Sources: ${data.stats.he} HE + ${data.stats.en} EN`);
         console.log(`   Translated: ${data.stats.translated}`);
         console.log(`   Israeli events: ${data.stats.israelEvents}`);
+        console.log(`   Ancient events: ${(data.ancientEvents || []).length}`);
         console.log(`   Categories: ${JSON.stringify(data.categories)}`);
         console.log(`========================================\n`);
     } catch (err) {
