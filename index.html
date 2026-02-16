@@ -179,13 +179,13 @@
     };
 
     const CATEGORY_COLORS = {
-        israel: '#0038b8',
-        politics: '#8b0000',
-        military: '#2e7d32',
-        sports: '#e65100',
-        culture: '#6a1b9a',
-        science: '#0277bd',
-        general: '#555'
+        israel:   { bg: '#dbeafe', text: '#1e3a5f' },
+        politics: { bg: '#fce4ec', text: '#7b1a2c' },
+        military: { bg: '#e8f5e9', text: '#1b5e20' },
+        sports:   { bg: '#fff3e0', text: '#bf360c' },
+        culture:  { bg: '#f3e5f5', text: '#4a148c' },
+        science:  { bg: '#e1f5fe', text: '#01579b' },
+        general:  { bg: '#f5f5f5', text: '#424242' }
     };
 
     // ====== State ======
@@ -224,8 +224,8 @@
     function getCategoryBadge(category) {
         if (!category || category === 'general') return '';
         const label = CATEGORY_LABELS[category] || category;
-        const color = CATEGORY_COLORS[category] || '#555';
-        return `<span class="category-badge" style="background-color:${color}">${escapeHtml(label)}</span>`;
+        const colors = CATEGORY_COLORS[category] || CATEGORY_COLORS.general;
+        return `<span class="category-badge" style="background-color:${colors.bg};color:${colors.text}">${escapeHtml(label)}</span>`;
     }
 
     // ====== Data Fetching ======
@@ -266,8 +266,8 @@
 
     // Client-side category classifier (for fallback mode without server data)
     const CLIENT_KEYWORDS = {
-        israel: ['ישראל', 'ירושלים', 'תל אביב', 'חיפה', 'כנסת', 'צה"ל', 'ציונ', 'יהוד', 'עברי',
-            'israel', 'jerusalem', 'tel aviv', 'jewish', 'hebrew', 'zion', 'knesset', 'idf', 'palestine', 'holocaust'],
+        israel: ['ישראל', 'ירושלים', 'תל אביב', 'חיפה', 'כנסת', 'צה"ל', 'צהל', 'ציונ',
+            'israel', 'israeli', 'jerusalem', 'tel aviv', 'knesset', 'idf', 'kibbutz', 'mossad'],
         politics: ['נשיא', 'ממשלה', 'בחירות', 'מלך', 'קיסר', 'president', 'king', 'queen', 'election', 'parliament', 'empire', 'kingdom', 'republic', 'treaty'],
         military: ['מלחמ', 'קרב', 'צבא', 'טרור', 'war', 'battle', 'army', 'attack', 'invasion', 'bombing', 'siege', 'military'],
         sports: ['אולימפ', 'כדורגל', 'אליפות', 'olympic', 'football', 'soccer', 'championship', 'world cup', 'medal', 'tournament'],
@@ -742,6 +742,9 @@
                     'ynet': 'fas fa-bolt',
                     'וואלה': 'fas fa-fire',
                     'Google News': 'fab fa-google',
+                    'מעריב': 'fas fa-newspaper',
+                    'ישראל היום': 'fas fa-sun',
+                    'כלכליסט': 'fas fa-chart-line',
                     'default': 'fas fa-newspaper'
                 };
                 const srcIcon = sourceIcons[n.source] || sourceIcons['default'];

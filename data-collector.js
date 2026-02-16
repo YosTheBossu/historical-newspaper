@@ -17,8 +17,11 @@ const CONFIG = {
     YNET_RSS: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
     WALLA_RSS: 'https://rss.walla.co.il/feed/1',
     GOOGLE_NEWS_IL_RSS: 'https://news.google.com/rss?hl=he&gl=IL&ceid=IL:he',
+    MAARIV_RSS: 'https://www.maariv.co.il/Rss/RssChad498',
+    ISRAEL_HAYOM_RSS: 'https://www.israelhayom.co.il/rss.xml',
+    CALCALIST_RSS: 'https://www.calcalist.co.il/GeneralRss/0,16335,L-8,00.xml',
     USER_AGENT: 'HistoricalNewspaperBot/1.0 (educational project)',
-    TRANSLATE_BATCH_SIZE: 10,
+    TRANSLATE_BATCH_SIZE: 7,
     MAX_EVENTS: 60,
     MAX_BIRTHS: 30,
     MAX_DEATHS: 25,
@@ -29,13 +32,14 @@ const CONFIG = {
 const CATEGORY_KEYWORDS = {
     israel: {
         keywords: ['ישראל', 'ירושלים', 'תל אביב', 'תל-אביב', 'חיפה', 'צה"ל', 'צהל',
-            'כנסת', 'ציונ', 'יהוד', 'עברי', 'מנדט', 'פלשתינ', 'גולן', 'נגב', 'גליל',
+            'כנסת', 'ציונ', 'מנדט', 'גולן', 'נגב', 'גליל',
             'יהודה', 'שומרון', 'באר שבע', 'אילת', 'רמת גן', 'בני ברק', 'נתניה',
-            'הגנה', 'אצ"ל', 'לח"י', 'מוסד', 'שב"כ', 'שואה', 'עליי',
-            'israel', 'jerusalem', 'tel aviv', 'haifa', 'idf', 'knesset', 'zion',
-            'jewish', 'hebrew', 'palestine', 'mandate', 'kibbutz', 'mossad',
-            'holocaust', 'yishuv', 'aliyah', 'israeli', 'judea', 'samaria', 'negev',
-            'galilee', 'golan', 'eilat', 'beersheba', 'nazareth', 'bethlehem', 'jaffa'],
+            'הגנה', 'אצ"ל', 'לח"י', 'מוסד', 'שב"כ', 'עליי',
+            'israel', 'israeli', 'jerusalem', 'tel aviv', 'haifa', 'idf', 'knesset',
+            'zionist', 'kibbutz', 'mossad', 'yishuv', 'aliyah', 'judea', 'samaria',
+            'negev', 'galilee', 'golan', 'eilat', 'beersheba'],
+        weakKeywords: ['jewish', 'hebrew', 'zion', 'palestine', 'mandate',
+            'holocaust', 'שואה', 'יהוד', 'עברי', 'nazareth', 'bethlehem', 'jaffa', 'פלשתינ'],
         label: 'ישראל'
     },
     politics: {
@@ -88,14 +92,27 @@ const CATEGORY_KEYWORDS = {
 function classifyEvent(event) {
     const text = ((event.text || '') + ' ' + (event.pageTitle || '')).toLowerCase();
 
+    let bestCategory = 'general';
+    let bestScore = 0;
+
     for (const [cat, config] of Object.entries(CATEGORY_KEYWORDS)) {
+        let score = 0;
         for (const kw of config.keywords) {
-            if (text.includes(kw.toLowerCase())) {
-                return cat;
-            }
+            if (text.includes(kw.toLowerCase())) score += 2;
+        }
+        for (const kw of (config.weakKeywords || [])) {
+            if (text.includes(kw.toLowerCase())) score += 1;
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestCategory = cat;
         }
     }
-    return 'general';
+
+    // Require minimum score of 2 for Israel (at least one strong keyword)
+    if (bestCategory === 'israel' && bestScore < 2) return 'general';
+
+    return bestCategory;
 }
 
 // ====== HTTP Helpers ======
@@ -165,6 +182,25 @@ function httpPost(url, body, headers = {}) {
     });
 }
 
+async function httpGetWithRetry(url, headers = {}, expectJson = true, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            return await httpGet(url, {
+                'Accept': expectJson ? 'application/json' : 'application/rss+xml, application/xml, text/xml, */*',
+                ...headers
+            }, expectJson);
+        } catch (err) {
+            console.error(`    Attempt ${attempt + 1}/${retries + 1} failed for ${url}: ${err.message}`);
+            if (attempt < retries) {
+                const delay = 1000 * Math.pow(2, attempt);
+                await new Promise(r => setTimeout(r, delay));
+            } else {
+                throw err;
+            }
+        }
+    }
+}
+
 // ====== Date Helpers ======
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -221,7 +257,7 @@ function parseRssItems(xmlText) {
         const link = extractPlainText((xml.match(/<link>([\s\S]*?)<\/link>/i) || [])[1]);
         const desc = extractPlainText((xml.match(/<description>([\s\S]*?)<\/description>/i) || [])[1]);
         if (title && link) {
-            items.push({ title, url: link, summary: desc, source: 'ynet' });
+            items.push({ title, url: link, summary: desc, source: 'unknown' });
         }
     }
     return items;
@@ -273,16 +309,26 @@ function extractJsonFromResponse(text) {
 async function translateBatch(entries) {
     if (entries.length === 0) return entries;
 
-    const textsToTranslate = entries.map((e, i) => `${i}. ${e.text}`).join('\n');
+    // Build lines: both title (T) and extract/description (E)
+    const lines = [];
+    entries.forEach((e, i) => {
+        lines.push(`${i}T. ${e.text}`);
+        if (e.extract) {
+            const truncExtract = e.extract.length > 300 ? e.extract.substring(0, 300) + '...' : e.extract;
+            lines.push(`${i}E. ${truncExtract}`);
+        }
+    });
+    const textsToTranslate = lines.join('\n');
 
     const systemPrompt = `You are a professional Hebrew translator specializing in historical content.
 Translate each numbered line from English to Hebrew.
+Lines marked "T" are titles. Lines marked "E" are descriptions.
 Rules:
 - Use formal newspaper Hebrew style
 - Transliterate proper nouns to Hebrew (e.g., "Abraham Lincoln" → "אברהם לינקולן")
 - Keep year numbers as-is
 - Be concise but accurate
-- Return ONLY a valid JSON array: [{"id": 0, "text": "Hebrew translation"}, ...]`;
+- Return ONLY a valid JSON array: [{"id": 0, "text": "Hebrew title translation", "extract": "Hebrew description translation or null if no E line"}, ...]`;
 
     const userPrompt = `Translate these ${entries.length} historical entries to Hebrew:\n${textsToTranslate}`;
 
@@ -296,12 +342,15 @@ Rules:
                 for (const t of translated) {
                     if (typeof t.id === 'number' && t.text && entries[t.id]) {
                         entries[t.id].text = t.text;
+                        if (t.extract && entries[t.id].extract) {
+                            entries[t.id].extract = t.extract;
+                        }
                         entries[t.id].originalLang = 'en';
                         entries[t.id].lang = 'he';
                         count++;
                     }
                 }
-                console.log(`    Translated ${count}/${entries.length} entries`);
+                console.log(`    Translated ${count}/${entries.length} entries (with extracts)`);
                 return entries;
             } else {
                 console.log(`    Could not parse translation response (attempt ${attempt + 1})`);
@@ -533,37 +582,36 @@ async function collectDailyData() {
         console.error(`  Hebrew date failed: ${err.message}`);
     }
 
-    // --- Step 4: Fetch YNET News ---
-    console.log('4. Fetching YNET news...');
-    try {
-        const xml = await httpGet(CONFIG.YNET_RSS, {}, false);
-        data.news = parseRssItems(xml).slice(0, 10);
-        console.log(`  YNET: ${data.news.length} articles`);
-    } catch (err) {
-        console.error(`  YNET failed: ${err.message}`);
-    }
+    // --- Step 4: Fetch Israeli News (with retries and fallbacks) ---
+    console.log('4. Fetching Israeli news...');
+    const newsSourceConfigs = [
+        { name: 'YNET',         url: CONFIG.YNET_RSS,           source: 'ynet',        max: 10 },
+        { name: 'Walla',        url: CONFIG.WALLA_RSS,          source: 'וואלה',       max: 5  },
+        { name: 'Google News',  url: CONFIG.GOOGLE_NEWS_IL_RSS, source: 'Google News',  max: 5  },
+        { name: 'Maariv',       url: CONFIG.MAARIV_RSS,         source: 'מעריב',       max: 4  },
+        { name: 'Israel Hayom', url: CONFIG.ISRAEL_HAYOM_RSS,   source: 'ישראל היום',  max: 4  },
+        { name: 'Calcalist',    url: CONFIG.CALCALIST_RSS,      source: 'כלכליסט',     max: 3  },
+    ];
 
-    // --- Step 4b: Fetch Walla News ---
-    console.log('4b. Fetching Walla news...');
-    try {
-        const xml = await httpGet(CONFIG.WALLA_RSS, {}, false);
-        const items = parseRssItems(xml).map(item => ({ ...item, source: 'וואלה' }));
-        data.news.push(...items.slice(0, 5));
-        console.log(`  Walla: ${Math.min(items.length, 5)} articles`);
-    } catch (err) {
-        console.error(`  Walla failed: ${err.message}`);
+    let successfulSources = 0;
+    for (const src of newsSourceConfigs) {
+        try {
+            const xml = await httpGetWithRetry(src.url, {}, false, 2);
+            const items = parseRssItems(xml)
+                .map(item => ({ ...item, source: src.source }))
+                .slice(0, src.max);
+            if (items.length > 0) {
+                data.news.push(...items);
+                successfulSources++;
+                console.log(`  ${src.name}: ${items.length} articles`);
+            } else {
+                console.log(`  ${src.name}: 0 articles (empty feed)`);
+            }
+        } catch (err) {
+            console.error(`  ${src.name} failed: ${err.message}`);
+        }
     }
-
-    // --- Step 4c: Fetch Google News Israel ---
-    console.log('4c. Fetching Google News Israel...');
-    try {
-        const xml = await httpGet(CONFIG.GOOGLE_NEWS_IL_RSS, {}, false);
-        const items = parseRssItems(xml).map(item => ({ ...item, source: 'Google News' }));
-        data.news.push(...items.slice(0, 5));
-        console.log(`  Google News: ${Math.min(items.length, 5)} articles`);
-    } catch (err) {
-        console.error(`  Google News failed: ${err.message}`);
-    }
+    console.log(`  Total news: ${data.news.length} from ${successfulSources} sources`);
 
     // --- Step 5: Translate English entries with DeepSeek ---
     console.log('5. Translating English content with DeepSeek...');
@@ -627,11 +675,17 @@ async function collectDailyData() {
     }
 
     // --- Step 9: Mark Israeli headline ---
-    const israelHeadline = data.events.find(e =>
+    // Prefer natively Hebrew Israeli events (more likely truly Israeli)
+    const israelHeadlineNative = data.events.find(e =>
+        e.category === 'israel' && e.lang === 'he' && !e.isAncient && e.originalLang !== 'en'
+    );
+    const israelHeadlineAny = data.events.find(e =>
         e.category === 'israel' && e.lang === 'he' && !e.isAncient
     );
-    if (israelHeadline) {
-        data.headline = israelHeadline;
+    if (israelHeadlineNative) {
+        data.headline = israelHeadlineNative;
+    } else if (israelHeadlineAny) {
+        data.headline = israelHeadlineAny;
     }
 
     // --- Final stats ---

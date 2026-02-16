@@ -240,7 +240,6 @@ body {
 /* תגי קטגוריה */
 .category-badge {
     display: inline-block;
-    color: white;
     font-size: 10px;
     font-weight: 700;
     padding: 2px 8px;
@@ -261,12 +260,14 @@ body {
 
 /* ====== Social Media Posts - Platform Specific ====== */
 .social-post {
-    border-radius: 16px;
-    padding: 16px;
-    margin-top: 12px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-top: 10px;
     border: 1px solid #e0e0e0;
     background: #fff;
     transition: box-shadow 0.2s;
+    max-width: 380px;
+    font-size: 13px;
 }
 
 .social-post:hover {
@@ -276,20 +277,20 @@ body {
 .social-post-header {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .social-avatar {
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 20px;
-    margin-left: 12px;
+    font-size: 15px;
+    margin-left: 8px;
     flex-shrink: 0;
 }
 
@@ -300,13 +301,13 @@ body {
 
 .social-author-info strong {
     display: block;
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1.3;
 }
 
 .social-author-info span {
     color: #657786;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .social-platform-badge {
@@ -315,18 +316,18 @@ body {
 }
 
 .social-post-body {
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 12px;
-    color: #333;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    color: #1a1a1a;
 }
 
 .social-post-actions {
     display: flex;
-    gap: 24px;
+    gap: 18px;
     color: #657786;
-    font-size: 13px;
-    padding-top: 10px;
+    font-size: 11px;
+    padding-top: 8px;
     border-top: 1px solid #eee;
 }
 
@@ -341,8 +342,9 @@ body {
 /* Twitter/X */
 .social-twitter {
     background: #fff;
-    border: 1px solid #e1e8ed;
-    border-radius: 16px;
+    border: 1px solid #cfd9de;
+    border-radius: 12px;
+    border-top: 3px solid #1d9bf0;
 }
 
 .social-twitter .social-post-actions span:hover {
@@ -354,6 +356,7 @@ body {
     background: #fff;
     border: 1px solid #dddfe2;
     border-radius: 8px;
+    border-top: 3px solid #1877f2;
 }
 
 .social-facebook .social-post-header {
@@ -382,6 +385,18 @@ body {
     background: #fff;
     border: 1px solid #dbdbdb;
     border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.social-instagram::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
 }
 
 .social-instagram .social-avatar {
@@ -696,16 +711,17 @@ body {
 }
 
 .news-card {
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    border-right: 3px solid #c62828;
+    background-color: #fffdf7;
+    border: 1px solid #e8dcc8;
+    border-right: 3px solid #b8860b;
     border-radius: 8px;
     padding: 15px;
     transition: box-shadow 0.2s, transform 0.2s;
+    box-shadow: 0 1px 4px rgba(184, 134, 11, 0.08);
 }
 
 .news-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(184, 134, 11, 0.15);
     transform: translateY(-1px);
 }
 
