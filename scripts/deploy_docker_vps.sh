@@ -63,7 +63,7 @@ rsync -avz --delete \
   --exclude='.env' \
   "$ROOT_DIR/" "$SSH_TARGET:$REMOTE_APP_DIR/"
 
-echo "[3/5] Starting web server..."
+echo "[3/5] Building and starting container..."
 ssh -o StrictHostKeyChecking=accept-new "$SSH_TARGET" bash -s -- "$REMOTE_APP_DIR" <<'REMOTE'
 set -euo pipefail
 cd "$1"
@@ -78,15 +78,15 @@ else
   exit 1
 fi
 
-# Pull latest images and recreate containers
-$COMPOSE pull
+# Build and start the all-in-one container (nginx + node + cron)
+$COMPOSE build
 $COMPOSE up -d --force-recreate
 
 echo "  Container status:"
 $COMPOSE ps
 REMOTE
 
-echo "[4/5] Running initial data collection..."
+echo "[4/5] Verifying data collection..."
 ssh -o StrictHostKeyChecking=accept-new "$SSH_TARGET" bash -s -- "$REMOTE_APP_DIR" <<'REMOTE'
 set -euo pipefail
 cd "$1"
@@ -97,30 +97,13 @@ else
   COMPOSE="docker-compose"
 fi
 
-echo "  Collecting today's data (this may take 1-2 minutes)..."
-$COMPOSE --profile collect run --rm collector
-echo "  Data collection complete!"
+echo "  Checking container logs for initial collection..."
+sleep 5
+$COMPOSE logs --tail=20 newspaper
+echo "  Container is running — data collection happens on startup and via cron (02:00, 14:00 UTC)"
 REMOTE
 
-echo "[5/5] Setting up daily cron job..."
-ssh -o StrictHostKeyChecking=accept-new "$SSH_TARGET" bash -s -- "$REMOTE_APP_DIR" <<'REMOTE'
-set -euo pipefail
-APP_DIR="$1"
-
-CRON_CMD="cd $APP_DIR && docker compose --profile collect run --rm collector >> /var/log/newspaper-collector.log 2>&1"
-CRON_LINE="0 2,14 * * * $CRON_CMD"
-
-# Add cron job if not already present
-if ! crontab -l 2>/dev/null | grep -qF "newspaper-collector"; then
-  (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
-  echo "  Cron job added: runs daily at 02:00 and 14:00 UTC"
-else
-  echo "  Cron job already exists"
-fi
-REMOTE
-
-echo ""
-echo "[Health check]..."
+echo "[5/5] Health check..."
 sleep 3
 if curl -sf --connect-timeout 5 "http://$HOSTINGER_HOST:$APP_PORT/health" >/dev/null 2>&1; then
   echo "Site is live at: http://$HOSTINGER_HOST:$APP_PORT"
@@ -133,9 +116,11 @@ echo "=== Deployment Complete ==="
 echo ""
 echo "Site URL:  http://$HOSTINGER_HOST:$APP_PORT"
 echo ""
+echo "The container includes built-in cron (02:00 and 14:00 UTC) for daily data collection."
+echo ""
 echo "Useful commands (run on VPS):"
 echo "  cd $REMOTE_APP_DIR"
-echo "  docker compose logs -f                              # View web logs"
-echo "  docker compose --profile collect run --rm collector  # Run collector manually"
+echo "  docker compose logs -f newspaper                     # View logs"
+echo "  docker compose exec newspaper node data-collector.js # Run collector now"
 echo "  docker compose down                                  # Stop everything"
-echo "  docker compose up -d                                 # Start again"
+echo "  docker compose up -d --build                         # Rebuild and start"
