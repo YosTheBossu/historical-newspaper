@@ -15,7 +15,7 @@ const CONFIG = {
     HEBCAL: 'https://www.hebcal.com/converter',
     YNET_RSS: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
     USER_AGENT: 'HistoricalNewspaperBot/1.0 (educational project)',
-    TRANSLATE_BATCH_SIZE: 25,
+    TRANSLATE_BATCH_SIZE: 10,
     MAX_EVENTS: 50,
     MAX_BIRTHS: 30,
     MAX_DEATHS: 25
@@ -82,7 +82,7 @@ const CATEGORY_KEYWORDS = {
 };
 
 function classifyEvent(event) {
-    const text = ((event.text || '') + ' ' + (event.extract || '') + ' ' + (event.pageTitle || '')).toLowerCase();
+    const text = ((event.text || '') + ' ' + (event.pageTitle || '')).toLowerCase();
 
     for (const [cat, config] of Object.entries(CATEGORY_KEYWORDS)) {
         for (const kw of config.keywords) {
@@ -260,45 +260,44 @@ function extractJsonFromResponse(text) {
 async function translateBatch(entries) {
     if (entries.length === 0) return entries;
 
-    const textsToTranslate = entries.map((e, i) => ({
-        id: i,
-        text: e.text,
-        extract: e.extract || ''
-    }));
+    const textsToTranslate = entries.map((e, i) => `${i}. ${e.text}`).join('\n');
 
     const systemPrompt = `You are a professional Hebrew translator specializing in historical content.
-Translate the given entries from English to Hebrew.
+Translate each numbered line from English to Hebrew.
 Rules:
 - Use formal newspaper Hebrew style
-- Transliterate well-known proper nouns to Hebrew (e.g., "Abraham Lincoln" → "אברהם לינקולן")
+- Transliterate proper nouns to Hebrew (e.g., "Abraham Lincoln" → "אברהם לינקולן")
 - Keep year numbers as-is
 - Be concise but accurate
-- Translate BOTH the "text" field AND the "extract" field
-- Return ONLY a valid JSON array with objects: {"id": number, "text": "Hebrew translation", "extract": "Hebrew translation of extract"}`;
+- Return ONLY a valid JSON array: [{"id": 0, "text": "Hebrew translation"}, ...]`;
 
-    const userPrompt = `Translate these ${entries.length} historical entries to Hebrew:\n${JSON.stringify(textsToTranslate)}`;
+    const userPrompt = `Translate these ${entries.length} historical entries to Hebrew:\n${textsToTranslate}`;
 
-    try {
-        const response = await callDeepSeek(systemPrompt, userPrompt);
-        const translated = extractJsonFromResponse(response);
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const response = await callDeepSeek(systemPrompt, userPrompt);
+            const translated = extractJsonFromResponse(response);
 
-        if (Array.isArray(translated)) {
-            for (const t of translated) {
-                if (typeof t.id === 'number' && t.text && entries[t.id]) {
-                    entries[t.id].text = t.text;
-                    entries[t.id].originalLang = 'en';
-                    entries[t.id].lang = 'he';
-                    if (t.extract && entries[t.id].extract) {
-                        entries[t.id].extract = t.extract;
+            if (Array.isArray(translated)) {
+                let count = 0;
+                for (const t of translated) {
+                    if (typeof t.id === 'number' && t.text && entries[t.id]) {
+                        entries[t.id].text = t.text;
+                        entries[t.id].originalLang = 'en';
+                        entries[t.id].lang = 'he';
+                        count++;
                     }
                 }
+                console.log(`    Translated ${count}/${entries.length} entries`);
+                return entries;
+            } else {
+                console.log(`    Could not parse translation response (attempt ${attempt + 1})`);
             }
-            console.log(`    Translated ${translated.length}/${entries.length} entries`);
-        } else {
-            console.log(`    Could not parse translation response`);
+        } catch (err) {
+            console.error(`    Translation batch failed (attempt ${attempt + 1}): ${err.message}`);
         }
-    } catch (err) {
-        console.error(`    Translation batch failed: ${err.message}`);
+        // Short delay before retry
+        if (attempt < 1) await new Promise(r => setTimeout(r, 2000));
     }
 
     return entries;
@@ -359,7 +358,7 @@ async function generateSocialPosts(data) {
         if (seen.has(e.year)) return false;
         seen.add(e.year);
         return true;
-    }).slice(0, 6);
+    }).slice(0, 10);
 
     if (uniqueSources.length === 0) return [];
 
@@ -375,7 +374,7 @@ Return ONLY a valid JSON array.`;
 
 ${eventsText}
 
-Create exactly 5 social media posts. Each post should be from the perspective of a relevant historical figure.
+Create exactly 8 social media posts. Each post should be from the perspective of a relevant historical figure.
 Prefer Israeli/Jewish historical figures when relevant.
 Return a JSON array with objects:
 {
@@ -435,7 +434,9 @@ async function collectDailyData() {
         const heData = await fetchWikiData('he', month, day);
         const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
         for (const cat of categories) {
-            const items = (heData[cat] || []).map(e => processWikiEntry(e, 'he'));
+            const raw = heData[cat];
+            const arr = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+            const items = arr.filter(e => e && typeof e === 'object' && e.text).map(e => processWikiEntry(e, 'he'));
             data[cat].push(...items);
             data.stats.he += items.length;
         }
@@ -450,9 +451,11 @@ async function collectDailyData() {
         const enData = await fetchWikiData('en', month, day);
         const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
         for (const cat of categories) {
+            const raw = enData[cat];
+            const arr = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
             const existingYears = new Set(data[cat].map(e => e.year));
-            const newItems = (enData[cat] || [])
-                .filter(e => !existingYears.has(e.year))
+            const newItems = arr
+                .filter(e => e && typeof e === 'object' && e.text && !existingYears.has(e.year))
                 .map(e => processWikiEntry(e, 'en'));
             data[cat].push(...newItems);
             data.stats.en += newItems.length;
