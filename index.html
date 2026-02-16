@@ -58,19 +58,28 @@
             <!-- כותרת ראשית -->
             <section id="mainHeadline" class="main-headline"></section>
 
-            <!-- אירועים + ציוצים בצד -->
-            <div class="article-with-tweet">
-                <div class="article-content">
-                    <section class="news-section">
-                        <h3><i class="fas fa-landmark"></i> אירועים</h3>
-                        <div id="eventsContent"></div>
-                    </section>
-                </div>
-                <div class="tweet-sidebar" id="tweetsSection">
-                    <h3 class="sidebar-title"><i class="fas fa-share-alt"></i> מה היו מפרסמים?</h3>
-                    <div id="tweetsContent"></div>
-                </div>
+            <!-- סינון קטגוריות -->
+            <div class="category-tabs" id="categoryTabs">
+                <button class="cat-tab active" data-cat="all"><i class="fas fa-globe"></i> הכל</button>
+                <button class="cat-tab" data-cat="israel"><i class="fas fa-star-of-david"></i> ישראל</button>
+                <button class="cat-tab" data-cat="politics"><i class="fas fa-landmark"></i> פוליטיקה</button>
+                <button class="cat-tab" data-cat="military"><i class="fas fa-shield-alt"></i> ביטחון</button>
+                <button class="cat-tab" data-cat="sports"><i class="fas fa-futbol"></i> ספורט</button>
+                <button class="cat-tab" data-cat="culture"><i class="fas fa-palette"></i> תרבות</button>
+                <button class="cat-tab" data-cat="science"><i class="fas fa-flask"></i> מדע</button>
             </div>
+
+            <!-- חדשות היום (ישראל) - מוצג למעלה -->
+            <section id="newsSection" class="news-section" style="display:none;">
+                <h3><i class="fas fa-newspaper"></i> חדשות היום מישראל</h3>
+                <div id="newsContent"></div>
+            </section>
+
+            <!-- אירועים עם ציוצים משובצים -->
+            <section class="news-section">
+                <h3><i class="fas fa-landmark"></i> אירועים היסטוריים</h3>
+                <div id="eventsContent"></div>
+            </section>
 
             <!-- חגים ומועדים -->
             <section id="holidaysSection" class="news-section" style="display:none;">
@@ -93,12 +102,6 @@
                     </section>
                 </div>
             </div>
-
-            <!-- חדשות היום -->
-            <section id="newsSection" class="news-section" style="display:none;">
-                <h3><i class="fas fa-newspaper"></i> חדשות היום</h3>
-                <div id="newsContent"></div>
-            </section>
 
             <!-- ציר זמן -->
             <section class="news-section" id="timelineSection">
@@ -157,14 +160,34 @@
         HEBCAL: 'https://www.hebcal.com/converter'
     };
 
-    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12, TWEETS: 4 };
+    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12 };
+
+    const CATEGORY_LABELS = {
+        israel: 'ישראל',
+        politics: 'פוליטיקה',
+        military: 'ביטחון',
+        sports: 'ספורט',
+        culture: 'תרבות',
+        science: 'מדע',
+        general: 'כללי'
+    };
+
+    const CATEGORY_COLORS = {
+        israel: '#0038b8',
+        politics: '#8b0000',
+        military: '#2e7d32',
+        sports: '#e65100',
+        culture: '#6a1b9a',
+        science: '#0277bd',
+        general: '#555'
+    };
 
     // ====== State ======
     let currentDate = new Date();
     let allData = null;
+    let activeCategory = 'all';
     let isSubscriber = localStorage.getItem('newspaper_sub') === 'true';
 
-    // Allow ?subscribe=true for testing
     if (new URLSearchParams(window.location.search).get('subscribe') === 'true') {
         localStorage.setItem('newspaper_sub', 'true');
         isSubscriber = true;
@@ -192,18 +215,20 @@
         return num >= 1000 ? (num / 1000).toFixed(1) + 'K' : String(num);
     }
 
+    function getCategoryBadge(category) {
+        if (!category || category === 'general') return '';
+        const label = CATEGORY_LABELS[category] || category;
+        const color = CATEGORY_COLORS[category] || '#555';
+        return `<span class="category-badge" style="background-color:${color}">${escapeHtml(label)}</span>`;
+    }
+
     // ====== Data Fetching ======
-
-    // Strategy: Try pre-built today.json first (server-side enriched data),
-    // then fall back to live Wikipedia API calls
-
     async function loadFromCachedJson() {
         const todayStr = currentDate.toISOString().slice(0, 10);
         const resp = await fetch('today.json?_=' + Date.now());
         if (!resp.ok) throw new Error('No cached data');
         const data = await resp.json();
         if (data.date !== todayStr) throw new Error('Cached data is stale');
-        // Normalize format for renderer
         if (!data.sourceStats) {
             data.sourceStats = data.stats || { he: 0, en: 0 };
         }
@@ -226,11 +251,32 @@
             year: entry.year || 0,
             text: entry.text || '',
             lang: lang,
-            url: (page.content_urls && page.content_urls.desktop && page.content_urls.desktop.page) || null,
             extract: page.extract || null,
             thumbnail: (page.thumbnail && page.thumbnail.source) || null,
-            pageTitle: page.title || ''
+            pageTitle: page.title || '',
+            category: 'general'
         };
+    }
+
+    // Client-side category classifier (for fallback mode without server data)
+    const CLIENT_KEYWORDS = {
+        israel: ['ישראל', 'ירושלים', 'תל אביב', 'חיפה', 'כנסת', 'צה"ל', 'ציונ', 'יהוד', 'עברי',
+            'israel', 'jerusalem', 'tel aviv', 'jewish', 'hebrew', 'zion', 'knesset', 'idf', 'palestine', 'holocaust'],
+        politics: ['נשיא', 'ממשלה', 'בחירות', 'מלך', 'קיסר', 'president', 'king', 'queen', 'election', 'parliament', 'empire', 'kingdom', 'republic', 'treaty'],
+        military: ['מלחמ', 'קרב', 'צבא', 'טרור', 'war', 'battle', 'army', 'attack', 'invasion', 'bombing', 'siege', 'military'],
+        sports: ['אולימפ', 'כדורגל', 'אליפות', 'olympic', 'football', 'soccer', 'championship', 'world cup', 'medal', 'tournament'],
+        culture: ['סרט', 'מוסיקה', 'סופר', 'אוסקר', 'נובל', 'film', 'movie', 'music', 'oscar', 'nobel', 'author', 'singer', 'opera'],
+        science: ['מדע', 'חלל', 'המצא', 'science', 'space', 'nasa', 'computer', 'invent', 'discover', 'satellite', 'rocket']
+    };
+
+    function classifyClient(entry) {
+        const text = ((entry.text || '') + ' ' + (entry.extract || '')).toLowerCase();
+        for (const [cat, keywords] of Object.entries(CLIENT_KEYWORDS)) {
+            for (const kw of keywords) {
+                if (text.includes(kw.toLowerCase())) return cat;
+            }
+        }
+        return 'general';
     }
 
     async function loadFromLiveAPIs() {
@@ -285,7 +331,18 @@
             }
         }
 
-        data.events.sort((a, b) => b.year - a.year);
+        // Classify and sort client-side
+        for (const cat of ['events', 'births', 'deaths', 'selected']) {
+            for (const entry of data[cat]) {
+                entry.category = classifyClient(entry);
+            }
+        }
+
+        data.events.sort((a, b) => {
+            if (a.category === 'israel' && b.category !== 'israel') return -1;
+            if (a.category !== 'israel' && b.category === 'israel') return 1;
+            return b.year - a.year;
+        });
         data.births.sort((a, b) => b.year - a.year);
         data.deaths.sort((a, b) => b.year - a.year);
 
@@ -294,13 +351,11 @@
     }
 
     async function loadData() {
-        // Try cached server-enriched data first (translated, with social posts)
         try {
             return await loadFromCachedJson();
         } catch (e) {
             console.log('Cached data unavailable, trying live APIs...', e.message);
         }
-        // Fallback to live Wikipedia API calls
         return await loadFromLiveAPIs();
     }
 
@@ -341,6 +396,19 @@
         alert('מערכת המנויים בבנייה. בקרוב תוכל להירשם!');
     }
 
+    // ====== Category Tabs ======
+    function initCategoryTabs() {
+        document.querySelectorAll('.cat-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                activeCategory = tab.dataset.cat;
+                renderEvents();
+                renderTimeline();
+            });
+        });
+    }
+
     // ====== Main Loader ======
     async function loadEventsForDate() {
         document.getElementById('loading').style.display = 'block';
@@ -351,7 +419,6 @@
         try {
             allData = await loadData();
 
-            // Update Hebrew date
             if (allData.hebrewDate) {
                 document.getElementById('hebrewDate').textContent = allData.hebrewDate;
             }
@@ -372,33 +439,32 @@
         if (!allData) return;
         renderStatsBar();
         renderMainHeadline();
+        renderNews();
         renderEvents();
         renderBirths();
         renderDeaths();
-        renderTweets();
         renderHolidays();
-        renderNews();
         renderTimeline();
     }
 
     function renderStatsBar() {
         const bar = document.getElementById('statsBar');
-        const total = allData.events.length + allData.births.length + allData.deaths.length;
+        const stats = allData.sourceStats || allData.stats || {};
+        const israelCount = (allData.events || []).filter(e => e.category === 'israel').length;
         bar.innerHTML = `
+            <span><i class="fas fa-star-of-david"></i> ${israelCount} ישראל</span>
             <span><i class="fas fa-landmark"></i> ${allData.events.length} אירועים</span>
             <span><i class="fas fa-birthday-cake"></i> ${allData.births.length} לידות</span>
             <span><i class="fas fa-star-of-life"></i> ${allData.deaths.length} פטירות</span>
-            <span class="stats-sources">
-                <i class="fas fa-database"></i>
-                ${allData.sourceStats.he} מעברית | ${allData.sourceStats.en} מאנגלית
-            </span>
         `;
     }
 
     function renderMainHeadline() {
         const el = document.getElementById('mainHeadline');
-        // Prefer selected events, fallback to regular events
-        const pool = allData.selected.length > 0 ? allData.selected : allData.events;
+        // Prefer Israeli events for headline
+        const israelEvents = [...(allData.selected || []), ...(allData.events || [])].filter(e => e.category === 'israel');
+        const pool = israelEvents.length > 0 ? israelEvents : (allData.selected.length > 0 ? allData.selected : allData.events);
+
         if (pool.length === 0) {
             el.innerHTML = '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
             return;
@@ -407,7 +473,7 @@
         // Pick one with a thumbnail, or the first
         const ev = pool.find(e => e.thumbnail) || pool[0];
         const ago = yearsAgo(ev.year);
-        const langBadge = ev.lang === 'en' ? '<span class="lang-tag">EN</span>' : '';
+        const catBadge = getCategoryBadge(ev.category);
 
         const imgHtml = ev.thumbnail
             ? `<div class="headline-image-wrap">
@@ -417,7 +483,7 @@
             : '';
 
         el.innerHTML = `
-            <div class="headline-category">אירוע מרכזי ${langBadge}</div>
+            <div class="headline-category">אירוע מרכזי ${catBadge}</div>
             <div class="headline-layout">
                 <div class="headline-text">
                     <h2>${escapeHtml(String(ev.year))} - ${escapeHtml(ev.text)}</h2>
@@ -426,43 +492,87 @@
                         <span class="time">${ago ? '&#128336; ' + ago : ''}</span>
                     </div>
                     ${ev.extract ? `<p class="headline-extract">${escapeHtml(ev.extract)}</p>` : ''}
-                    ${ev.url ? `<a href="${escapeHtml(ev.url)}" target="_blank" rel="noopener" class="read-more">קרא עוד בויקיפדיה &larr;</a>` : ''}
                 </div>
                 ${imgHtml}
             </div>
         `;
 
-        // Update subtitle
         const sub = ev.text.length > 80 ? ev.text.substring(0, 80) + '...' : ev.text;
         document.getElementById('dailyHeadline').textContent = `${ago} | ${sub}`;
     }
 
     function renderEvents() {
         const container = document.getElementById('eventsContent');
-        const events = allData.events.slice(0, LIMITS.EVENTS);
+        let events = allData.events;
+
+        // Filter by category if active
+        if (activeCategory !== 'all') {
+            events = events.filter(e => e.category === activeCategory);
+        }
+        events = events.slice(0, LIMITS.EVENTS);
 
         if (events.length === 0) {
-            container.innerHTML = '<p class="no-events">לא נמצאו אירועים.</p>';
+            container.innerHTML = `<p class="no-events">לא נמצאו אירועים בקטגוריה זו.</p>`;
             return;
         }
 
+        // Build a map of social posts by eventYear
+        const tweetsByYear = {};
+        (allData.socialPosts || []).forEach(post => {
+            const yr = post.eventYear || post.year;
+            if (!tweetsByYear[yr]) tweetsByYear[yr] = [];
+            tweetsByYear[yr].push(post);
+        });
+
         container.innerHTML = events.map(ev => {
             const ago = yearsAgo(ev.year);
-            const langBadge = ev.lang === 'en' ? ' <span class="lang-tag">EN</span>' : '';
+            const catBadge = getCategoryBadge(ev.category);
             const thumb = ev.thumbnail
                 ? `<img src="${escapeHtml(ev.thumbnail)}" class="event-thumb" alt="" onerror="this.style.display='none'">`
                 : '';
+
+            // Embedded social post for this event
+            let tweetHtml = '';
+            const tweets = tweetsByYear[ev.year];
+            if (tweets && tweets.length > 0) {
+                const post = tweets.shift(); // Take one and remove
+                const platformIcons = {
+                    twitter: { icon: 'fab fa-x-twitter', color: '#000' },
+                    facebook: { icon: 'fab fa-facebook', color: '#1877f2' },
+                    instagram: { icon: 'fab fa-instagram', color: '#e4405f' }
+                };
+                const p = platformIcons[post.platform] || platformIcons.twitter;
+                const initial = (post.author || '?').charAt(0);
+                tweetHtml = `
+                    <div class="embedded-tweet">
+                        <div class="tweet-header">
+                            <div class="tweet-avatar-placeholder" style="background-color:${p.color}">${escapeHtml(initial)}</div>
+                            <div class="tweet-author">
+                                <strong>${escapeHtml(post.author || '')}</strong>
+                                <span>${escapeHtml(post.handle || '')}</span>
+                            </div>
+                            <i class="${p.icon} tweet-icon" style="color:${p.color}"></i>
+                        </div>
+                        <div class="tweet-content">${escapeHtml(post.content || '')}</div>
+                        <div class="tweet-stats">
+                            <span><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
+                            <span><i class="fas fa-retweet"></i> ${formatNumber(post.retweets || 0)}</span>
+                            <span><i class="fas fa-comment"></i> ${formatNumber(post.replies || 0)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
             return `
                 <article class="news-item">
                     <div class="event-year-badge">${ev.year}</div>
                     <div class="event-body">
                         ${thumb}
                         <div class="event-text">
-                            <h4>${escapeHtml(ev.text)}${langBadge}</h4>
-                            <p class="event-meta">
-                                ${ago}
-                                ${ev.url ? ` | <a href="${escapeHtml(ev.url)}" target="_blank" rel="noopener" class="item-link">קרא עוד</a>` : ''}
-                            </p>
+                            <h4>${escapeHtml(ev.text)} ${catBadge}</h4>
+                            ${ev.extract ? `<p class="event-extract">${escapeHtml(ev.extract.length > 200 ? ev.extract.substring(0, 200) + '...' : ev.extract)}</p>` : ''}
+                            <p class="event-meta">${ago}</p>
+                            ${tweetHtml}
                         </div>
                     </div>
                 </article>
@@ -484,13 +594,11 @@
                 const thumb = b.thumbnail
                     ? `<img src="${escapeHtml(b.thumbnail)}" class="person-thumb" alt="" onerror="this.outerHTML='<div class=\\'person-thumb-placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
                     : '<div class="person-thumb-placeholder"><i class="fas fa-user"></i></div>';
-                const langBadge = b.lang === 'en' ? ' <span class="lang-tag">EN</span>' : '';
+                const catBadge = getCategoryBadge(b.category);
                 return `<div class="birthday-item person-card">
                     ${thumb}
                     <div class="person-info">
-                        ${b.url ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noopener">` : ''}
-                        <strong>${escapeHtml(b.text)}</strong>${langBadge}
-                        ${b.url ? '</a>' : ''}
+                        <strong>${escapeHtml(b.text)}</strong> ${catBadge}
                         <span class="person-year">(${b.year})${age > 0 ? ` - בן/בת ${age}` : ''}</span>
                     </div>
                 </div>`;
@@ -511,130 +619,16 @@
                 const thumb = d.thumbnail
                     ? `<img src="${escapeHtml(d.thumbnail)}" class="person-thumb" alt="" onerror="this.outerHTML='<div class=\\'person-thumb-placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
                     : '<div class="person-thumb-placeholder"><i class="fas fa-user"></i></div>';
-                const langBadge = d.lang === 'en' ? ' <span class="lang-tag">EN</span>' : '';
+                const catBadge = getCategoryBadge(d.category);
                 return `<div class="birthday-item person-card">
                     ${thumb}
                     <div class="person-info">
-                        ${d.url ? `<a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">` : ''}
-                        <strong>${escapeHtml(d.text)}</strong>${langBadge}
-                        ${d.url ? '</a>' : ''}
+                        <strong>${escapeHtml(d.text)}</strong> ${catBadge}
                         <span class="person-year">(${d.year})</span>
                     </div>
                 </div>`;
             }).join('') +
             '</div>';
-    }
-
-    function renderTweets() {
-        const container = document.getElementById('tweetsContent');
-        const section = document.getElementById('tweetsSection');
-
-        // Use server-generated social posts if available (from DeepSeek)
-        const serverPosts = allData.socialPosts || [];
-        if (serverPosts.length > 0) {
-            section.style.display = '';
-            const platformIcons = {
-                twitter: { icon: 'fab fa-x-twitter', color: '#000' },
-                facebook: { icon: 'fab fa-facebook', color: '#1877f2' },
-                instagram: { icon: 'fab fa-instagram', color: '#e4405f' }
-            };
-            container.innerHTML = serverPosts.slice(0, LIMITS.TWEETS).map(post => {
-                const p = platformIcons[post.platform] || platformIcons.twitter;
-                const initial = (post.author || '?').charAt(0);
-                const ago = yearsAgo(post.year);
-                return `
-                    <div class="historical-tweet">
-                        <div class="tweet-header">
-                            <div class="tweet-avatar-placeholder" style="background-color:${p.color}">${escapeHtml(initial)}</div>
-                            <div class="tweet-author">
-                                <strong>${escapeHtml(post.author || '')}</strong>
-                                <span>${escapeHtml(post.handle || '')}</span>
-                            </div>
-                            <i class="${p.icon} tweet-icon" style="color:${p.color}"></i>
-                        </div>
-                        <div class="tweet-content">
-                            ${escapeHtml(post.content || '')}
-                            ${ago ? `<div class="tweet-ago">${ago}</div>` : ''}
-                        </div>
-                        <div class="tweet-stats">
-                            <span><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
-                            <span><i class="fas fa-retweet"></i> ${formatNumber(post.retweets || 0)}</span>
-                            <span><i class="fas fa-comment"></i> ${formatNumber(post.replies || 0)}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            return;
-        }
-
-        // Fallback: generate posts from event data (client-side)
-        const sources = [
-            ...allData.selected.slice(0, 2),
-            ...allData.events.filter(e => e.lang === 'he').slice(0, 4),
-            ...allData.births.filter(b => b.lang === 'he').slice(0, 2),
-            ...allData.events.slice(0, 4)
-        ];
-
-        if (sources.length < 2) {
-            section.style.display = 'none';
-            return;
-        }
-        section.style.display = '';
-
-        const picks = [];
-        const usedYears = new Set();
-        for (const s of sources) {
-            if (!usedYears.has(s.year) && picks.length < LIMITS.TWEETS) {
-                picks.push(s);
-                usedYears.add(s.year);
-            }
-        }
-
-        const platforms = [
-            { icon: 'fab fa-x-twitter', name: 'X', color: '#000' },
-            { icon: 'fab fa-facebook', name: 'Facebook', color: '#1877f2' },
-            { icon: 'fab fa-instagram', name: 'Instagram', color: '#e4405f' },
-            { icon: 'fab fa-x-twitter', name: 'X', color: '#000' }
-        ];
-
-        container.innerHTML = picks.map((ev, i) => {
-            const platform = platforms[i % platforms.length];
-            const nameText = ev.text || '';
-            const name = nameText.split(/[,\-–:]/)[0].trim().substring(0, 30) || 'Unknown';
-            const initial = name.charAt(0).toUpperCase() || '?';
-            const cleanHandle = name.replace(/\s+/g, '').replace(/[^\w\u0590-\u05FF]/g, '').substring(0, 15);
-            const handle = '@' + (cleanHandle || 'history');
-            const likes = Math.floor(Math.random() * 12000) + 500;
-            const shares = Math.floor(likes * 0.35);
-            const ago = yearsAgo(ev.year);
-
-            const avatarHtml = ev.thumbnail
-                ? `<img src="${escapeHtml(ev.thumbnail)}" class="tweet-avatar" alt=""
-                       onerror="this.outerHTML='<div class=\\'tweet-avatar-placeholder\\' style=\\'background-color:${platform.color}\\'>${initial}</div>'">`
-                : `<div class="tweet-avatar-placeholder" style="background-color:${platform.color}">${initial}</div>`;
-
-            return `
-                <div class="historical-tweet">
-                    <div class="tweet-header">
-                        ${avatarHtml}
-                        <div class="tweet-author">
-                            <strong>${escapeHtml(name)}</strong>
-                            <span>${escapeHtml(handle)}</span>
-                        </div>
-                        <i class="${platform.icon} tweet-icon" style="color:${platform.color}"></i>
-                    </div>
-                    <div class="tweet-content">
-                        "${escapeHtml(ev.text)}"
-                        ${ago ? `<div class="tweet-ago">${ago}</div>` : ''}
-                    </div>
-                    <div class="tweet-stats">
-                        <span><i class="fas fa-heart"></i> ${formatNumber(likes)}</span>
-                        <span><i class="fas fa-retweet"></i> ${formatNumber(shares)}</span>
-                        <span><i class="fas fa-comment"></i> ${formatNumber(Math.floor(shares * 0.3))}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
 
     function renderHolidays() {
@@ -647,11 +641,9 @@
         section.style.display = '';
         container.innerHTML = '<div class="holidays-list">' +
             allData.holidays.map(h => {
-                const langBadge = h.lang === 'en' ? ' <span class="lang-tag">EN</span>' : '';
                 return `<div class="holiday-item">
                     <i class="fas fa-star holiday-star"></i>
-                    <span>${escapeHtml(h.text)}${langBadge}</span>
-                    ${h.url ? `<a href="${escapeHtml(h.url)}" target="_blank" rel="noopener" class="item-link">פרטים</a>` : ''}
+                    <span>${escapeHtml(h.text)}</span>
                 </div>`;
             }).join('') +
             '</div>';
@@ -682,7 +674,12 @@
     function renderTimeline() {
         const section = document.getElementById('timelineSection');
         const container = document.getElementById('timelineContent');
-        const remaining = allData.events.slice(LIMITS.EVENTS);
+        let remaining = allData.events.slice(LIMITS.EVENTS);
+
+        if (activeCategory !== 'all') {
+            remaining = allData.events.filter(e => e.category === activeCategory).slice(LIMITS.EVENTS);
+        }
+
         if (remaining.length === 0) {
             section.style.display = 'none';
             return;
@@ -690,14 +687,13 @@
         section.style.display = '';
 
         container.innerHTML = remaining.slice(0, 20).reverse().map(ev => {
-            const langBadge = ev.lang === 'en' ? ' <span class="lang-tag">EN</span>' : '';
-            return `<li><strong>${ev.year}</strong> - ${escapeHtml(ev.text)}${langBadge}</li>`;
+            const catBadge = getCategoryBadge(ev.category);
+            return `<li><strong>${ev.year}</strong> - ${escapeHtml(ev.text)} ${catBadge}</li>`;
         }).join('');
     }
 
     // ====== Init ======
     document.addEventListener('DOMContentLoaded', function () {
-        // Update nav buttons based on subscription
         if (!isSubscriber) {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.add('locked');
@@ -710,6 +706,7 @@
             if (banner) banner.style.display = 'none';
         }
 
+        initCategoryTabs();
         currentDate = new Date();
         updateDateDisplay();
         loadEventsForDate();
