@@ -18,7 +18,7 @@
                 <span class="edition">העיתון היומי של ההיסטוריה | מהדורה דיגיטלית</span>
             </div>
             <h1 class="newspaper-title">היום בהיסטוריה</h1>
-            <div class="subtitle" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים מויקיפדיה</div>
+            <div class="subtitle" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים ממקורות ישראליים ועולמיים</div>
             <div class="header-line"></div>
 
             <div class="controls">
@@ -43,7 +43,7 @@
         <div id="loading" class="loading-indicator">
             <div class="spinner"></div>
             <p>טוען אירועים היסטוריים...</p>
-            <p class="loading-sub">מביא נתונים מויקיפדיה העברית והאנגלית</p>
+            <p class="loading-sub">מביא נתונים ממקורות ישראליים, ויקיפדיה ועוד</p>
         </div>
 
         <!-- שגיאה -->
@@ -103,6 +103,12 @@
                 </div>
             </div>
 
+            <!-- אירועים עתיקים -->
+            <section id="ancientSection" class="news-section ancient-section" style="display:none;">
+                <h3><i class="fas fa-scroll"></i> היום בהיסטוריה העתיקה</h3>
+                <div id="ancientContent"></div>
+            </section>
+
             <!-- ציר זמן -->
             <section class="news-section" id="timelineSection">
                 <h3><i class="fas fa-calendar-alt"></i> עוד היום בהיסטוריה</h3>
@@ -139,7 +145,7 @@
                 </div>
                 <div class="footer-section">
                     <h4>מקור הנתונים</h4>
-                    <p>הנתונים מגיעים מויקיפדיה העברית והאנגלית. התוכן מתעדכן אוטומטית בכל יום.</p>
+                    <p>הנתונים מגיעים מויקיפדיה, YNET, וואלה, Google News ומקורות נוספים. התוכן מתעדכן אוטומטית בכל יום.</p>
                 </div>
                 <div class="footer-section">
                     <h4>צרו קשר</h4>
@@ -147,7 +153,7 @@
                 </div>
             </div>
             <div class="copyright">
-                &copy; 2026 "היום בהיסטוריה" - כל הזכויות שמורות | נתונים: ויקיפדיה
+                &copy; 2026 "היום בהיסטוריה" - כל הזכויות שמורות | נתונים: ויקיפדיה, YNET, וואלה, Google News
             </div>
         </footer>
     </div>
@@ -434,6 +440,75 @@
         }
     }
 
+    // ====== Social Post Builder ======
+    function buildSocialPostHtml(post) {
+        const initial = (post.author || '?').charAt(0);
+        const platform = post.platform || 'twitter';
+
+        const platforms = {
+            twitter: {
+                cls: 'social-twitter',
+                icon: 'fab fa-x-twitter',
+                iconColor: '#000',
+                avatarBg: '#000',
+                name: 'X',
+                verifiedColor: '#1d9bf0',
+                stats: [
+                    { icon: 'far fa-comment', val: post.replies },
+                    { icon: 'fas fa-retweet', val: post.retweets },
+                    { icon: 'far fa-heart', val: post.likes }
+                ]
+            },
+            facebook: {
+                cls: 'social-facebook',
+                icon: 'fab fa-facebook',
+                iconColor: '#1877f2',
+                avatarBg: '#1877f2',
+                name: 'Facebook',
+                verifiedColor: '#1877f2',
+                stats: [
+                    { icon: 'fas fa-thumbs-up', val: post.likes },
+                    { icon: 'far fa-comment-alt', val: post.replies },
+                    { icon: 'fas fa-share', val: post.retweets }
+                ]
+            },
+            instagram: {
+                cls: 'social-instagram',
+                icon: 'fab fa-instagram',
+                iconColor: '#e4405f',
+                avatarBg: '#c13584',
+                name: 'Instagram',
+                verifiedColor: '#3897f0',
+                stats: [
+                    { icon: 'far fa-heart', val: post.likes },
+                    { icon: 'far fa-comment', val: post.replies },
+                    { icon: 'far fa-paper-plane', val: post.retweets }
+                ]
+            }
+        };
+
+        const p = platforms[platform] || platforms.twitter;
+
+        return `
+            <div class="social-post ${p.cls}">
+                <div class="social-post-header">
+                    <div class="social-avatar" style="background-color:${p.avatarBg}">${escapeHtml(initial)}</div>
+                    <div class="social-author-info">
+                        <strong>${escapeHtml(post.author || '')} <i class="fas fa-check-circle" style="color:${p.verifiedColor};font-size:12px"></i></strong>
+                        <span>${escapeHtml(post.handle || '')}</span>
+                    </div>
+                    <div class="social-platform-badge">
+                        <i class="${p.icon}" style="color:${p.iconColor};font-size:22px"></i>
+                    </div>
+                </div>
+                <div class="social-post-body">${escapeHtml(post.content || '')}</div>
+                <div class="social-post-actions">
+                    ${p.stats.map(s => `<span><i class="${s.icon}"></i> ${formatNumber(s.val || 0)}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     // ====== Render ======
     function renderAll() {
         if (!allData) return;
@@ -444,6 +519,7 @@
         renderBirths();
         renderDeaths();
         renderHolidays();
+        renderAncientEvents();
         renderTimeline();
     }
 
@@ -461,19 +537,45 @@
 
     function renderMainHeadline() {
         const el = document.getElementById('mainHeadline');
-        // Prefer Israeli events for headline
-        const israelEvents = [...(allData.selected || []), ...(allData.events || [])].filter(e => e.category === 'israel');
-        const pool = israelEvents.length > 0 ? israelEvents : (allData.selected.length > 0 ? allData.selected : allData.events);
 
-        if (pool.length === 0) {
+        // STRICTLY Israel-first headline
+        // Priority: 1) server-marked headline, 2) Israeli events in Hebrew, 3) any Israeli event, 4) fallback
+        let ev = null;
+
+        if (allData.headline) {
+            ev = allData.headline;
+        }
+
+        if (!ev) {
+            const israelHebrew = [...(allData.selected || []), ...(allData.events || [])]
+                .filter(e => e.category === 'israel' && e.lang === 'he' && !e.isAncient);
+            if (israelHebrew.length > 0) {
+                ev = israelHebrew.find(e => e.thumbnail) || israelHebrew[0];
+            }
+        }
+
+        if (!ev) {
+            const israelAny = [...(allData.selected || []), ...(allData.events || [])]
+                .filter(e => e.category === 'israel' && !e.isAncient);
+            if (israelAny.length > 0) {
+                ev = israelAny.find(e => e.thumbnail) || israelAny[0];
+            }
+        }
+
+        if (!ev) {
+            const pool = allData.selected.length > 0 ? allData.selected : allData.events;
+            const nonAncient = pool.filter(e => !e.isAncient);
+            ev = (nonAncient.find(e => e.thumbnail) || nonAncient[0] || pool[0]);
+        }
+
+        if (!ev) {
             el.innerHTML = '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
             return;
         }
 
-        // Pick one with a thumbnail, or the first
-        const ev = pool.find(e => e.thumbnail) || pool[0];
         const ago = yearsAgo(ev.year);
         const catBadge = getCategoryBadge(ev.category);
+        const isIsrael = ev.category === 'israel';
 
         const imgHtml = ev.thumbnail
             ? `<div class="headline-image-wrap">
@@ -483,12 +585,12 @@
             : '';
 
         el.innerHTML = `
-            <div class="headline-category">אירוע מרכזי ${catBadge}</div>
+            <div class="headline-category">${isIsrael ? '<i class="fas fa-star-of-david"></i> ' : ''}אירוע מרכזי ${catBadge}</div>
             <div class="headline-layout">
                 <div class="headline-text">
                     <h2>${escapeHtml(String(ev.year))} - ${escapeHtml(ev.text)}</h2>
                     <div class="headline-meta">
-                        <span class="byline"><i class="fas fa-book"></i> ויקיפדיה</span>
+                        <span class="byline"><i class="fas fa-book"></i> ${ev.lang === 'he' ? 'ויקיפדיה העברית' : 'ויקיפדיה'}</span>
                         <span class="time">${ago ? '&#128336; ' + ago : ''}</span>
                     </div>
                     ${ev.extract ? `<p class="headline-extract">${escapeHtml(ev.extract)}</p>` : ''}
@@ -535,32 +637,8 @@
             let tweetHtml = '';
             const tweets = tweetsByYear[ev.year];
             if (tweets && tweets.length > 0) {
-                const post = tweets.shift(); // Take one and remove
-                const platformIcons = {
-                    twitter: { icon: 'fab fa-x-twitter', color: '#000' },
-                    facebook: { icon: 'fab fa-facebook', color: '#1877f2' },
-                    instagram: { icon: 'fab fa-instagram', color: '#e4405f' }
-                };
-                const p = platformIcons[post.platform] || platformIcons.twitter;
-                const initial = (post.author || '?').charAt(0);
-                tweetHtml = `
-                    <div class="embedded-tweet">
-                        <div class="tweet-header">
-                            <div class="tweet-avatar-placeholder" style="background-color:${p.color}">${escapeHtml(initial)}</div>
-                            <div class="tweet-author">
-                                <strong>${escapeHtml(post.author || '')}</strong>
-                                <span>${escapeHtml(post.handle || '')}</span>
-                            </div>
-                            <i class="${p.icon} tweet-icon" style="color:${p.color}"></i>
-                        </div>
-                        <div class="tweet-content">${escapeHtml(post.content || '')}</div>
-                        <div class="tweet-stats">
-                            <span><i class="fas fa-heart"></i> ${formatNumber(post.likes || 0)}</span>
-                            <span><i class="fas fa-retweet"></i> ${formatNumber(post.retweets || 0)}</span>
-                            <span><i class="fas fa-comment"></i> ${formatNumber(post.replies || 0)}</span>
-                        </div>
-                    </div>
-                `;
+                const post = tweets.shift();
+                tweetHtml = buildSocialPostHtml(post);
             }
 
             return `
@@ -659,15 +737,65 @@
         }
         section.style.display = '';
         container.innerHTML = '<div class="news-list">' +
-            news.slice(0, 6).map(n => `
+            news.slice(0, 8).map(n => {
+                const sourceIcons = {
+                    'ynet': 'fas fa-bolt',
+                    'וואלה': 'fas fa-fire',
+                    'Google News': 'fab fa-google',
+                    'default': 'fas fa-newspaper'
+                };
+                const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
+                return `
                 <div class="news-card">
                     <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
                         <strong>${escapeHtml(n.title)}</strong>
                     </a>
                     ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 120))}${n.summary.length > 120 ? '...' : ''}</p>` : ''}
-                    <span class="news-source"><i class="fas fa-external-link-alt"></i> ${escapeHtml(n.source || 'ynet')}</span>
+                    <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || 'ynet')}</span>
                 </div>
-            `).join('') +
+            `}).join('') +
+            '</div>';
+    }
+
+    function renderAncientEvents() {
+        const section = document.getElementById('ancientSection');
+        const container = document.getElementById('ancientContent');
+        const ancientEvents = (allData.ancientEvents || []).concat(
+            (allData.events || []).filter(e => e.isAncient)
+        );
+
+        // Deduplicate by text
+        const seen = new Set();
+        const unique = ancientEvents.filter(e => {
+            const key = e.text;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        if (unique.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = '';
+        unique.sort((a, b) => a.year - b.year);
+
+        container.innerHTML = '<div class="ancient-events-list">' +
+            unique.map(ev => {
+                const yearDisplay = ev.year < 0
+                    ? `${Math.abs(ev.year)} לפנה"ס`
+                    : String(ev.year);
+                const catBadge = getCategoryBadge(ev.category);
+                return `
+                    <div class="ancient-event-item">
+                        <div class="ancient-year">${escapeHtml(yearDisplay)}</div>
+                        <div class="ancient-text">
+                            <span>${escapeHtml(ev.text)}</span> ${catBadge}
+                        </div>
+                    </div>
+                `;
+            }).join('') +
             '</div>';
     }
 
