@@ -815,6 +815,8 @@
             news.slice(0, 10).map(n => {
                 const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
                 const hasImage = n.image && n.image.startsWith('http');
+                const displayTitle = n.translatedTitle || n.title || '';
+                const displaySummary = n.translatedSummary || n.summary || '';
 
                 if (hasImage) {
                     return `
@@ -823,9 +825,9 @@
                             <img src="${escapeHtml(n.image)}" class="news-card-image" alt="" onerror="this.style.display='none'">
                             <div class="news-card-text">
                                 <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                                    ${escapeHtml(n.title)}
+                                    ${escapeHtml(displayTitle)}
                                 </a>
-                                ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 100))}${n.summary.length > 100 ? '...' : ''}</p>` : ''}
+                                ${displaySummary ? `<p class="news-summary">${escapeHtml(displaySummary.substring(0, 100))}${displaySummary.length > 100 ? '...' : ''}</p>` : ''}
                                 <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
                             </div>
                         </div>
@@ -835,9 +837,9 @@
                 return `
                 <div class="news-card">
                     <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                        ${escapeHtml(n.title)}
+                        ${escapeHtml(displayTitle)}
                     </a>
-                    ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 120))}${n.summary.length > 120 ? '...' : ''}</p>` : ''}
+                    ${displaySummary ? `<p class="news-summary">${escapeHtml(displaySummary.substring(0, 120))}${displaySummary.length > 120 ? '...' : ''}</p>` : ''}
                     <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
                 </div>`;
             }).join('') +
