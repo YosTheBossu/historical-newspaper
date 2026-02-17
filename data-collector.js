@@ -282,6 +282,14 @@ function parseRssItems(xmlText) {
     return items;
 }
 
+function isProbablyHebrew(text) {
+    if (!text || !text.trim()) return true;
+    const letters = (text.match(/[A-Za-z\u0590-\u05FF]/g) || []).length;
+    if (letters === 0) return true;
+    const hebLetters = (text.match(/[\u0590-\u05FF]/g) || []).length;
+    return (hebLetters / letters) >= 0.3;
+}
+
 // ====== DeepSeek API ======
 async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
     if (!CONFIG.DEEPSEEK_API_KEY) {
@@ -427,6 +435,77 @@ async function translateAllEnglishEntries(data) {
 
     console.log(`  Total processed for translation: ${totalEN} entries`);
     return data;
+}
+
+async function translateNewsSummaries(newsItems) {
+    if (!Array.isArray(newsItems) || newsItems.length === 0) return newsItems;
+
+    const candidates = newsItems
+        .map((item, idx) => ({ item, idx }))
+        .filter(({ item }) => !isProbablyHebrew(`${item.title || ''} ${item.summary || ''}`));
+
+    if (candidates.length === 0) {
+        console.log('  News translation: all items already in Hebrew');
+        return newsItems;
+    }
+
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        console.log(`  News translation: skipped ${candidates.length} non-Hebrew items (no API key)`);
+        return newsItems;
+    }
+
+    const compactSummary = (txt) => {
+        if (!txt) return '';
+        return txt.length > 350 ? txt.substring(0, 350) + '...' : txt;
+    };
+
+    const lines = candidates.map(({ item, idx }) => ({
+        id: idx,
+        title: item.title || '',
+        summary: compactSummary(item.summary || '')
+    }));
+
+    const systemPrompt = `You are a professional Hebrew news translator.
+Translate each item title and summary into natural Hebrew suitable for an Israeli news digest.
+Return ONLY valid JSON in this exact format:
+[{"id":0,"title":"...","summary":"..."}]
+Rules:
+- Keep factual meaning and tone
+- Transliterate names to accepted Hebrew forms
+- Keep numbers and dates accurate
+- If summary is empty, return an empty string`;
+
+    const userPrompt = `Translate these news items to Hebrew:\n${JSON.stringify(lines)}`;
+
+    try {
+        const response = await callDeepSeek(systemPrompt, userPrompt);
+        const translated = extractJsonFromResponse(response);
+        if (!Array.isArray(translated)) {
+            console.log('  News translation: invalid response format');
+            return newsItems;
+        }
+
+        let updated = 0;
+        for (const t of translated) {
+            if (typeof t.id !== 'number') continue;
+            const target = newsItems[t.id];
+            if (!target) continue;
+
+            target.originalTitle = target.title || '';
+            target.originalSummary = target.summary || '';
+            target.translatedTitle = (t.title || '').trim() || target.title || '';
+            target.translatedSummary = (t.summary || '').trim() || target.summary || '';
+            target.title = target.translatedTitle;
+            target.summary = target.translatedSummary;
+            target.lang = 'he';
+            updated++;
+        }
+        console.log(`  News translation: translated ${updated}/${candidates.length} non-Hebrew items`);
+    } catch (err) {
+        console.error(`  News translation failed: ${err.message}`);
+    }
+
+    return newsItems;
 }
 
 // ====== Social Media Post Generation ======
@@ -639,6 +718,9 @@ async function collectDailyData() {
         }
     }
     console.log(`  Total news: ${data.news.length} from ${successfulSources} sources`);
+
+    console.log('4.1 Translating non-Hebrew news titles/summaries...');
+    await translateNewsSummaries(data.news);
 
     // --- Step 5: Translate English entries with DeepSeek ---
     console.log('5. Translating English content with DeepSeek...');
