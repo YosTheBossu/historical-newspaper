@@ -681,7 +681,7 @@
                         ${thumb}
                         <div class="event-text">
                             <h4>${escapeHtml(ev.text)} ${catBadge}</h4>
-                            ${ev.extract ? `<p class="event-extract">${escapeHtml(ev.extract.length > 200 ? ev.extract.substring(0, 200) + '...' : ev.extract)}</p>` : ''}
+                            ${ev.extract ? `<p class="event-extract">${escapeHtml(ev.extract.length > 200 ? ev.extract.substring(0, 120) + '...' : ev.extract)}</p>` : ''}
                             <p class="event-meta">${ago}</p>
                         </div>
                     </div>

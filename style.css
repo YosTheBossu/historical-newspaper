@@ -63,13 +63,13 @@ body {
 }
 
 .masthead-right {
-    align-items: flex-end;
-    text-align: left;
+    align-items: flex-start;
+    text-align: right;
 }
 
 .masthead-left {
-    align-items: flex-start;
-    text-align: right;
+    align-items: flex-end;
+    text-align: left;
 }
 
 .masthead-center {
@@ -79,12 +79,12 @@ body {
 
 .newspaper-title {
     font-family: 'David Libre', 'Frank Ruhl Libre', serif;
-    font-size: 4rem;
+    font-size: 4.5rem;
     font-weight: 700;
     color: #1a1a1a;
     margin: 0;
-    letter-spacing: 3px;
-    line-height: 1.1;
+    letter-spacing: 5px;
+    line-height: 1.0;
     text-shadow: none;
 }
 
@@ -113,9 +113,9 @@ body {
 
 /* Double line separator - classic newspaper */
 .header-double-line {
-    border-top: 3px solid #1a1a1a;
-    border-bottom: 1px solid #1a1a1a;
-    height: 6px;
+    border-top: 4px solid #1a1a1a;
+    border-bottom: 2px solid #1a1a1a;
+    height: 8px;
     margin: 0 20px;
 }
 
@@ -129,10 +129,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 30px;
-    font-size: 13px;
-    color: #666;
-    border-bottom: 1px solid #ddd;
+    padding: 4px 30px;
+    font-size: 12px;
+    color: #888;
+    border-bottom: none;
 }
 
 .subtitle-bar .tagline {
@@ -206,14 +206,15 @@ body {
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
-    background: #1a1a1a;
-    padding: 8px 20px;
-    font-size: 13px;
-    color: #fff;
+    background: #f5f2ea;
+    padding: 6px 20px;
+    font-size: 12px;
+    color: #666;
     border: none;
     border-radius: 0;
     margin-bottom: 0;
     box-shadow: none;
+    border-bottom: 1px solid #ddd;
 }
 
 .stats-bar span {
@@ -223,8 +224,8 @@ body {
 }
 
 .stats-bar i {
-    color: #ffd700;
-    font-size: 12px;
+    color: #c41e3a;
+    font-size: 11px;
 }
 
 /* ====== Main Content Area ====== */
@@ -478,6 +479,8 @@ body {
     column-count: 2;
     column-gap: 30px;
     column-rule: 1px solid #999;
+    column-fill: balance;
+    overflow: hidden;
 }
 
 .news-item {
@@ -706,12 +709,12 @@ body {
 }
 
 .column:first-child {
-    padding-left: 20px;
-    border-left: 1px solid #999;
+    padding-inline-end: 20px;
+    border-inline-end: 1px solid #999;
 }
 
 .column:last-child {
-    padding-right: 20px;
+    padding-inline-start: 20px;
 }
 
 .person-card {
@@ -1138,8 +1141,8 @@ body {
 }
 
 @keyframes ticker {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
 }
 
 /* ====== Responsive ====== */
