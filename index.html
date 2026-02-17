@@ -193,7 +193,7 @@
         HEBCAL: 'https://www.hebcal.com/converter'
     };
 
-    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12 };
+    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12, NEWS: 3, SOCIAL: 8 };
     const HEADLINE_CONFIG = {
         minHistoricalYears: Math.max(1, Number(new URLSearchParams(window.location.search).get('minHistoricalYears')) || 25)
     };
@@ -293,7 +293,12 @@
         const resp = await fetch('today.json?_=' + Date.now());
         if (!resp.ok) throw new Error('No cached data');
         const data = await resp.json();
-        if (data.date !== todayStr) throw new Error('Cached data is stale');
+        if (data.date !== todayStr) {
+            // Keep enriched server data even when cache date lags behind local timezone.
+            // Falling back to live APIs removes translations/social posts and hurts UX.
+            data.isStale = true;
+            console.warn(`today.json date (${data.date}) differs from local date (${todayStr}), using cached enriched data`);
+        }
         if (!data.sourceStats) {
             data.sourceStats = data.stats || { he: 0, en: 0 };
         }
@@ -766,7 +771,7 @@
         }
 
         container.innerHTML = '<div class="social-posts-grid">' +
-            posts.map(post => buildSocialPostHtml(post)).join('') +
+            posts.slice(0, LIMITS.SOCIAL).map(post => buildSocialPostHtml(post)).join('') +
             '</div>';
     }
 
@@ -860,7 +865,7 @@
         };
 
         container.innerHTML = '<div class="news-list">' +
-            news.slice(0, 10).map(n => {
+            news.slice(0, LIMITS.NEWS).map(n => {
                 const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
                 const hasImage = n.image && n.image.startsWith('http');
                 const displayTitle = n.translatedTitle || n.title || '';
