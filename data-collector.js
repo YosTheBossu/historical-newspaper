@@ -25,7 +25,15 @@ const CONFIG = {
     MAX_EVENTS: 60,
     MAX_BIRTHS: 30,
     MAX_DEATHS: 25,
-    ANCIENT_EVENT_SLOTS: 8
+    ANCIENT_EVENT_SLOTS: 8,
+    MIN_HISTORICAL_YEARS: Math.max(1, parseInt(process.env.MIN_HISTORICAL_YEARS || '25', 10) || 25)
+};
+
+const HEADLINE_WEIGHTS = {
+    verifiedIsraeli: 45,
+    historicalImportance: 30,
+    descriptionDepth: 15,
+    image: 10
 };
 
 // ====== Category Classification ======
@@ -113,6 +121,30 @@ function classifyEvent(event) {
     if (bestCategory === 'israel' && bestScore < 2) return 'general';
 
     return bestCategory;
+}
+
+function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+}
+
+function getHeadlineScore(event, nowYear) {
+    if (!event || !event.year) return 0;
+
+    const ageYears = Math.max(0, nowYear - event.year);
+    const verifiedIsraeliStrength = event.category === 'israel'
+        ? (event.lang === 'he' && event.originalLang !== 'en' ? 1 : 0.7)
+        : 0;
+    const historicalImportance = clamp(ageYears / 150, 0, 1);
+    const descriptionDepth = clamp(((event.extract || '').trim().length) / 280, 0, 1);
+    const image = event.thumbnail ? 1 : 0;
+
+    const score =
+        (verifiedIsraeliStrength * HEADLINE_WEIGHTS.verifiedIsraeli) +
+        (historicalImportance * HEADLINE_WEIGHTS.historicalImportance) +
+        (descriptionDepth * HEADLINE_WEIGHTS.descriptionDepth) +
+        (image * HEADLINE_WEIGHTS.image);
+
+    return Number(score.toFixed(2));
 }
 
 // ====== HTTP Helpers ======
@@ -701,18 +733,19 @@ async function collectDailyData() {
         }
     }
 
-    // --- Step 9: Mark Israeli headline ---
-    // Prefer natively Hebrew Israeli events (more likely truly Israeli)
-    const israelHeadlineNative = data.events.find(e =>
-        e.category === 'israel' && e.lang === 'he' && !e.isAncient && e.originalLang !== 'en'
-    );
-    const israelHeadlineAny = data.events.find(e =>
-        e.category === 'israel' && e.lang === 'he' && !e.isAncient
-    );
-    if (israelHeadlineNative) {
-        data.headline = israelHeadlineNative;
-    } else if (israelHeadlineAny) {
-        data.headline = israelHeadlineAny;
+    // --- Step 9: Compute headline scores and pick best fallback by score ---
+    const candidateHeadlinePool = [...(data.selected || []), ...(data.events || [])]
+        .filter(e => e && !e.isAncient && e.year && (year - e.year) >= CONFIG.MIN_HISTORICAL_YEARS);
+
+    for (const cat of ['events', 'births', 'deaths', 'selected']) {
+        for (const entry of (data[cat] || [])) {
+            entry.headlineScore = getHeadlineScore(entry, year);
+        }
+    }
+
+    candidateHeadlinePool.sort((a, b) => (b.headlineScore || 0) - (a.headlineScore || 0));
+    if (candidateHeadlinePool.length > 0) {
+        data.headline = candidateHeadlinePool[0];
     }
 
     // --- Final stats ---

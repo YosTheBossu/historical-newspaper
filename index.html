@@ -194,6 +194,16 @@
     };
 
     const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12 };
+    const HEADLINE_CONFIG = {
+        minHistoricalYears: Math.max(1, Number(new URLSearchParams(window.location.search).get('minHistoricalYears')) || 25)
+    };
+
+    const HEADLINE_WEIGHTS = {
+        verifiedIsraeli: 45,
+        historicalImportance: 30,
+        descriptionDepth: 15,
+        image: 10
+    };
 
     const CATEGORY_LABELS = {
         israel: 'ישראל',
@@ -253,6 +263,28 @@
         const label = CATEGORY_LABELS[category] || category;
         const colors = CATEGORY_COLORS[category] || CATEGORY_COLORS.general;
         return `<span class="category-badge" style="background-color:${colors.bg};color:${colors.text}">${escapeHtml(label)}</span>`;
+    }
+
+    function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+    }
+
+    function getHeadlineScore(event) {
+        if (!event || !event.year) return 0;
+        const ageYears = Math.max(0, currentDate.getFullYear() - event.year);
+        const verifiedIsraeliStrength = event.category === 'israel'
+            ? (event.lang === 'he' && event.originalLang !== 'en' ? 1 : 0.7)
+            : 0;
+        const historicalImportance = clamp(ageYears / 150, 0, 1);
+        const descriptionDepth = clamp(((event.extract || '').trim().length / 280), 0, 1);
+        const image = event.thumbnail ? 1 : 0;
+
+        return Number((
+            (verifiedIsraeliStrength * HEADLINE_WEIGHTS.verifiedIsraeli) +
+            (historicalImportance * HEADLINE_WEIGHTS.historicalImportance) +
+            (descriptionDepth * HEADLINE_WEIGHTS.descriptionDepth) +
+            (image * HEADLINE_WEIGHTS.image)
+        ).toFixed(2));
     }
 
     // ====== Data Fetching ======
@@ -590,33 +622,15 @@
     function renderMainHeadline() {
         const el = document.getElementById('mainHeadline');
 
-        let ev = null;
+        const pool = [...(allData.selected || []), ...(allData.events || [])];
+        const minYear = currentDate.getFullYear() - HEADLINE_CONFIG.minHistoricalYears;
+        const eligiblePool = pool.filter(e => e && !e.isAncient && e.year && e.year <= minYear);
+        const fallbackPool = pool.filter(e => e && !e.isAncient);
+        const scoredPool = (eligiblePool.length > 0 ? eligiblePool : fallbackPool)
+            .map(e => ({ ...e, headlineScore: typeof e.headlineScore === 'number' ? e.headlineScore : getHeadlineScore(e) }))
+            .sort((a, b) => b.headlineScore - a.headlineScore);
 
-        if (allData.headline) {
-            ev = allData.headline;
-        }
-
-        if (!ev) {
-            const israelHebrew = [...(allData.selected || []), ...(allData.events || [])]
-                .filter(e => e.category === 'israel' && e.lang === 'he' && !e.isAncient);
-            if (israelHebrew.length > 0) {
-                ev = israelHebrew.find(e => e.thumbnail) || israelHebrew[0];
-            }
-        }
-
-        if (!ev) {
-            const israelAny = [...(allData.selected || []), ...(allData.events || [])]
-                .filter(e => e.category === 'israel' && !e.isAncient);
-            if (israelAny.length > 0) {
-                ev = israelAny.find(e => e.thumbnail) || israelAny[0];
-            }
-        }
-
-        if (!ev) {
-            const pool = allData.selected.length > 0 ? allData.selected : allData.events;
-            const nonAncient = pool.filter(e => !e.isAncient);
-            ev = (nonAncient.find(e => e.thumbnail) || nonAncient[0] || pool[0]);
-        }
+        const ev = scoredPool[0] || null;
 
         if (!ev) {
             el.innerHTML = '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
@@ -642,6 +656,7 @@
                     <div class="headline-meta">
                         <span class="byline"><i class="fas fa-book"></i> ${ev.lang === 'he' ? 'ויקיפדיה העברית' : 'ויקיפדיה'}</span>
                         <span class="time">${ago || ''}</span>
+                        <span class="time"><i class="fas fa-chart-line"></i> ציון: ${ev.headlineScore || getHeadlineScore(ev)}</span>
                     </div>
                     ${ev.extract ? `<p class="headline-extract">${escapeHtml(ev.extract)}</p>` : ''}
                 </div>
