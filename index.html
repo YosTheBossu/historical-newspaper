@@ -695,12 +695,13 @@
         const container = document.getElementById('socialContent');
         const posts = allData.socialPosts || [];
 
+        section.style.display = '';
+
         if (posts.length === 0) {
-            section.style.display = 'none';
+            container.innerHTML = '<p class="no-events">פוסטים חברתיים עדיין לא זמינים. ננסה לרענן בקרוב.</p>';
             return;
         }
 
-        section.style.display = '';
         container.innerHTML = '<div class="social-posts-grid">' +
             posts.map(post => buildSocialPostHtml(post)).join('') +
             '</div>';
