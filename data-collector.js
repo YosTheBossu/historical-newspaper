@@ -332,6 +332,48 @@ function extractJsonFromResponse(text) {
     }
 }
 
+const FALLBACK_GLOSSARY = {
+    war: 'מלחמה', battle: 'קרב', empire: 'אימפריה', king: 'מלך', queen: 'מלכה',
+    president: 'נשיא', prime: 'ראשי', minister: 'שר', israel: 'ישראל', jerusalem: 'ירושלים',
+    jews: 'יהודים', jewish: 'יהודי', independence: 'עצמאות', revolution: 'מהפכה',
+    founded: 'הוקם', established: 'הוקם',
+    born: 'נולד', died: 'נפטר', treaty: 'הסכם', law: 'חוק', state: 'מדינה',
+    city: 'עיר', army: 'צבא', science: 'מדע', university: 'אוניברסיטה',
+    olympic: 'אולימפי', football: 'כדורגל', movie: 'סרט', music: 'מוזיקה'
+};
+
+function transliterateToken(token) {
+    const map = {
+        a: 'א', b: 'ב', c: 'ק', d: 'ד', e: 'ה', f: 'פ', g: 'ג', h: 'ה', i: 'י', j: 'ג׳',
+        k: 'ק', l: 'ל', m: 'מ', n: 'נ', o: 'ו', p: 'פ', q: 'ק', r: 'ר', s: 'ס', t: 'ט',
+        u: 'ו', v: 'ו', w: 'ו', x: 'קס', y: 'י', z: 'ז'
+    };
+    return token
+        .toLowerCase()
+        .split('')
+        .map(ch => map[ch] || ch)
+        .join('');
+}
+
+function basicFallbackTranslate(text) {
+    if (!text) return '';
+    return String(text).replace(/[A-Za-z][A-Za-z'’-]*/g, (word) => {
+        const key = word.toLowerCase();
+        if (FALLBACK_GLOSSARY[key]) return FALLBACK_GLOSSARY[key];
+        if (/^[A-Z][a-z]/.test(word) || word.length > 7) return transliterateToken(word);
+        return word;
+    });
+}
+
+function applyFallbackTranslation(entry) {
+    entry.text = basicFallbackTranslate(entry.text);
+    if (entry.extract) entry.extract = basicFallbackTranslate(entry.extract);
+    entry.originalLang = 'en';
+    entry.lang = 'he';
+    entry.translationMode = 'fallback';
+    return entry;
+}
+
 // ====== Translation ======
 async function translateBatch(entries) {
     if (entries.length === 0) return entries;
@@ -369,14 +411,25 @@ Rules:
                 for (const t of translated) {
                     if (typeof t.id === 'number' && t.text && entries[t.id]) {
                         entries[t.id].text = t.text;
-                        if (t.extract && entries[t.id].extract) {
+                        if (typeof t.extract === 'string' && entries[t.id].extract) {
                             entries[t.id].extract = t.extract;
                         }
                         entries[t.id].originalLang = 'en';
                         entries[t.id].lang = 'he';
+                        entries[t.id].translationMode = 'deepseek';
                         count++;
                     }
                 }
+                // Handle partial JSON cases: translated text exists, extract missing/null
+                entries.forEach((entry, idx) => {
+                    if (entry.lang === 'en' && translated[idx] && typeof translated[idx].text === 'string') {
+                        entry.text = translated[idx].text;
+                        entry.originalLang = 'en';
+                        entry.lang = 'he';
+                        entry.translationMode = 'deepseek';
+                        count++;
+                    }
+                });
                 console.log(`    Translated ${count}/${entries.length} entries (with extracts)`);
                 return entries;
             } else {
@@ -395,6 +448,16 @@ Rules:
 async function translateAllEnglishEntries(data) {
     const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
     let totalEN = 0;
+
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        console.log('  DeepSeek key missing, using fallback translation for English entries');
+        for (const cat of categories) {
+            const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
+            enEntries.forEach(applyFallbackTranslation);
+        }
+        data.translationMode = 'fallback';
+        return data;
+    }
 
     for (const cat of categories) {
         const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
@@ -424,6 +487,14 @@ async function translateAllEnglishEntries(data) {
             }
         }
     }
+
+    // Final fallback for any entries that remained untranslated
+    for (const cat of categories) {
+        const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
+        stillEN.forEach(applyFallbackTranslation);
+    }
+
+    data.translationMode = 'deepseek';
 
     console.log(`  Total processed for translation: ${totalEN} entries`);
     return data;
