@@ -285,7 +285,7 @@ function parseRssItems(xmlText) {
 // ====== DeepSeek API ======
 async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
     if (!CONFIG.DEEPSEEK_API_KEY) {
-        console.log('  ⏭️  DeepSeek API key not set, skipping');
+        console.log('  DeepSeek API key not set, skipping');
         return null;
     }
 
@@ -299,12 +299,20 @@ async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
         max_tokens: maxTokens
     };
 
-    const result = await httpPost('https://api.deepseek.com/v1/chat/completions', body, {
-        'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
-    });
+    try {
+        const result = await httpPost('https://api.deepseek.com/chat/completions', body, {
+            'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
+        });
 
-    const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
-    return content || null;
+        const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+        if (!content) {
+            console.error('  DeepSeek returned empty content. Response keys:', Object.keys(result || {}));
+        }
+        return content || null;
+    } catch (err) {
+        console.error(`  DeepSeek API call failed: ${err.message}`);
+        throw err;
+    }
 }
 
 function extractJsonFromResponse(text) {
@@ -726,6 +734,10 @@ function saveData(data) {
 }
 
 async function main() {
+    console.log(`[Diagnostics] DEEPSEEK_API_KEY: ${CONFIG.DEEPSEEK_API_KEY ? 'set (' + CONFIG.DEEPSEEK_API_KEY.substring(0, 8) + '...)' : 'NOT SET'}`);
+    console.log(`[Diagnostics] DEEPSEEK_MODEL: ${CONFIG.DEEPSEEK_MODEL}`);
+    console.log(`[Diagnostics] API URL: https://api.deepseek.com/chat/completions`);
+
     // Safety net: kill the process if collection takes longer than 5 minutes
     const globalTimeout = setTimeout(() => {
         console.error('Global timeout: collection exceeded 5 minutes, exiting');
