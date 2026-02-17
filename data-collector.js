@@ -430,8 +430,76 @@ async function translateAllEnglishEntries(data) {
 }
 
 // ====== Social Media Post Generation ======
+function generateDeterministicSocialPosts(data) {
+    const preferredEvents = [
+        ...(data.events || []).filter(e => e.category === 'israel'),
+        ...(data.selected || []),
+        ...(data.events || []),
+        ...(data.births || []).filter(e => e.category === 'israel'),
+        ...(data.births || []),
+        ...(data.deaths || [])
+    ];
+
+    const seenYears = new Set();
+    const uniqueEvents = preferredEvents.filter(e => {
+        if (!e || typeof e.year !== 'number' || !e.text) return false;
+        if (seenYears.has(e.year)) return false;
+        seenYears.add(e.year);
+        return true;
+    }).slice(0, 8);
+
+    if (uniqueEvents.length === 0) return [];
+
+    const postCount = Math.min(8, Math.max(6, uniqueEvents.length));
+    const templates = [
+        {
+            platform: 'twitter',
+            author: 'מערכת דברי הימים',
+            handle: '@HistoryDeskIL',
+            buildContent: (ev) => `בדיוק היום בשנת ${ev.year}: ${ev.text}. אם זה היה קורה היום — הייתם משתפים או רק עושים לייק? #היסטוריה_יומית`
+        },
+        {
+            platform: 'facebook',
+            author: 'הארכיון הלאומי',
+            handle: '@NationalArchiveIL',
+            buildContent: (ev) => `פלאשבק היסטורי: ${ev.text} (${ev.year}). כתבו בתגובות איך האירוע הזה שינה את העולם לדעתכם.`
+        },
+        {
+            platform: 'instagram',
+            author: 'כרוניקה בזמן',
+            handle: '@ChronicleToday',
+            buildContent: (ev) => `רגע אחד ששווה תמונה: "${ev.text}" — ${ev.year}. #OnThisDay #זיכרון_היסטורי`
+        },
+        {
+            platform: 'twitter',
+            author: 'כתב מהעבר',
+            handle: '@PastReporter',
+            buildContent: (ev) => `דיווח מתגלגל מ-${ev.year}: ${ev.text}. הכותרות משתנות, הדרמות נשארות. #היום_בהיסטוריה`
+        }
+    ];
+
+    return uniqueEvents.slice(0, postCount).map((event, index) => {
+        const template = templates[index % templates.length];
+        const seed = Math.abs((event.year * 37) + (index * 101));
+        return {
+            author: template.author,
+            handle: template.handle,
+            platform: template.platform,
+            content: template.buildContent(event).slice(0, 200),
+            year: event.year,
+            eventYear: event.year,
+            likes: 500 + (seed % 14501),
+            retweets: 100 + (seed % 4901),
+            replies: 50 + (seed % 1951),
+            source: 'template'
+        };
+    });
+}
+
 async function generateSocialPosts(data) {
-    if (!CONFIG.DEEPSEEK_API_KEY) return [];
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        return generateDeterministicSocialPosts(data);
+    }
 
     // Prefer Israeli events, then selected, then general events
     const israelEvents = (data.events || []).filter(e => e.category === 'israel').slice(0, 3);
@@ -484,14 +552,22 @@ Make them creative, witty, and historically accurate. ALL content MUST be in Heb
         const response = await callDeepSeek(systemPrompt, userPrompt);
         const posts = extractJsonFromResponse(response);
         if (Array.isArray(posts) && posts.length > 0) {
-            console.log(`  Generated ${posts.length} social posts`);
-            return posts;
+            const normalizedPosts = posts.map(post => ({
+                ...post,
+                source: 'ai'
+            }));
+            console.log(`  Generated ${normalizedPosts.length} social posts (AI)`);
+            return normalizedPosts;
         }
     } catch (err) {
         console.error(`  Social post generation failed: ${err.message}`);
     }
 
-    return [];
+    const fallbackPosts = generateDeterministicSocialPosts(data);
+    if (fallbackPosts.length > 0) {
+        console.log(`  Generated ${fallbackPosts.length} social posts (template fallback)`);
+    }
+    return fallbackPosts;
 }
 
 // ====== Ancient/Biblical Events Generation ======
