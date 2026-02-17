@@ -116,7 +116,8 @@ function classifyEvent(event) {
 }
 
 // ====== HTTP Helpers ======
-function httpGet(url, headers = {}, expectJson = true) {
+function httpGet(url, headers = {}, expectJson = true, redirectDepth = 0) {
+    const MAX_REDIRECTS = 5;
     return new Promise((resolve, reject) => {
         const parsedUrl = new URL(url);
         const options = {
@@ -128,14 +129,36 @@ function httpGet(url, headers = {}, expectJson = true) {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
+                if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+                    const location = res.headers.location;
+                    if (!location) {
+                        return reject(new Error(`HTTP ${res.statusCode} redirect without location for ${url}`));
+                    }
+                    if (redirectDepth >= MAX_REDIRECTS) {
+                        return reject(new Error(`Too many redirects (${MAX_REDIRECTS}) for ${url}`));
+                    }
+                    const redirectUrl = new URL(location, url).toString();
+                    return resolve(httpGet(redirectUrl, headers, expectJson, redirectDepth + 1));
+                }
+
                 if (res.statusCode < 200 || res.statusCode >= 300) {
                     return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
                 }
+
+                const response = {
+                    body: data,
+                    statusCode: res.statusCode,
+                    finalUrl: url
+                };
+
                 if (expectJson) {
-                    try { resolve(JSON.parse(data)); }
+                    try {
+                        response.body = JSON.parse(data);
+                        resolve(response);
+                    }
                     catch (e) { reject(new Error(`Invalid JSON from ${url}`)); }
                 } else {
-                    resolve(data);
+                    resolve(response);
                 }
             });
         });
@@ -230,12 +253,14 @@ function processWikiEntry(entry, lang) {
 async function fetchWikiData(lang, month, day) {
     const baseUrl = lang === 'he' ? CONFIG.WIKI_HE : CONFIG.WIKI_EN;
     const url = `${baseUrl}/${month}/${day}`;
-    return httpGet(url);
+    const response = await httpGet(url);
+    return response.body;
 }
 
 async function fetchHebrewDate(year, month, day) {
     const url = `${CONFIG.HEBCAL}?cfg=json&gy=${year}&gm=${parseInt(month)}&gd=${parseInt(day)}&g2h=1`;
-    return httpGet(url);
+    const response = await httpGet(url);
+    return response.body;
 }
 
 // ====== YNET RSS ======
@@ -247,39 +272,110 @@ function extractPlainText(html) {
         .trim();
 }
 
+function decodeXmlEntities(text) {
+    return (text || '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/gi, "'")
+        .trim();
+}
+
+function extractFirstMatch(text, regexList) {
+    for (const regex of regexList) {
+        const match = text.match(regex);
+        if (match && match[1]) return match[1];
+    }
+    return '';
+}
+
+function extractImageFromXml(fragment) {
+    const directPatterns = [
+        /<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image/i,
+        /<media:content[^>]+url=["']([^"']+)["']/i,
+        /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
+        /<link[^>]+rel=["']enclosure["'][^>]+href=["']([^"']+)["'][^>]*type=["']image/i,
+        /<link[^>]+href=["']([^"']+)["'][^>]*type=["']image\//i
+    ];
+
+    for (const pattern of directPatterns) {
+        const match = fragment.match(pattern);
+        if (match && match[1]) return match[1];
+    }
+
+    const mediaGroup = fragment.match(/<media:group>([\s\S]*?)<\/media:group>/i);
+    if (mediaGroup) {
+        const mediaGroupImage = extractImageFromXml(mediaGroup[1]);
+        if (mediaGroupImage) return mediaGroupImage;
+    }
+
+    const imgInHtml = fragment.match(/<img[^>]+src=["']([^"']+)["']/i);
+    return imgInHtml ? imgInHtml[1] : null;
+}
+
 function parseRssItems(xmlText) {
     const items = [];
-    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemRegex.exec(xmlText)) !== null) {
-        const xml = match[1];
-        const title = extractPlainText((xml.match(/<title>([\s\S]*?)<\/title>/i) || [])[1]);
-        const link = extractPlainText((xml.match(/<link>([\s\S]*?)<\/link>/i) || [])[1]);
-        const desc = extractPlainText((xml.match(/<description>([\s\S]*?)<\/description>/i) || [])[1]);
+    const telemetry = { format: 'unknown', parseFailureReason: null };
 
-        // Extract image from various RSS tags
-        let image = null;
-        const enclosure = xml.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image/i);
-        if (enclosure) image = enclosure[1];
-        if (!image) {
-            const mediaContent = xml.match(/<media:content[^>]+url=["']([^"']+)["']/i);
-            if (mediaContent) image = mediaContent[1];
-        }
-        if (!image) {
-            const mediaThumbnail = xml.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
-            if (mediaThumbnail) image = mediaThumbnail[1];
-        }
-        // Try image from description HTML
-        if (!image) {
-            const imgInHtml = match[1].match(/<img[^>]+src=["']([^"']+)["']/i);
-            if (imgInHtml) image = imgInHtml[1];
-        }
+    const hasRssItems = /<item[\s>]/i.test(xmlText);
+    const hasAtomEntries = /<entry[\s>]/i.test(xmlText);
 
-        if (title && link) {
-            items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
+    if (!hasRssItems && !hasAtomEntries) {
+        telemetry.parseFailureReason = 'no_item_or_entry_nodes';
+        return { items, telemetry };
+    }
+
+    if (hasRssItems) {
+        telemetry.format = 'rss';
+        const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+        let match;
+        while ((match = itemRegex.exec(xmlText)) !== null) {
+            const xml = match[1];
+            const title = extractPlainText(extractFirstMatch(xml, [/<title>([\s\S]*?)<\/title>/i]));
+            const link = decodeXmlEntities(extractPlainText(extractFirstMatch(xml, [/<link>([\s\S]*?)<\/link>/i])));
+            const desc = extractPlainText(extractFirstMatch(xml, [
+                /<content:encoded>([\s\S]*?)<\/content:encoded>/i,
+                /<description>([\s\S]*?)<\/description>/i
+            ]));
+            const image = extractImageFromXml(xml);
+
+            if (title && link) {
+                items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
+            }
         }
     }
-    return items;
+
+    if (hasAtomEntries) {
+        telemetry.format = telemetry.format === 'rss' ? 'rss+atom' : 'atom';
+        const entryRegex = /<entry\b[^>]*>([\s\S]*?)<\/entry>/gi;
+        let match;
+        while ((match = entryRegex.exec(xmlText)) !== null) {
+            const xml = match[1];
+            const title = extractPlainText(extractFirstMatch(xml, [/<title[^>]*>([\s\S]*?)<\/title>/i]));
+
+            const linkMatch = xml.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*>/i)
+                || xml.match(/<link\b[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)["'][^>]*>/i);
+            const link = decodeXmlEntities(linkMatch ? linkMatch[1] : '');
+
+            const desc = extractPlainText(extractFirstMatch(xml, [
+                /<content[^>]*>([\s\S]*?)<\/content>/i,
+                /<summary[^>]*>([\s\S]*?)<\/summary>/i
+            ]));
+            const image = extractImageFromXml(xml);
+
+            if (title && link) {
+                items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
+            }
+        }
+    }
+
+    if (items.length === 0 && !telemetry.parseFailureReason) {
+        telemetry.parseFailureReason = 'nodes_found_but_no_valid_items';
+    }
+
+    return { items, telemetry };
 }
 
 // ====== DeepSeek API ======
@@ -612,32 +708,90 @@ async function collectDailyData() {
     // --- Step 4: Fetch Israeli News (with retries and fallbacks) ---
     console.log('4. Fetching Israeli news...');
     const newsSourceConfigs = [
-        { name: 'YNET',         url: CONFIG.YNET_RSS,           source: 'ynet',        max: 10 },
-        { name: 'Walla',        url: CONFIG.WALLA_RSS,          source: 'וואלה',       max: 5  },
-        { name: 'Google News',  url: CONFIG.GOOGLE_NEWS_IL_RSS, source: 'Google News',  max: 5  },
-        { name: 'Maariv',       url: CONFIG.MAARIV_RSS,         source: 'מעריב',       max: 4  },
-        { name: 'Israel Hayom', url: CONFIG.ISRAEL_HAYOM_RSS,   source: 'ישראל היום',  max: 4  },
-        { name: 'Calcalist',    url: CONFIG.CALCALIST_RSS,      source: 'כלכליסט',     max: 3  },
+        { name: 'YNET',         url: CONFIG.YNET_RSS,           source: 'ynet',        min: 2, max: 7, backupMax: 12 },
+        { name: 'Walla',        url: CONFIG.WALLA_RSS,          source: 'וואלה',       min: 1, max: 4, backupMax: 8  },
+        { name: 'Google News',  url: CONFIG.GOOGLE_NEWS_IL_RSS, source: 'Google News', min: 1, max: 4, backupMax: 7  },
+        { name: 'Maariv',       url: CONFIG.MAARIV_RSS,         source: 'מעריב',       min: 1, max: 3, backupMax: 6  },
+        { name: 'Israel Hayom', url: CONFIG.ISRAEL_HAYOM_RSS,   source: 'ישראל היום',  min: 1, max: 3, backupMax: 6  },
+        { name: 'Calcalist',    url: CONFIG.CALCALIST_RSS,      source: 'כלכליסט',     min: 1, max: 2, backupMax: 5  },
     ];
 
-    let successfulSources = 0;
+    const newsTelemetry = [];
+    const sourceBuckets = [];
+
     for (const src of newsSourceConfigs) {
+        const telemetry = {
+            source: src.name,
+            statusCode: null,
+            parsedItems: 0,
+            parseFailureReason: null,
+            fetchFailure: null
+        };
+
         try {
-            const xml = await httpGetWithRetry(src.url, {}, false, 2);
-            const items = parseRssItems(xml)
-                .map(item => ({ ...item, source: src.source }))
-                .slice(0, src.max);
-            if (items.length > 0) {
-                data.news.push(...items);
-                successfulSources++;
-                console.log(`  ${src.name}: ${items.length} articles`);
-            } else {
-                console.log(`  ${src.name}: 0 articles (empty feed)`);
-            }
+            const response = await httpGetWithRetry(src.url, {}, false, 2);
+            telemetry.statusCode = response.statusCode;
+
+            const parsed = parseRssItems(response.body);
+            telemetry.parsedItems = parsed.items.length;
+            telemetry.parseFailureReason = parsed.telemetry.parseFailureReason;
+
+            const taggedItems = parsed.items.map(item => ({ ...item, source: src.source }));
+            sourceBuckets.push({
+                config: src,
+                primary: taggedItems.slice(0, src.max),
+                backup: taggedItems.slice(src.max, src.backupMax)
+            });
+
+            console.log(`  ${src.name}: status ${telemetry.statusCode}, parsed ${telemetry.parsedItems}, parseFailure=${telemetry.parseFailureReason || 'none'}`);
         } catch (err) {
+            telemetry.fetchFailure = err.message;
+            telemetry.parseFailureReason = telemetry.parseFailureReason || 'fetch_failed';
             console.error(`  ${src.name} failed: ${err.message}`);
         }
+
+        newsTelemetry.push(telemetry);
     }
+
+    let successfulSources = 0;
+    const leftovers = [];
+
+    for (const bucket of sourceBuckets) {
+        const guaranteed = bucket.primary.slice(0, bucket.config.min);
+        const remainingPrimary = bucket.primary.slice(bucket.config.min);
+
+        if (guaranteed.length > 0) {
+            successfulSources++;
+            data.news.push(...guaranteed);
+        }
+
+        leftovers.push(...remainingPrimary, ...bucket.backup);
+    }
+
+    // Fill the rest from remaining per-source quota and backup items without letting one source dominate first-pass selection
+    for (const bucket of sourceBuckets) {
+        const alreadySelected = data.news.filter(n => n.source === bucket.config.source).length;
+        const room = Math.max(0, bucket.config.max - alreadySelected);
+        if (room > 0) {
+            const candidates = bucket.primary.slice(bucket.config.min, bucket.config.min + room);
+            data.news.push(...candidates);
+        }
+    }
+
+    // Final fallback expansion from backup pools if some sources are empty/down
+    const targetNewsCount = newsSourceConfigs.reduce((sum, src) => sum + src.max, 0);
+    if (leftovers.length > 0 && data.news.length < targetNewsCount) {
+        const seen = new Set(data.news.map(n => n.url));
+        for (const candidate of leftovers) {
+            if (data.news.length >= targetNewsCount) break;
+            if (!seen.has(candidate.url)) {
+                data.news.push(candidate);
+                seen.add(candidate.url);
+            }
+        }
+    }
+
+    data.newsTelemetry = newsTelemetry;
     console.log(`  Total news: ${data.news.length} from ${successfulSources} sources`);
 
     // --- Step 5: Translate English entries with DeepSeek ---
