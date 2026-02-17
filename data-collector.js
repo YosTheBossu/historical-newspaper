@@ -256,8 +256,27 @@ function parseRssItems(xmlText) {
         const title = extractPlainText((xml.match(/<title>([\s\S]*?)<\/title>/i) || [])[1]);
         const link = extractPlainText((xml.match(/<link>([\s\S]*?)<\/link>/i) || [])[1]);
         const desc = extractPlainText((xml.match(/<description>([\s\S]*?)<\/description>/i) || [])[1]);
+
+        // Extract image from various RSS tags
+        let image = null;
+        const enclosure = xml.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image/i);
+        if (enclosure) image = enclosure[1];
+        if (!image) {
+            const mediaContent = xml.match(/<media:content[^>]+url=["']([^"']+)["']/i);
+            if (mediaContent) image = mediaContent[1];
+        }
+        if (!image) {
+            const mediaThumbnail = xml.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
+            if (mediaThumbnail) image = mediaThumbnail[1];
+        }
+        // Try image from description HTML
+        if (!image) {
+            const imgInHtml = match[1].match(/<img[^>]+src=["']([^"']+)["']/i);
+            if (imgInHtml) image = imgInHtml[1];
+        }
+
         if (title && link) {
-            items.push({ title, url: link, summary: desc, source: 'unknown' });
+            items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
         }
     }
     return items;

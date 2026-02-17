@@ -1,4 +1,8 @@
-/* עיצוב עיתון היסטורי עם נגיעות מודרניות */
+/* ========================================
+   עיתון היסטורי - עיצוב בהשראת עיתונים ישראליים
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=David+Libre:wght@400;700&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -7,138 +11,303 @@
 
 body {
     font-family: 'Heebo', sans-serif;
-    background-color: #f5f1e8;
-    color: #333;
+    background-color: #e8e4da;
+    color: #1a1a1a;
     line-height: 1.6;
-    padding: 20px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.05"><path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="black" stroke-width="1"/></svg>');
+    padding: 0;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
-    background-color: white;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 56, 184, 0.1);
-    border: 1px solid #c8d8e8;
-    padding: 30px;
+    background-color: #faf8f2;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.15);
     position: relative;
+    overflow: hidden;
 }
 
-/* כותרת העיתון */
+/* ====== Red Top Bar ====== */
+.top-red-bar {
+    background: #c41e3a;
+    height: 6px;
+    width: 100%;
+}
+
+/* ====== Newspaper Masthead ====== */
 .newspaper-header {
     text-align: center;
-    margin-bottom: 30px;
-    border-bottom: 4px solid #0038b8;
-    padding-bottom: 20px;
+    padding: 0;
+    margin-bottom: 0;
+    border-bottom: none;
     position: relative;
+    background: #faf8f2;
 }
 
 .newspaper-header::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #0038b8;
+    display: none;
 }
 
-.date-line {
+.masthead {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 10px;
-    font-family: 'Frank Ruhl Libre', serif;
-    flex-wrap: wrap;
-    gap: 5px;
+    justify-content: center;
+    padding: 18px 30px 12px;
+    position: relative;
 }
 
-.hebrew-date {
-    background-color: #f0e6d0;
-    padding: 3px 12px;
-    border-radius: 3px;
-    font-weight: 700;
-    color: #5d4037;
-    font-size: 13px;
+.masthead-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.masthead-right {
+    align-items: flex-end;
+    text-align: left;
+}
+
+.masthead-left {
+    align-items: flex-start;
+    text-align: right;
+}
+
+.masthead-center {
+    flex: 0 0 auto;
+    padding: 0 30px;
 }
 
 .newspaper-title {
+    font-family: 'David Libre', 'Frank Ruhl Libre', serif;
+    font-size: 4rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: 3px;
+    line-height: 1.1;
+    text-shadow: none;
+}
+
+.masthead-date {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 4.5rem;
-    font-weight: 900;
-    color: #0038b8;
-    margin: 10px 0;
-    text-shadow: 2px 2px 4px rgba(0, 56, 184, 0.15);
-    letter-spacing: 2px;
+    font-size: 15px;
+    color: #444;
+    font-weight: 400;
+}
+
+.hebrew-date {
+    font-family: 'David Libre', 'Frank Ruhl Libre', serif;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-size: 16px;
+}
+
+.edition-info {
+    font-size: 12px;
+    color: #888;
+    font-family: 'Heebo', sans-serif;
+}
+
+/* Double line separator - classic newspaper */
+.header-double-line {
+    border-top: 3px solid #1a1a1a;
+    border-bottom: 1px solid #1a1a1a;
+    height: 6px;
+    margin: 0 20px;
+}
+
+.header-thin-line {
+    border-top: 1px solid #ccc;
+    margin: 0 20px;
+}
+
+/* ====== Subtitle / Tagline ====== */
+.subtitle-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 30px;
+    font-size: 13px;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+}
+
+.subtitle-bar .tagline {
+    font-style: italic;
+    font-family: 'Frank Ruhl Libre', serif;
 }
 
 .subtitle {
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: #666;
     font-style: italic;
-    margin-bottom: 20px;
+    font-family: 'Frank Ruhl Libre', serif;
 }
 
-.header-line {
-    height: 2px;
-    background: linear-gradient(to right, transparent, #333, transparent);
-    margin-top: 10px;
-}
-
-/* סרגל סטטיסטיקות */
-.stats-bar {
+/* ====== Navigation Controls ====== */
+.controls {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 25px;
-    flex-wrap: wrap;
-    background: linear-gradient(135deg, #0038b8, #1a5fd4);
-    border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    margin-bottom: 25px;
-    font-size: 14px;
-    color: #fff;
-    box-shadow: 0 2px 10px rgba(0, 56, 184, 0.2);
+    gap: 10px;
+    padding: 10px 20px;
+    background: #f5f2ea;
+    border-bottom: 2px solid #1a1a1a;
 }
 
-.stats-bar span {
+.control-btn {
+    background-color: #1a1a1a;
+    color: white;
+    border: none;
+    padding: 7px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.2s;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
+.control-btn:hover {
+    background-color: #333;
+}
+
+.today-btn {
+    background-color: #c41e3a;
+}
+
+.today-btn:hover {
+    background-color: #a01830;
+}
+
+.nav-btn .lock-icon {
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.nav-btn.locked {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+.nav-btn.locked:hover {
+    background-color: #888;
+}
+
+/* ====== Stats Bar ====== */
+.stats-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: #1a1a1a;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: #fff;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    box-shadow: none;
+}
+
+.stats-bar span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .stats-bar i {
     color: #ffd700;
-    font-size: 13px;
-}
-
-.stats-sources {
     font-size: 12px;
-    color: #888;
 }
 
-/* כותרת ראשית */
+/* ====== Main Content Area ====== */
+.content-area {
+    padding: 20px 30px;
+}
+
+/* ====== Category Tabs ====== */
+.category-tabs {
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 0;
+    border-bottom: 2px solid #1a1a1a;
+    border-top: none;
+}
+
+.cat-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-family: 'Heebo', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #555;
+}
+
+.cat-tab:hover {
+    background: #f0ece4;
+    color: #1a1a1a;
+}
+
+.cat-tab.active {
+    background: transparent;
+    color: #c41e3a;
+    border-bottom-color: #c41e3a;
+}
+
+.cat-tab i {
+    font-size: 11px;
+}
+
+/* ====== Category Badge ====== */
+.category-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+/* ====== Main Headline ====== */
 .main-headline {
-    margin-bottom: 35px;
-    padding: 25px;
-    background: linear-gradient(135deg, #f0f4fa, #eef1f8);
-    border-right: 5px solid #0038b8;
-    border-radius: 5px;
-    box-shadow: 0 3px 15px rgba(0, 56, 184, 0.08);
+    margin-bottom: 25px;
+    padding: 20px 0;
+    background: none;
+    border-right: none;
+    border-radius: 0;
+    box-shadow: none;
+    border-bottom: 2px solid #1a1a1a;
 }
 
 .headline-category {
     display: inline-block;
-    background: linear-gradient(135deg, #0038b8, #1a5fd4);
+    background: #c41e3a;
     color: white;
-    padding: 5px 15px;
-    font-size: 14px;
-    font-weight: bold;
-    border-radius: 3px;
-    margin-bottom: 15px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 0;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .headline-layout {
@@ -154,148 +323,273 @@ body {
 
 .headline-image-wrap {
     flex-shrink: 0;
-    max-width: 280px;
+    max-width: 300px;
 }
 
 .main-headline h2 {
-    font-size: 2.2rem;
-    color: #222;
-    margin-bottom: 15px;
-    line-height: 1.3;
+    font-family: 'David Libre', 'Frank Ruhl Libre', serif;
+    font-size: 2.4rem;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    line-height: 1.25;
+    font-weight: 700;
 }
 
 .headline-meta {
     display: flex;
-    justify-content: space-between;
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #ccc;
+    justify-content: flex-start;
+    gap: 20px;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
 }
 
 .headline-extract {
-    font-size: 1.05rem;
-    color: #444;
-    margin-bottom: 15px;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 0;
     text-align: justify;
     line-height: 1.7;
 }
 
-.headline-content p {
-    font-size: 1.1rem;
-    margin-bottom: 25px;
-    text-align: justify;
-}
-
 .headline-image {
     width: 100%;
-    max-width: 280px;
-    border-radius: 8px;
-    border: 2px solid #ddd;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 300px;
+    border-radius: 0;
+    border: 1px solid #ccc;
+    box-shadow: none;
 }
 
-/* טאבים של קטגוריות */
-.category-tabs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+/* ====== Section Headers - Newspaper Style ====== */
+.news-section {
     margin-bottom: 25px;
-    padding: 12px 0;
-    border-bottom: 2px solid #eee;
 }
 
-.cat-tab {
-    background: #f5f1e8;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-family: 'Heebo', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
+.news-section h3 {
+    font-family: 'David Libre', 'Frank Ruhl Libre', serif;
+    font-size: 1.4rem;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 3px double #1a1a1a;
     display: flex;
     align-items: center;
-    gap: 6px;
-    color: #555;
+    gap: 8px;
 }
 
-.cat-tab:hover {
-    background: #e8e0d4;
-    border-color: #bbb;
+.news-section h3 i {
+    color: #c41e3a;
+    font-size: 16px;
 }
 
-.cat-tab.active {
-    background: #0038b8;
-    color: white;
-    border-color: #0038b8;
+/* ====== Today's News Section ====== */
+.news-section-highlight {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 25px;
 }
 
-.cat-tab i {
-    font-size: 12px;
+.news-section-highlight h3 {
+    color: #c41e3a;
+    border-bottom-color: #c41e3a;
 }
 
-/* תגי קטגוריה */
-.category-badge {
-    display: inline-block;
-    font-size: 10px;
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0;
+}
+
+.news-card {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+    border-radius: 0;
+    padding: 12px 14px;
+    transition: background-color 0.15s;
+    box-shadow: none;
+    border-right: none;
+}
+
+.news-card:hover {
+    background-color: #f5f2ea;
+    box-shadow: none;
+    transform: none;
+}
+
+.news-card-with-image {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.news-card-image {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #ddd;
+}
+
+.news-card-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-card a {
+    color: #1a1a1a;
+    text-decoration: none;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 14px;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-right: 4px;
-    vertical-align: middle;
+    line-height: 1.35;
 }
 
-/* ציוצים משובצים בתוך כתבות (legacy) */
-.embedded-tweet {
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 10px;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+.news-card a:hover {
+    color: #c41e3a;
 }
 
-/* ====== Social Media Posts Grid ====== */
+.news-summary {
+    color: #555;
+    font-size: 12px;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.news-source {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #999;
+}
+
+.news-source i {
+    font-size: 10px;
+    margin-left: 3px;
+}
+
+/* ====== Events - Two Column Newspaper Layout ====== */
+.events-columns {
+    column-count: 2;
+    column-gap: 30px;
+    column-rule: 1px solid #999;
+}
+
+.news-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #ddd;
+    break-inside: avoid;
+    animation: none;
+}
+
+.news-item:last-child {
+    border-bottom: none;
+}
+
+.event-year-badge {
+    background: #1a1a1a;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 3px 8px;
+    border-radius: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'Frank Ruhl Libre', serif;
+    box-shadow: none;
+    min-width: 44px;
+    text-align: center;
+}
+
+.event-body {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+}
+
+.event-thumb {
+    width: 55px;
+    height: 55px;
+    border-radius: 0;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #ccc;
+}
+
+.event-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-item h4 {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    margin-bottom: 3px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.event-extract {
+    color: #555;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    margin-top: 3px;
+}
+
+.event-meta {
+    color: #999;
+    font-size: 0.78rem;
+    margin-top: 3px;
+}
+
+/* ====== Social Media Posts ====== */
 .social-posts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
 }
 
-/* ====== Social Media Posts - Platform Specific ====== */
 .social-post {
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 10px 12px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #ddd;
     background: #fff;
-    transition: box-shadow 0.2s;
-    max-width: 340px;
+    transition: box-shadow 0.15s;
     font-size: 12px;
 }
 
 .social-post:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
 .social-post-header {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
 }
 
 .social-avatar {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 15px;
+    font-size: 14px;
     margin-left: 8px;
     flex-shrink: 0;
 }
@@ -307,90 +601,78 @@ body {
 
 .social-author-info strong {
     display: block;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.3;
 }
 
 .social-author-info span {
     color: #657786;
-    font-size: 11px;
+    font-size: 10px;
 }
 
 .social-platform-badge {
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: 6px;
 }
 
 .social-post-body {
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.5;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
     color: #1a1a1a;
 }
 
 .social-post-actions {
     display: flex;
-    gap: 18px;
+    gap: 16px;
     color: #657786;
-    font-size: 11px;
-    padding-top: 8px;
+    font-size: 10px;
+    padding-top: 6px;
     border-top: 1px solid #eee;
 }
 
 .social-post-actions span {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     cursor: default;
-    transition: color 0.15s;
 }
 
 /* Twitter/X */
 .social-twitter {
     background: #fff;
     border: 1px solid #cfd9de;
-    border-radius: 12px;
     border-top: 3px solid #1d9bf0;
 }
 
-.social-twitter .social-post-actions span:hover {
-    color: #1d9bf0;
-}
+.social-twitter .social-post-actions span:hover { color: #1d9bf0; }
 
 /* Facebook */
 .social-facebook {
     background: #fff;
     border: 1px solid #dddfe2;
-    border-radius: 8px;
     border-top: 3px solid #1877f2;
 }
 
 .social-facebook .social-post-header {
-    padding-bottom: 10px;
+    padding-bottom: 7px;
     border-bottom: 1px solid #eee;
-    margin-bottom: 10px;
+    margin-bottom: 7px;
 }
 
 .social-facebook .social-post-actions {
     border-top: 1px solid #dddfe2;
-    padding-top: 10px;
+    padding-top: 7px;
     justify-content: space-around;
 }
 
-.social-facebook .social-post-actions span {
-    font-weight: 600;
-    color: #65676b;
-}
-
-.social-facebook .social-post-actions span:hover {
-    color: #1877f2;
-}
+.social-facebook .social-post-actions span { font-weight: 600; color: #65676b; }
+.social-facebook .social-post-actions span:hover { color: #1877f2; }
 
 /* Instagram */
 .social-instagram {
     background: #fff;
     border: 1px solid #dbdbdb;
-    border-radius: 8px;
     position: relative;
     overflow: hidden;
 }
@@ -407,204 +689,50 @@ body {
 
 .social-instagram .social-avatar {
     background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important;
-    border: 2px solid transparent;
 }
 
-.social-instagram .social-post-actions {
-    border-top: 1px solid #efefef;
-}
+.social-instagram .social-post-actions { border-top: 1px solid #efefef; }
+.social-instagram .social-post-actions span:hover { color: #ed4956; }
 
-.social-instagram .social-post-actions span:hover {
-    color: #ed4956;
-}
-
-.event-extract {
-    color: #555;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-top: 5px;
-}
-
-.event-meta {
-    color: #888;
-    font-size: 0.85rem;
-    margin-top: 5px;
-}
-
-.historical-tweet {
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
-}
-
-.historical-tweet:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.tweet-header {
+/* ====== Person Cards (Births/Deaths) ====== */
+.columns {
     display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+    gap: 0;
+    margin-bottom: 25px;
 }
 
-.tweet-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-left: 10px;
-    object-fit: cover;
-    border: 2px solid #ddd;
-}
-
-.tweet-author {
-    flex-grow: 1;
-}
-
-.tweet-author strong {
-    display: block;
-    font-size: 15px;
-}
-
-.tweet-author span {
-    color: #657786;
-    font-size: 13px;
-}
-
-.tweet-icon {
-    font-size: 20px;
-}
-
-.tweet-content {
-    font-size: 15px;
-    line-height: 1.5;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.tweet-ago {
-    font-size: 12px;
-    color: #888;
-    margin-top: 4px;
-}
-
-.tweet-stats {
-    display: flex;
-    gap: 18px;
-    color: #657786;
-    font-size: 13px;
-}
-
-.tweet-stats i {
-    margin-left: 4px;
-}
-
-/* עמודות עיתון לאירועים */
-.events-columns {
-    column-count: 2;
-    column-gap: 35px;
-    column-rule: 1px solid #ccc;
-}
-
-/* אירועים עם תמונות */
-.news-item {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid #ddd;
-    break-inside: avoid;
-}
-
-.news-item:last-child {
-    border-bottom: none;
-}
-
-.event-year-badge {
-    background: linear-gradient(135deg, #0038b8, #1a5fd4);
-    color: white;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 4px 10px;
-    border-radius: 4px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-family: 'Frank Ruhl Libre', serif;
-    box-shadow: 0 2px 6px rgba(0, 56, 184, 0.2);
-}
-
-.event-body {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
+.column {
     flex: 1;
-    min-width: 0;
 }
 
-.event-thumb {
-    width: 60px;
-    height: 60px;
-    border-radius: 6px;
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 1px solid #ddd;
+.column:first-child {
+    padding-left: 20px;
+    border-left: 1px solid #999;
 }
 
-.event-text {
-    flex: 1;
-    min-width: 0;
+.column:last-child {
+    padding-right: 20px;
 }
 
-.news-item h4 {
-    font-size: 1.1rem;
-    color: #222;
-    margin-bottom: 5px;
-    line-height: 1.4;
-}
-
-.news-item p {
-    color: #444;
-    font-size: 1rem;
-    text-align: justify;
-}
-
-/* תג שפה */
-.lang-tag {
-    display: inline-block;
-    background-color: #e3f2fd;
-    color: #1565c0;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 3px;
-    margin-right: 4px;
-    vertical-align: middle;
-}
-
-/* כרטיסי אנשים (לידות/פטירות) */
 .person-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 0;
+    gap: 10px;
+    padding: 8px 0;
 }
 
 .person-thumb {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid #ddd;
+    border: 1px solid #ccc;
 }
 
 .person-thumb-placeholder {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background-color: #e8e0d4;
     display: flex;
@@ -612,7 +740,7 @@ body {
     justify-content: center;
     flex-shrink: 0;
     color: #999;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .person-info {
@@ -622,89 +750,57 @@ body {
 
 .person-info strong {
     display: block;
-    font-size: 14px;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 13px;
     line-height: 1.3;
 }
 
 .person-year {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color: #888;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
-/* עמודות */
-.columns {
-    display: flex;
-    gap: 40px;
-    margin-bottom: 30px;
-}
-
-.column {
-    flex: 1;
-}
-
-/* קטעי חדשות */
-.news-section {
-    margin-bottom: 30px;
-}
-
-.news-section h3 {
-    font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.5rem;
-    color: #222;
-    margin-bottom: 15px;
-    padding-bottom: 8px;
-    border-bottom: 3px solid #0038b8;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.news-section h3 i {
-    color: #0038b8;
-}
-
-/* ימי הולדת */
+/* Birthdays */
 .birthdays {
-    background-color: #fff9f0;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #ffd8b2;
+    background-color: transparent;
+    padding: 0 10px;
+    border-radius: 0;
+    border: none;
 }
 
 .birthday-item {
-    border-bottom: 1px dashed #ffd8b2;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .birthday-item:last-child {
     border-bottom: none;
 }
 
-/* פטירות */
 .deaths-list {
-    background-color: #f8f8f8;
-    border-color: #ddd;
+    background-color: transparent;
+    border-color: transparent;
 }
 
 .deaths-list .birthday-item {
     border-bottom-color: #e0e0e0;
 }
 
-/* חגים */
+/* ====== Holidays ====== */
 .holidays-list {
-    background: linear-gradient(135deg, #fffde7, #fff8e1);
-    border: 1px solid #ffecb3;
-    border-radius: 8px;
-    padding: 15px;
+    background: #fffde7;
+    border: 1px solid #f0e68c;
+    border-radius: 0;
+    padding: 12px;
 }
 
 .holiday-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px dashed #ffecb3;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0e68c;
 }
 
 .holiday-item:last-child {
@@ -712,64 +808,12 @@ body {
 }
 
 .holiday-star {
-    color: #ffd700;
-    font-size: 16px;
+    color: #d4a017;
+    font-size: 14px;
     flex-shrink: 0;
 }
 
-/* חדשות */
-.news-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-}
-
-.news-card {
-    background-color: #fffdf7;
-    border: 1px solid #e8dcc8;
-    border-right: 3px solid #b8860b;
-    border-radius: 8px;
-    padding: 15px;
-    transition: box-shadow 0.2s, transform 0.2s;
-    box-shadow: 0 1px 4px rgba(184, 134, 11, 0.08);
-}
-
-.news-card:hover {
-    box-shadow: 0 4px 16px rgba(184, 134, 11, 0.15);
-    transform: translateY(-1px);
-}
-
-.news-card a {
-    color: #222;
-    text-decoration: none;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-.news-card a:hover {
-    color: #0038b8;
-}
-
-.news-summary {
-    color: #666;
-    font-size: 13px;
-    margin-top: 8px;
-    line-height: 1.4;
-}
-
-.news-source {
-    display: inline-block;
-    margin-top: 8px;
-    font-size: 11px;
-    color: #999;
-}
-
-.news-source i {
-    font-size: 10px;
-    margin-left: 3px;
-}
-
-/* אירועים עתיקים */
+/* ====== Ancient Events ====== */
 .ancient-section h3 {
     border-bottom-color: #8d6e37;
 }
@@ -781,16 +825,20 @@ body {
 .ancient-events-list {
     background: linear-gradient(135deg, #faf7f0, #f5efe3);
     border: 1px solid #e0d5c0;
-    border-radius: 8px;
-    padding: 15px;
+    border-radius: 0;
+    padding: 12px;
+    column-count: 2;
+    column-gap: 25px;
+    column-rule: 1px solid #d8cdb7;
 }
 
 .ancient-event-item {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: flex-start;
-    padding: 12px 0;
+    padding: 8px 0;
     border-bottom: 1px dashed #d8cdb7;
+    break-inside: avoid;
 }
 
 .ancient-event-item:last-child {
@@ -798,75 +846,75 @@ body {
 }
 
 .ancient-year {
-    background: linear-gradient(135deg, #8d6e37, #b08d4f);
+    background: #8d6e37;
     color: white;
     font-weight: 700;
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 4px;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 0;
     white-space: nowrap;
     flex-shrink: 0;
     font-family: 'Frank Ruhl Libre', serif;
-    min-width: 80px;
+    min-width: 70px;
     text-align: center;
 }
 
 .ancient-text {
     flex: 1;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.45;
     color: #444;
 }
 
-/* טיימליין */
+/* ====== Timeline ====== */
 .timeline {
     list-style-type: none;
-    padding-right: 20px;
-    position: relative;
+    padding-right: 15px;
+    column-count: 2;
+    column-gap: 25px;
+    column-rule: 1px solid #ddd;
 }
 
 .timeline li {
-    padding: 10px 0;
-    padding-right: 30px;
+    padding: 6px 0;
+    padding-right: 0;
     position: relative;
     border-bottom: 1px dashed #eee;
+    font-size: 13px;
+    break-inside: avoid;
 }
 
 .timeline li:before {
-    content: "";
-    color: #0038b8;
-    font-size: 24px;
-    position: absolute;
-    right: 0;
-    top: 10px;
+    display: none;
 }
 
 .timeline li strong {
-    color: #0038b8;
+    color: #c41e3a;
+    font-family: 'Frank Ruhl Libre', serif;
 }
 
-/* באנר פרימיום */
+/* ====== Premium Banner ====== */
 .premium-banner {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border-radius: 12px;
-    padding: 30px;
-    margin-top: 30px;
+    background: #1a1a1a;
+    border-radius: 0;
+    padding: 25px;
+    margin-top: 25px;
     color: white;
     transition: box-shadow 0.3s;
 }
 
 .premium-banner.highlight {
-    box-shadow: 0 0 0 4px #ffd700, 0 0 30px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 0 3px #ffd700, 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
 .premium-inner {
     display: flex;
     align-items: center;
-    gap: 25px;
+    gap: 20px;
 }
 
 .premium-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
     color: #ffd700;
     flex-shrink: 0;
 }
@@ -876,30 +924,32 @@ body {
 }
 
 .premium-text h3 {
-    font-size: 1.4rem;
-    margin-bottom: 8px;
+    font-size: 1.3rem;
+    margin-bottom: 6px;
     color: #ffd700;
+    font-family: 'Frank Ruhl Libre', serif;
+    border-bottom: none;
 }
 
 .premium-text p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #ccc;
     line-height: 1.5;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .premium-features {
     display: flex;
-    gap: 20px;
+    gap: 18px;
     flex-wrap: wrap;
 }
 
 .premium-features span {
-    font-size: 13px;
+    font-size: 12px;
     color: #aaa;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
 }
 
 .premium-features i {
@@ -907,12 +957,12 @@ body {
 }
 
 .premium-btn {
-    background: linear-gradient(135deg, #ffd700, #ffab00);
-    color: #1a1a2e;
+    background: #ffd700;
+    color: #1a1a1a;
     border: none;
-    padding: 14px 28px;
-    border-radius: 8px;
-    font-size: 16px;
+    padding: 12px 24px;
+    border-radius: 0;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     font-family: 'Heebo', sans-serif;
@@ -922,64 +972,11 @@ body {
 }
 
 .premium-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+    transform: scale(1.03);
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
 }
 
-/* כפתורי ניווט */
-.controls {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-
-.control-btn {
-    background-color: #0038b8;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-family: 'Heebo', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.control-btn:hover {
-    background-color: #004de6;
-}
-
-.today-btn {
-    background-color: #333;
-}
-
-.today-btn:hover {
-    background-color: #555;
-}
-
-/* כפתור נעול */
-.nav-btn .lock-icon {
-    font-size: 11px;
-    margin-right: 4px;
-}
-
-.nav-btn.locked {
-    background-color: #999;
-    cursor: not-allowed;
-    position: relative;
-}
-
-.nav-btn.locked:hover {
-    background-color: #888;
-}
-
-/* טעינה */
+/* ====== Loading ====== */
 .loading-indicator {
     text-align: center;
     padding: 60px 20px;
@@ -994,7 +991,7 @@ body {
 
 .spinner {
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #0038b8;
+    border-top: 4px solid #c41e3a;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -1007,7 +1004,7 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* שגיאה */
+/* ====== Error ====== */
 .error-message {
     display: flex;
     flex-direction: column;
@@ -1022,139 +1019,26 @@ body {
     font-size: 2rem;
 }
 
-/* קישורים */
-.read-more {
-    display: inline-block;
-    margin-top: 15px;
-    color: #0038b8;
-    font-weight: 700;
-    text-decoration: none;
-    border-bottom: 2px solid #0038b8;
-    padding-bottom: 2px;
-    transition: color 0.3s;
-}
-
-.read-more:hover {
-    color: #004de6;
-}
-
-.item-link {
-    display: inline-block;
-    color: #0038b8;
-    font-size: 0.9rem;
-    text-decoration: none;
-}
-
-.item-link:hover {
-    text-decoration: underline;
-}
-
-.no-events {
-    color: #999;
-    font-style: italic;
-    text-align: center;
-    padding: 20px;
-}
-
-/* קונטיינר ציוצים */
-.tweets-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.tweet-avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    background-color: #1da1f2;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 18px;
-    margin-left: 10px;
-    flex-shrink: 0;
-}
-
-/* קישורים בימי הולדת */
-.birthday-item a {
-    color: #222;
-    text-decoration: none;
-}
-
-.birthday-item a:hover {
-    color: #0038b8;
-    text-decoration: underline;
-}
-
-/* אפקט נייר ישן */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(rgba(255, 255, 255, 0.8) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.8) 1px, transparent 1px);
-    background-size: 20px 20px;
-    pointer-events: none;
-    z-index: -1;
-    opacity: 0.3;
-}
-
-/* אנימציות */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.news-item {
-    animation: fadeInUp 0.4s ease-out both;
-}
-
-.news-item:nth-child(1) { animation-delay: 0s; }
-.news-item:nth-child(2) { animation-delay: 0.05s; }
-.news-item:nth-child(3) { animation-delay: 0.1s; }
-.news-item:nth-child(4) { animation-delay: 0.15s; }
-.news-item:nth-child(5) { animation-delay: 0.2s; }
-
-/* פוטר */
+/* ====== Footer ====== */
 .newspaper-footer {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 4px solid #0038b8;
-    position: relative;
+    margin-top: 0;
+    padding: 20px 30px;
+    border-top: 3px double #1a1a1a;
+    background: #f5f2ea;
 }
 
 .newspaper-footer::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #0038b8;
+    display: none;
 }
 
 .footer-line {
-    height: 1px;
-    background: linear-gradient(to right, transparent, #333, transparent);
-    margin-bottom: 30px;
+    display: none;
 }
 
 .footer-content {
     display: flex;
-    gap: 40px;
-    margin-bottom: 30px;
+    gap: 30px;
+    margin-bottom: 20px;
 }
 
 .footer-section {
@@ -1162,53 +1046,168 @@ body::before {
 }
 
 .footer-section h4 {
-    font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.2rem;
-    color: #222;
-    margin-bottom: 10px;
+    font-family: 'David Libre', 'Frank Ruhl Libre', serif;
+    font-size: 1.1rem;
+    color: #1a1a1a;
+    margin-bottom: 8px;
 }
 
 .footer-section p {
     color: #666;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     line-height: 1.5;
 }
 
 .copyright {
     text-align: center;
-    font-size: 14px;
-    color: #888;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #999;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
 }
 
-/* ===== רספונסיביות ===== */
+/* ====== Misc ====== */
+.no-events {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 15px;
+}
+
+.read-more {
+    display: inline-block;
+    margin-top: 10px;
+    color: #c41e3a;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid #c41e3a;
+    padding-bottom: 1px;
+    font-size: 13px;
+}
+
+.read-more:hover {
+    color: #a01830;
+}
+
+.lang-tag {
+    display: inline-block;
+    background-color: #e3f2fd;
+    color: #1565c0;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-right: 3px;
+    vertical-align: middle;
+}
+
+/* ====== Section Divider ====== */
+.section-divider {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 5px 0 20px;
+}
+
+/* ====== Breaking News Ticker ====== */
+.breaking-ticker {
+    background: #c41e3a;
+    color: white;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.breaking-label {
+    background: #fff;
+    color: #c41e3a;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.breaking-text {
+    white-space: nowrap;
+    animation: ticker 25s linear infinite;
+    font-family: 'Frank Ruhl Libre', serif;
+}
+
+@keyframes ticker {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ====== Responsive ====== */
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+        margin: 0;
+    }
+
+    .masthead {
+        flex-direction: column;
+        padding: 12px 15px 8px;
+        gap: 4px;
+    }
+
+    .masthead-side {
+        align-items: center !important;
+        text-align: center !important;
+    }
+
+    .masthead-center {
+        padding: 0;
     }
 
     .newspaper-title {
-        font-size: 3rem;
+        font-size: 2.8rem;
+    }
+
+    .header-double-line {
+        margin: 0 10px;
+    }
+
+    .controls {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .control-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .content-area {
+        padding: 15px;
     }
 
     .columns {
         flex-direction: column;
-        gap: 20px;
+    }
+
+    .column:first-child {
+        border-left: none;
+        padding-left: 0;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 15px;
+    }
+
+    .column:last-child {
+        padding-right: 0;
     }
 
     .footer-content {
         flex-direction: column;
-        gap: 20px;
-    }
-
-    .date-line {
-        flex-direction: column;
-        gap: 5px;
+        gap: 15px;
     }
 
     .main-headline h2 {
-        font-size: 1.8rem;
+        font-size: 1.7rem;
     }
 
     .headline-layout {
@@ -1224,27 +1223,46 @@ body::before {
     }
 
     .category-tabs {
-        gap: 6px;
+        gap: 0;
+        overflow-x: auto;
+        flex-wrap: nowrap;
     }
 
     .cat-tab {
-        padding: 6px 12px;
+        padding: 8px 12px;
         font-size: 12px;
-    }
-
-    .controls {
-        gap: 8px;
-    }
-
-    .control-btn {
-        padding: 8px 14px;
-        font-size: 13px;
+        white-space: nowrap;
     }
 
     .stats-bar {
-        gap: 12px;
-        font-size: 12px;
-        padding: 10px 12px;
+        gap: 10px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .events-columns {
+        column-count: 1;
+    }
+
+    .ancient-events-list {
+        column-count: 1;
+    }
+
+    .timeline {
+        column-count: 1;
+    }
+
+    .social-posts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .news-item {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .event-year-badge {
+        align-self: flex-start;
     }
 
     .premium-inner {
@@ -1256,21 +1274,16 @@ body::before {
         justify-content: center;
     }
 
-    .events-columns {
-        column-count: 1;
+    .breaking-ticker {
+        font-size: 12px;
+        padding: 6px 10px;
     }
 
-    .social-posts-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .news-item {
+    .subtitle-bar {
         flex-direction: column;
-        gap: 8px;
-    }
-
-    .event-year-badge {
-        align-self: flex-start;
+        gap: 2px;
+        padding: 4px 15px;
+        text-align: center;
     }
 }
 
@@ -1280,26 +1293,26 @@ body::before {
     }
 
     .main-headline h2 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
     .headline-meta {
         flex-direction: column;
-        gap: 5px;
+        gap: 4px;
     }
 
     .main-headline {
-        padding: 15px;
+        padding: 12px 0;
     }
 
     .event-thumb {
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
     }
 
     .person-thumb,
     .person-thumb-placeholder {
-        width: 38px;
-        height: 38px;
+        width: 35px;
+        height: 35px;
     }
 }
