@@ -75,10 +75,16 @@
                 <div id="newsContent"></div>
             </section>
 
-            <!-- אירועים עם ציוצים משובצים -->
+            <!-- אירועים היסטוריים - שתי עמודות -->
             <section class="news-section">
                 <h3><i class="fas fa-landmark"></i> אירועים היסטוריים</h3>
                 <div id="eventsContent"></div>
+            </section>
+
+            <!-- ציוצים היסטוריים -->
+            <section id="socialSection" class="news-section" style="display:none;">
+                <h3><i class="fab fa-x-twitter"></i> ציוצים היסטוריים</h3>
+                <div id="socialContent"></div>
             </section>
 
             <!-- חגים ומועדים -->
@@ -516,6 +522,7 @@
         renderMainHeadline();
         renderNews();
         renderEvents();
+        renderSocialPosts();
         renderBirths();
         renderDeaths();
         renderHolidays();
@@ -618,28 +625,12 @@
             return;
         }
 
-        // Build a map of social posts by eventYear
-        const tweetsByYear = {};
-        (allData.socialPosts || []).forEach(post => {
-            const yr = post.eventYear || post.year;
-            if (!tweetsByYear[yr]) tweetsByYear[yr] = [];
-            tweetsByYear[yr].push(post);
-        });
-
-        container.innerHTML = events.map(ev => {
+        container.innerHTML = '<div class="events-columns">' + events.map(ev => {
             const ago = yearsAgo(ev.year);
             const catBadge = getCategoryBadge(ev.category);
             const thumb = ev.thumbnail
                 ? `<img src="${escapeHtml(ev.thumbnail)}" class="event-thumb" alt="" onerror="this.style.display='none'">`
                 : '';
-
-            // Embedded social post for this event
-            let tweetHtml = '';
-            const tweets = tweetsByYear[ev.year];
-            if (tweets && tweets.length > 0) {
-                const post = tweets.shift();
-                tweetHtml = buildSocialPostHtml(post);
-            }
 
             return `
                 <article class="news-item">
@@ -650,12 +641,27 @@
                             <h4>${escapeHtml(ev.text)} ${catBadge}</h4>
                             ${ev.extract ? `<p class="event-extract">${escapeHtml(ev.extract.length > 200 ? ev.extract.substring(0, 200) + '...' : ev.extract)}</p>` : ''}
                             <p class="event-meta">${ago}</p>
-                            ${tweetHtml}
                         </div>
                     </div>
                 </article>
             `;
-        }).join('');
+        }).join('') + '</div>';
+    }
+
+    function renderSocialPosts() {
+        const section = document.getElementById('socialSection');
+        const container = document.getElementById('socialContent');
+        const posts = allData.socialPosts || [];
+
+        if (posts.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = '';
+        container.innerHTML = '<div class="social-posts-grid">' +
+            posts.map(post => buildSocialPostHtml(post)).join('') +
+            '</div>';
     }
 
     function renderBirths() {
@@ -823,6 +829,42 @@
         }).join('');
     }
 
+    // ====== Auto-refresh: poll for updated data from background collector ======
+    let refreshAttempts = 0;
+    const MAX_REFRESH = 12; // 12 * 30s = 6 minutes max
+
+    function startAutoRefresh() {
+        if (refreshAttempts >= MAX_REFRESH) return;
+
+        setTimeout(async () => {
+            refreshAttempts++;
+            try {
+                const resp = await fetch('today.json?_=' + Date.now());
+                if (!resp.ok) return startAutoRefresh();
+                const data = await resp.json();
+
+                // Check if this data has translations or social posts (DeepSeek ran)
+                const hasTranslations = data.stats && data.stats.translated > 0;
+                const hasSocialPosts = data.socialPosts && data.socialPosts.length > 0;
+                const hasAncient = data.ancientEvents && data.ancientEvents.length > 0;
+
+                const currentHas = allData && allData.socialPosts && allData.socialPosts.length > 0;
+
+                if ((hasTranslations || hasSocialPosts || hasAncient) && !currentHas) {
+                    console.log('Auto-refresh: updated data with translations/posts detected, re-rendering');
+                    if (!data.sourceStats) data.sourceStats = data.stats || { he: 0, en: 0 };
+                    allData = data;
+                    renderAll();
+                    return; // stop refreshing
+                }
+            } catch (e) {
+                console.log('Auto-refresh check failed:', e.message);
+            }
+
+            if (refreshAttempts < MAX_REFRESH) startAutoRefresh();
+        }, 30000);
+    }
+
     // ====== Init ======
     document.addEventListener('DOMContentLoaded', function () {
         if (!isSubscriber) {
@@ -840,7 +882,13 @@
         initCategoryTabs();
         currentDate = new Date();
         updateDateDisplay();
-        loadEventsForDate();
+        loadEventsForDate().then(() => {
+            // Start auto-refresh if data seems incomplete (no translations/social posts)
+            if (allData && (!allData.socialPosts || allData.socialPosts.length === 0)) {
+                console.log('Starting auto-refresh to wait for background collector...');
+                startAutoRefresh();
+            }
+        });
     });
     </script>
 </body>

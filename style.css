@@ -258,16 +258,22 @@ body {
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 
+/* ====== Social Media Posts Grid ====== */
+.social-posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
 /* ====== Social Media Posts - Platform Specific ====== */
 .social-post {
     border-radius: 12px;
     padding: 10px 12px;
-    margin-top: 10px;
     border: 1px solid #e0e0e0;
     background: #fff;
     transition: box-shadow 0.2s;
-    max-width: 380px;
-    font-size: 13px;
+    max-width: 340px;
+    font-size: 12px;
 }
 
 .social-post:hover {
@@ -496,14 +502,22 @@ body {
     margin-left: 4px;
 }
 
+/* עמודות עיתון לאירועים */
+.events-columns {
+    column-count: 2;
+    column-gap: 35px;
+    column-rule: 1px solid #ccc;
+}
+
 /* אירועים עם תמונות */
 .news-item {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     align-items: flex-start;
-    margin-bottom: 20px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #ddd;
+    break-inside: avoid;
 }
 
 .news-item:last-child {
@@ -1240,6 +1254,14 @@ body::before {
 
     .premium-features {
         justify-content: center;
+    }
+
+    .events-columns {
+        column-count: 1;
+    }
+
+    .social-posts-grid {
+        grid-template-columns: 1fr;
     }
 
     .news-item {
