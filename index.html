@@ -194,6 +194,9 @@
     };
 
     const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12 };
+    const TOP_HEADLINES_LIMIT = 4;
+    const NEWS_LIMIT = 10;
+    const SOCIAL_LIMIT = 6;
 
     const CATEGORY_LABELS = {
         israel: 'ישראל',
@@ -660,14 +663,13 @@
         if (activeCategory !== 'all') {
             events = events.filter(e => e.category === activeCategory);
         }
-        events = events.slice(0, LIMITS.EVENTS);
 
         if (events.length === 0) {
             container.innerHTML = `<p class="no-events">לא נמצאו אירועים בקטגוריה זו.</p>`;
             return;
         }
 
-        container.innerHTML = '<div class="events-columns">' + events.map(ev => {
+        const renderEventCard = (ev) => {
             const ago = yearsAgo(ev.year);
             const catBadge = getCategoryBadge(ev.category);
             const thumb = ev.thumbnail
@@ -687,7 +689,30 @@
                     </div>
                 </article>
             `;
-        }).join('') + '</div>';
+        };
+
+        const topHeadlines = events.slice(0, TOP_HEADLINES_LIMIT);
+        const fullEvents = events.slice(TOP_HEADLINES_LIMIT, LIMITS.EVENTS);
+        const hasMoreEvents = events.length > LIMITS.EVENTS;
+
+        container.innerHTML = `
+            <div class="events-top-headlines">
+                <h4>כותרות עליונות</h4>
+                <div class="events-columns">
+                    ${topHeadlines.map(renderEventCard).join('')}
+                </div>
+                ${events.length > TOP_HEADLINES_LIMIT ? '<a href="#events-full-list" class="read-more">עוד אירועים</a>' : ''}
+            </div>
+            ${fullEvents.length > 0 ? `
+                <div class="events-full-list" id="events-full-list">
+                    <h4>הרשימה המלאה</h4>
+                    <div class="events-columns">
+                        ${fullEvents.map(renderEventCard).join('')}
+                    </div>
+                    ${hasMoreEvents ? '<span class="read-more">עוד...</span>' : ''}
+                </div>
+            ` : ''}
+        `;
     }
 
     function renderSocialPosts() {
@@ -701,9 +726,11 @@
         }
 
         section.style.display = '';
+        const visiblePosts = posts.slice(0, SOCIAL_LIMIT);
         container.innerHTML = '<div class="social-posts-grid">' +
-            posts.map(post => buildSocialPostHtml(post)).join('') +
-            '</div>';
+            visiblePosts.map(post => buildSocialPostHtml(post)).join('') +
+            '</div>' +
+            (posts.length > SOCIAL_LIMIT ? '<span class="read-more">עוד...</span>' : '');
     }
 
     function renderBirths() {
@@ -796,7 +823,7 @@
         };
 
         container.innerHTML = '<div class="news-list">' +
-            news.slice(0, 10).map(n => {
+            news.slice(0, NEWS_LIMIT).map(n => {
                 const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
                 const hasImage = n.image && n.image.startsWith('http');
 
@@ -825,7 +852,8 @@
                     <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
                 </div>`;
             }).join('') +
-            '</div>';
+            '</div>' +
+            (news.length > NEWS_LIMIT ? '<span class="read-more">עוד...</span>' : '');
     }
 
     function renderAncientEvents() {
