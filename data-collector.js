@@ -31,15 +31,20 @@ const CONFIG = {
 // ====== Category Classification ======
 const CATEGORY_KEYWORDS = {
     israel: {
-        keywords: ['ישראל', 'ירושלים', 'תל אביב', 'תל-אביב', 'חיפה', 'צה"ל', 'צהל',
+        strongIsraelSignals: ['ישראל', 'ירושלים', 'תל אביב', 'תל-אביב', 'חיפה', 'צה"ל', 'צהל',
             'כנסת', 'ציונ', 'מנדט', 'גולן', 'נגב', 'גליל',
             'יהודה', 'שומרון', 'באר שבע', 'אילת', 'רמת גן', 'בני ברק', 'נתניה',
             'הגנה', 'אצ"ל', 'לח"י', 'מוסד', 'שב"כ', 'עליי',
             'israel', 'israeli', 'jerusalem', 'tel aviv', 'haifa', 'idf', 'knesset',
             'zionist', 'kibbutz', 'mossad', 'yishuv', 'aliyah', 'judea', 'samaria',
             'negev', 'galilee', 'golan', 'eilat', 'beersheba'],
-        weakKeywords: ['jewish', 'hebrew', 'zion', 'palestine', 'mandate',
+        contextualSignals: ['jewish', 'hebrew', 'zion', 'palestine', 'mandate',
             'holocaust', 'שואה', 'יהוד', 'עברי', 'nazareth', 'bethlehem', 'jaffa', 'פלשתינ'],
+        globalContextBlacklist: [
+            'jewish community in', 'american jewish', 'british jew', 'french jew',
+            'german jew', 'diaspora', 'brooklyn', 'new york', 'london synagogue',
+            'anti-semit', 'european jewish', 'holocaust in europe'
+        ],
         label: 'ישראל'
     },
     politics: {
@@ -89,18 +94,43 @@ const CATEGORY_KEYWORDS = {
     }
 };
 
+function getIsraelClassification(text) {
+    const config = CATEGORY_KEYWORDS.israel;
+    const strongSignalHits = config.strongIsraelSignals
+        .filter(kw => text.includes(kw.toLowerCase()));
+    const contextualSignalHits = config.contextualSignals
+        .filter(kw => text.includes(kw.toLowerCase()));
+    const blacklistHits = config.globalContextBlacklist
+        .filter(kw => text.includes(kw.toLowerCase()));
+
+    return {
+        strongSignalHits,
+        contextualSignalHits,
+        blacklistHits,
+        strongCount: strongSignalHits.length,
+        contextualCount: contextualSignalHits.length,
+        hasStrongSignal: strongSignalHits.length > 0,
+        isIsraeliVerified: strongSignalHits.length > 0 && blacklistHits.length === 0
+    };
+}
+
 function classifyEvent(event) {
     const text = ((event.text || '') + ' ' + (event.pageTitle || '')).toLowerCase();
+    const israelClassification = getIsraelClassification(text);
 
     let bestCategory = 'general';
     let bestScore = 0;
 
     for (const [cat, config] of Object.entries(CATEGORY_KEYWORDS)) {
         let score = 0;
-        for (const kw of config.keywords) {
+
+        const primaryKeywords = config.keywords || config.strongIsraelSignals || [];
+        const secondaryKeywords = config.weakKeywords || config.contextualSignals || [];
+
+        for (const kw of primaryKeywords) {
             if (text.includes(kw.toLowerCase())) score += 2;
         }
-        for (const kw of (config.weakKeywords || [])) {
+        for (const kw of secondaryKeywords) {
             if (text.includes(kw.toLowerCase())) score += 1;
         }
         if (score > bestScore) {
@@ -109,10 +139,20 @@ function classifyEvent(event) {
         }
     }
 
-    // Require minimum score of 2 for Israel (at least one strong keyword)
-    if (bestCategory === 'israel' && bestScore < 2) return 'general';
+    // Israel can only be selected when at least one strong Israeli signal exists.
+    if (bestCategory === 'israel' && !israelClassification.hasStrongSignal) {
+        bestCategory = 'general';
+    }
 
-    return bestCategory;
+    if (bestCategory === 'israel' && israelClassification.blacklistHits.length > 0) {
+        bestCategory = 'general';
+    }
+
+    return {
+        category: bestCategory,
+        isIsraeliVerified: bestCategory === 'israel' && israelClassification.isIsraeliVerified,
+        israelSignals: israelClassification
+    };
 }
 
 // ====== HTTP Helpers ======
@@ -527,6 +567,7 @@ async function generateAncientEvents(month, day) {
                 text: e.text || '',
                 lang: 'he',
                 category: e.category || 'israel',
+                isIsraeliVerified: true,
                 isAncient: true,
                 thumbnail: null,
                 pageTitle: '',
@@ -649,7 +690,9 @@ async function collectDailyData() {
     const catCounts = {};
     for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
         for (const entry of (data[cat] || [])) {
-            entry.category = classifyEvent(entry);
+            const classification = classifyEvent(entry);
+            entry.category = classification.category;
+            entry.isIsraeliVerified = classification.isIsraeliVerified;
             catCounts[entry.category] = (catCounts[entry.category] || 0) + 1;
         }
     }
@@ -702,12 +745,12 @@ async function collectDailyData() {
     }
 
     // --- Step 9: Mark Israeli headline ---
-    // Prefer natively Hebrew Israeli events (more likely truly Israeli)
+    // Prefer natively Hebrew verified Israeli events (more likely truly Israeli)
     const israelHeadlineNative = data.events.find(e =>
-        e.category === 'israel' && e.lang === 'he' && !e.isAncient && e.originalLang !== 'en'
+        e.category === 'israel' && e.isIsraeliVerified && e.lang === 'he' && !e.isAncient && e.originalLang !== 'en'
     );
     const israelHeadlineAny = data.events.find(e =>
-        e.category === 'israel' && e.lang === 'he' && !e.isAncient
+        e.category === 'israel' && e.isIsraeliVerified && e.lang === 'he' && !e.isAncient
     );
     if (israelHeadlineNative) {
         data.headline = israelHeadlineNative;
@@ -776,4 +819,4 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { collectDailyData, saveData, getTodayParts };
+module.exports = { collectDailyData, saveData, getTodayParts, classifyEvent, getIsraelClassification };
