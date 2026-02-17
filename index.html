@@ -344,6 +344,43 @@
         return 'general';
     }
 
+    const CLIENT_TRANSLATION_GLOSSARY = {
+        war: 'מלחמה', battle: 'קרב', empire: 'אימפריה', king: 'מלך', queen: 'מלכה',
+        president: 'נשיא', minister: 'שר', israel: 'ישראל', jerusalem: 'ירושלים',
+        independence: 'עצמאות', revolution: 'מהפכה', born: 'נולד', died: 'נפטר',
+        treaty: 'הסכם', law: 'חוק', state: 'מדינה', city: 'עיר', army: 'צבא',
+        science: 'מדע', university: 'אוניברסיטה', olympic: 'אולימפי', football: 'כדורגל'
+    };
+
+    function clientTransliterateToken(token) {
+        const map = {
+            a: 'א', b: 'ב', c: 'ק', d: 'ד', e: 'ה', f: 'פ', g: 'ג', h: 'ה', i: 'י', j: 'ג׳',
+            k: 'ק', l: 'ל', m: 'מ', n: 'נ', o: 'ו', p: 'פ', q: 'ק', r: 'ר', s: 'ס', t: 'ט',
+            u: 'ו', v: 'ו', w: 'ו', x: 'קס', y: 'י', z: 'ז'
+        };
+        return token.toLowerCase().split('').map(ch => map[ch] || ch).join('');
+    }
+
+    function clientTranslateText(text) {
+        if (!text) return '';
+        return String(text).replace(/[A-Za-z][A-Za-z'’-]*/g, (word) => {
+            const key = word.toLowerCase();
+            if (CLIENT_TRANSLATION_GLOSSARY[key]) return CLIENT_TRANSLATION_GLOSSARY[key];
+            if (/^[A-Z][a-z]/.test(word) || word.length > 7) return clientTransliterateToken(word);
+            return word;
+        });
+    }
+
+    function clientTranslateEntry(entry) {
+        if (!entry || entry.lang !== 'en') return entry;
+        entry.text = clientTranslateText(entry.text);
+        if (entry.extract) entry.extract = clientTranslateText(entry.extract);
+        entry.originalLang = 'en';
+        entry.lang = 'he';
+        entry.translationMode = 'fallback';
+        return entry;
+    }
+
     async function loadFromLiveAPIs() {
         const m = currentDate.getMonth() + 1;
         const d = currentDate.getDate();
@@ -395,6 +432,14 @@
                 data.sourceStats.en += addUnique(data[cat], en[cat] || [], 'en');
             }
         }
+
+        for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
+            for (const entry of data[cat]) {
+                clientTranslateEntry(entry);
+            }
+        }
+
+        data.translationMode = 'fallback';
 
         // Classify and sort client-side
         for (const cat of ['events', 'births', 'deaths', 'selected']) {
@@ -588,11 +633,14 @@
     function renderStatsBar() {
         const bar = document.getElementById('statsBar');
         const israelCount = (allData.events || []).filter(e => e.category === 'israel').length;
+        const translationMode = allData.translationMode || (allData.stats && allData.stats.translated > 0 ? 'deepseek' : 'fallback');
+        const translationLabel = translationMode === 'deepseek' ? 'DeepSeek' : 'Fallback';
         bar.innerHTML = `
             <span><i class="fas fa-star-of-david"></i> ${israelCount} ישראל</span>
             <span><i class="fas fa-landmark"></i> ${allData.events.length} אירועים</span>
             <span><i class="fas fa-birthday-cake"></i> ${allData.births.length} לידות</span>
             <span><i class="fas fa-star-of-life"></i> ${allData.deaths.length} פטירות</span>
+            <span><i class="fas fa-language"></i> תרגום: ${translationLabel}</span>
             ${(allData.socialPosts || []).length > 0 ? `<span><i class="fab fa-x-twitter"></i> ${allData.socialPosts.length} ציוצים</span>` : ''}
             ${(allData.news || []).length > 0 ? `<span><i class="fas fa-newspaper"></i> ${allData.news.length} חדשות</span>` : ''}
         `;
