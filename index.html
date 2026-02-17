@@ -5,21 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>היום בהיסטוריה - העיתון היומי</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <!-- כותרת העיתון -->
+        <!-- Red top bar -->
+        <div class="top-red-bar"></div>
+
+        <!-- Newspaper Masthead -->
         <header class="newspaper-header">
-            <div class="date-line">
-                <span class="date" id="currentDate">טוען...</span>
-                <span class="hebrew-date" id="hebrewDate"></span>
-                <span class="edition">העיתון היומי של ההיסטוריה | מהדורה דיגיטלית</span>
+            <div class="masthead">
+                <div class="masthead-side masthead-right">
+                    <span class="hebrew-date" id="hebrewDate"></span>
+                    <span class="edition-info">מהדורה דיגיטלית</span>
+                </div>
+                <div class="masthead-center">
+                    <h1 class="newspaper-title">היום בהיסטוריה</h1>
+                </div>
+                <div class="masthead-side masthead-left">
+                    <span class="masthead-date" id="currentDate">טוען...</span>
+                    <span class="edition-info">גיליון יומי | חינם</span>
+                </div>
             </div>
-            <h1 class="newspaper-title">היום בהיסטוריה</h1>
-            <div class="subtitle" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים ממקורות ישראליים ועולמיים</div>
-            <div class="header-line"></div>
+            <div class="header-double-line"></div>
+            <div class="subtitle-bar">
+                <span class="tagline" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים ממקורות ישראליים ועולמיים</span>
+                <span>ויקיפדיה | YNET | וואלה | ישראל היום | מעריב | כלכליסט</span>
+            </div>
 
             <div class="controls">
                 <button onclick="changeDate(-1)" class="control-btn nav-btn" id="btnPrev">
@@ -36,108 +49,122 @@
             </div>
         </header>
 
-        <!-- סרגל סטטיסטיקות -->
+        <!-- Breaking news ticker -->
+        <div id="breakingTicker" class="breaking-ticker" style="display:none;">
+            <span class="breaking-label">מבזק</span>
+            <span class="breaking-text" id="breakingText"></span>
+        </div>
+
+        <!-- Stats bar -->
         <div id="statsBar" class="stats-bar" style="display:none;"></div>
 
-        <!-- טעינה -->
+        <!-- Loading -->
         <div id="loading" class="loading-indicator">
             <div class="spinner"></div>
             <p>טוען אירועים היסטוריים...</p>
             <p class="loading-sub">מביא נתונים ממקורות ישראליים, ויקיפדיה ועוד</p>
         </div>
 
-        <!-- שגיאה -->
+        <!-- Error -->
         <div id="errorMsg" class="error-message" style="display:none;">
             <i class="fas fa-exclamation-triangle"></i>
             <p>לא הצלחנו לטעון נתונים. נסה לרענן את הדף.</p>
             <button onclick="loadEventsForDate()" class="control-btn">נסה שוב</button>
         </div>
 
-        <!-- תוכן דינמי -->
+        <!-- Dynamic Content -->
         <div id="content" style="display: none;">
-            <!-- כותרת ראשית -->
-            <section id="mainHeadline" class="main-headline"></section>
+            <div class="content-area">
 
-            <!-- סינון קטגוריות -->
-            <div class="category-tabs" id="categoryTabs">
-                <button class="cat-tab active" data-cat="all"><i class="fas fa-globe"></i> הכל</button>
-                <button class="cat-tab" data-cat="israel"><i class="fas fa-star-of-david"></i> ישראל</button>
-                <button class="cat-tab" data-cat="politics"><i class="fas fa-landmark"></i> פוליטיקה</button>
-                <button class="cat-tab" data-cat="military"><i class="fas fa-shield-alt"></i> ביטחון</button>
-                <button class="cat-tab" data-cat="sports"><i class="fas fa-futbol"></i> ספורט</button>
-                <button class="cat-tab" data-cat="culture"><i class="fas fa-palette"></i> תרבות</button>
-                <button class="cat-tab" data-cat="science"><i class="fas fa-flask"></i> מדע</button>
-            </div>
+                <!-- Main headline -->
+                <section id="mainHeadline" class="main-headline"></section>
 
-            <!-- חדשות היום (ישראל) - מוצג למעלה -->
-            <section id="newsSection" class="news-section" style="display:none;">
-                <h3><i class="fas fa-newspaper"></i> חדשות היום מישראל</h3>
-                <div id="newsContent"></div>
-            </section>
-
-            <!-- אירועים עם ציוצים משובצים -->
-            <section class="news-section">
-                <h3><i class="fas fa-landmark"></i> אירועים היסטוריים</h3>
-                <div id="eventsContent"></div>
-            </section>
-
-            <!-- חגים ומועדים -->
-            <section id="holidaysSection" class="news-section" style="display:none;">
-                <h3><i class="fas fa-star"></i> חגים ואירועים מיוחדים</h3>
-                <div id="holidaysContent"></div>
-            </section>
-
-            <!-- עמודות - נולדו ונפטרו -->
-            <div class="columns">
-                <div class="column">
-                    <section class="news-section">
-                        <h3><i class="fas fa-birthday-cake"></i> נולדו היום</h3>
-                        <div id="birthsContent"></div>
-                    </section>
+                <!-- Category filter tabs -->
+                <div class="category-tabs" id="categoryTabs">
+                    <button class="cat-tab active" data-cat="all"><i class="fas fa-globe"></i> הכל</button>
+                    <button class="cat-tab" data-cat="israel"><i class="fas fa-star-of-david"></i> ישראל</button>
+                    <button class="cat-tab" data-cat="politics"><i class="fas fa-landmark"></i> פוליטיקה</button>
+                    <button class="cat-tab" data-cat="military"><i class="fas fa-shield-alt"></i> ביטחון</button>
+                    <button class="cat-tab" data-cat="sports"><i class="fas fa-futbol"></i> ספורט</button>
+                    <button class="cat-tab" data-cat="culture"><i class="fas fa-palette"></i> תרבות</button>
+                    <button class="cat-tab" data-cat="science"><i class="fas fa-flask"></i> מדע</button>
                 </div>
-                <div class="column">
-                    <section class="news-section">
-                        <h3><i class="fas fa-star-of-life"></i> נפטרו היום</h3>
-                        <div id="deathsContent"></div>
-                    </section>
-                </div>
-            </div>
 
-            <!-- אירועים עתיקים -->
-            <section id="ancientSection" class="news-section ancient-section" style="display:none;">
-                <h3><i class="fas fa-scroll"></i> היום בהיסטוריה העתיקה</h3>
-                <div id="ancientContent"></div>
-            </section>
+                <!-- Today's news from Israel -->
+                <section id="newsSection" class="news-section news-section-highlight" style="display:none;">
+                    <h3><i class="fas fa-newspaper"></i> חדשות היום מישראל</h3>
+                    <div id="newsContent"></div>
+                </section>
 
-            <!-- ציר זמן -->
-            <section class="news-section" id="timelineSection">
-                <h3><i class="fas fa-calendar-alt"></i> עוד היום בהיסטוריה</h3>
-                <ul id="timelineContent" class="timeline"></ul>
-            </section>
+                <!-- Historical events - two columns -->
+                <section class="news-section">
+                    <h3><i class="fas fa-landmark"></i> אירועים היסטוריים</h3>
+                    <div id="eventsContent"></div>
+                </section>
 
-            <!-- באנר פרימיום -->
-            <div id="premiumBanner" class="premium-banner">
-                <div class="premium-inner">
-                    <i class="fas fa-crown premium-icon"></i>
-                    <div class="premium-text">
-                        <h3>רוצה לראות תאריכים אחרים?</h3>
-                        <p>עם מנוי פרימיום תוכל לגלול אחורה ולראות כל יום בהיסטוריה. גם תקבל גישה לארכיון מלא, תמונות היסטוריות, ותכנים בלעדיים.</p>
-                        <div class="premium-features">
-                            <span><i class="fas fa-check"></i> ניווט בין תאריכים</span>
-                            <span><i class="fas fa-check"></i> ארכיון מלא</span>
-                            <span><i class="fas fa-check"></i> ללא פרסומות</span>
-                        </div>
+                <!-- Historical social posts -->
+                <section id="socialSection" class="news-section" style="display:none;">
+                    <h3><i class="fab fa-x-twitter"></i> ציוצים היסטוריים</h3>
+                    <div id="socialContent"></div>
+                </section>
+
+                <!-- Holidays -->
+                <section id="holidaysSection" class="news-section" style="display:none;">
+                    <h3><i class="fas fa-star"></i> חגים ואירועים מיוחדים</h3>
+                    <div id="holidaysContent"></div>
+                </section>
+
+                <!-- Columns - births and deaths -->
+                <div class="columns">
+                    <div class="column">
+                        <section class="news-section">
+                            <h3><i class="fas fa-birthday-cake"></i> נולדו היום</h3>
+                            <div id="birthsContent"></div>
+                        </section>
                     </div>
-                    <button class="premium-btn" onclick="handleSubscribe()">
-                        <i class="fas fa-unlock"></i> הירשם עכשיו
-                    </button>
+                    <div class="column">
+                        <section class="news-section">
+                            <h3><i class="fas fa-star-of-life"></i> נפטרו היום</h3>
+                            <div id="deathsContent"></div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Ancient events -->
+                <section id="ancientSection" class="news-section ancient-section" style="display:none;">
+                    <h3><i class="fas fa-scroll"></i> היום בהיסטוריה העתיקה</h3>
+                    <div id="ancientContent"></div>
+                </section>
+
+                <!-- Timeline -->
+                <section class="news-section" id="timelineSection">
+                    <h3><i class="fas fa-calendar-alt"></i> עוד היום בהיסטוריה</h3>
+                    <ul id="timelineContent" class="timeline"></ul>
+                </section>
+
+                <!-- Premium banner -->
+                <div id="premiumBanner" class="premium-banner">
+                    <div class="premium-inner">
+                        <i class="fas fa-crown premium-icon"></i>
+                        <div class="premium-text">
+                            <h3>רוצה לראות תאריכים אחרים?</h3>
+                            <p>עם מנוי פרימיום תוכל לגלול אחורה ולראות כל יום בהיסטוריה. גם תקבל גישה לארכיון מלא, תמונות היסטוריות, ותכנים בלעדיים.</p>
+                            <div class="premium-features">
+                                <span><i class="fas fa-check"></i> ניווט בין תאריכים</span>
+                                <span><i class="fas fa-check"></i> ארכיון מלא</span>
+                                <span><i class="fas fa-check"></i> ללא פרסומות</span>
+                            </div>
+                        </div>
+                        <button class="premium-btn" onclick="handleSubscribe()">
+                            <i class="fas fa-unlock"></i> הירשם עכשיו
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- פוטר -->
+        <!-- Footer -->
         <footer class="newspaper-footer">
-            <div class="footer-line"></div>
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>אודות העיתון</h4>
@@ -145,7 +172,7 @@
                 </div>
                 <div class="footer-section">
                     <h4>מקור הנתונים</h4>
-                    <p>הנתונים מגיעים מויקיפדיה, YNET, וואלה, Google News ומקורות נוספים. התוכן מתעדכן אוטומטית בכל יום.</p>
+                    <p>הנתונים מגיעים מויקיפדיה, YNET, וואלה, ישראל היום, מעריב, כלכליסט ומקורות נוספים.</p>
                 </div>
                 <div class="footer-section">
                     <h4>צרו קשר</h4>
@@ -153,7 +180,7 @@
                 </div>
             </div>
             <div class="copyright">
-                &copy; 2026 "היום בהיסטוריה" - כל הזכויות שמורות | נתונים: ויקיפדיה, YNET, וואלה, Google News
+                &copy; 2026 "היום בהיסטוריה" - כל הזכויות שמורות
             </div>
         </footer>
     </div>
@@ -179,13 +206,13 @@
     };
 
     const CATEGORY_COLORS = {
-        israel: '#0038b8',
-        politics: '#8b0000',
-        military: '#2e7d32',
-        sports: '#e65100',
-        culture: '#6a1b9a',
-        science: '#0277bd',
-        general: '#555'
+        israel:   { bg: '#dbeafe', text: '#1e3a5f' },
+        politics: { bg: '#fce4ec', text: '#7b1a2c' },
+        military: { bg: '#e8f5e9', text: '#1b5e20' },
+        sports:   { bg: '#fff3e0', text: '#bf360c' },
+        culture:  { bg: '#f3e5f5', text: '#4a148c' },
+        science:  { bg: '#e1f5fe', text: '#01579b' },
+        general:  { bg: '#f5f5f5', text: '#424242' }
     };
 
     // ====== State ======
@@ -224,8 +251,8 @@
     function getCategoryBadge(category) {
         if (!category || category === 'general') return '';
         const label = CATEGORY_LABELS[category] || category;
-        const color = CATEGORY_COLORS[category] || '#555';
-        return `<span class="category-badge" style="background-color:${color}">${escapeHtml(label)}</span>`;
+        const colors = CATEGORY_COLORS[category] || CATEGORY_COLORS.general;
+        return `<span class="category-badge" style="background-color:${colors.bg};color:${colors.text}">${escapeHtml(label)}</span>`;
     }
 
     // ====== Data Fetching ======
@@ -266,8 +293,8 @@
 
     // Client-side category classifier (for fallback mode without server data)
     const CLIENT_KEYWORDS = {
-        israel: ['ישראל', 'ירושלים', 'תל אביב', 'חיפה', 'כנסת', 'צה"ל', 'ציונ', 'יהוד', 'עברי',
-            'israel', 'jerusalem', 'tel aviv', 'jewish', 'hebrew', 'zion', 'knesset', 'idf', 'palestine', 'holocaust'],
+        israel: ['ישראל', 'ירושלים', 'תל אביב', 'חיפה', 'כנסת', 'צה"ל', 'צהל', 'ציונ',
+            'israel', 'israeli', 'jerusalem', 'tel aviv', 'knesset', 'idf', 'kibbutz', 'mossad'],
         politics: ['נשיא', 'ממשלה', 'בחירות', 'מלך', 'קיסר', 'president', 'king', 'queen', 'election', 'parliament', 'empire', 'kingdom', 'republic', 'treaty'],
         military: ['מלחמ', 'קרב', 'צבא', 'טרור', 'war', 'battle', 'army', 'attack', 'invasion', 'bombing', 'siege', 'military'],
         sports: ['אולימפ', 'כדורגל', 'אליפות', 'olympic', 'football', 'soccer', 'championship', 'world cup', 'medal', 'tournament'],
@@ -421,6 +448,7 @@
         document.getElementById('content').style.display = 'none';
         document.getElementById('errorMsg').style.display = 'none';
         document.getElementById('statsBar').style.display = 'none';
+        document.getElementById('breakingTicker').style.display = 'none';
 
         try {
             allData = await loadData();
@@ -494,11 +522,11 @@
                 <div class="social-post-header">
                     <div class="social-avatar" style="background-color:${p.avatarBg}">${escapeHtml(initial)}</div>
                     <div class="social-author-info">
-                        <strong>${escapeHtml(post.author || '')} <i class="fas fa-check-circle" style="color:${p.verifiedColor};font-size:12px"></i></strong>
+                        <strong>${escapeHtml(post.author || '')} <i class="fas fa-check-circle" style="color:${p.verifiedColor};font-size:11px"></i></strong>
                         <span>${escapeHtml(post.handle || '')}</span>
                     </div>
                     <div class="social-platform-badge">
-                        <i class="${p.icon}" style="color:${p.iconColor};font-size:22px"></i>
+                        <i class="${p.icon}" style="color:${p.iconColor};font-size:18px"></i>
                     </div>
                 </div>
                 <div class="social-post-body">${escapeHtml(post.content || '')}</div>
@@ -513,9 +541,11 @@
     function renderAll() {
         if (!allData) return;
         renderStatsBar();
+        renderBreakingTicker();
         renderMainHeadline();
         renderNews();
         renderEvents();
+        renderSocialPosts();
         renderBirths();
         renderDeaths();
         renderHolidays();
@@ -525,21 +555,41 @@
 
     function renderStatsBar() {
         const bar = document.getElementById('statsBar');
-        const stats = allData.sourceStats || allData.stats || {};
         const israelCount = (allData.events || []).filter(e => e.category === 'israel').length;
         bar.innerHTML = `
             <span><i class="fas fa-star-of-david"></i> ${israelCount} ישראל</span>
             <span><i class="fas fa-landmark"></i> ${allData.events.length} אירועים</span>
             <span><i class="fas fa-birthday-cake"></i> ${allData.births.length} לידות</span>
             <span><i class="fas fa-star-of-life"></i> ${allData.deaths.length} פטירות</span>
+            ${(allData.socialPosts || []).length > 0 ? `<span><i class="fab fa-x-twitter"></i> ${allData.socialPosts.length} ציוצים</span>` : ''}
+            ${(allData.news || []).length > 0 ? `<span><i class="fas fa-newspaper"></i> ${allData.news.length} חדשות</span>` : ''}
         `;
+    }
+
+    function renderBreakingTicker() {
+        const ticker = document.getElementById('breakingTicker');
+        const textEl = document.getElementById('breakingText');
+
+        // Use the first Israeli event or headline for the ticker
+        let tickerText = '';
+        if (allData.headline) {
+            tickerText = `${allData.headline.year}: ${allData.headline.text}`;
+        } else {
+            const israelEv = (allData.events || []).find(e => e.category === 'israel');
+            if (israelEv) {
+                tickerText = `${israelEv.year}: ${israelEv.text}`;
+            }
+        }
+
+        if (tickerText) {
+            textEl.textContent = tickerText;
+            ticker.style.display = 'flex';
+        }
     }
 
     function renderMainHeadline() {
         const el = document.getElementById('mainHeadline');
 
-        // STRICTLY Israel-first headline
-        // Priority: 1) server-marked headline, 2) Israeli events in Hebrew, 3) any Israeli event, 4) fallback
         let ev = null;
 
         if (allData.headline) {
@@ -591,7 +641,7 @@
                     <h2>${escapeHtml(String(ev.year))} - ${escapeHtml(ev.text)}</h2>
                     <div class="headline-meta">
                         <span class="byline"><i class="fas fa-book"></i> ${ev.lang === 'he' ? 'ויקיפדיה העברית' : 'ויקיפדיה'}</span>
-                        <span class="time">${ago ? '&#128336; ' + ago : ''}</span>
+                        <span class="time">${ago || ''}</span>
                     </div>
                     ${ev.extract ? `<p class="headline-extract">${escapeHtml(ev.extract)}</p>` : ''}
                 </div>
@@ -607,7 +657,6 @@
         const container = document.getElementById('eventsContent');
         let events = allData.events;
 
-        // Filter by category if active
         if (activeCategory !== 'all') {
             events = events.filter(e => e.category === activeCategory);
         }
@@ -618,28 +667,12 @@
             return;
         }
 
-        // Build a map of social posts by eventYear
-        const tweetsByYear = {};
-        (allData.socialPosts || []).forEach(post => {
-            const yr = post.eventYear || post.year;
-            if (!tweetsByYear[yr]) tweetsByYear[yr] = [];
-            tweetsByYear[yr].push(post);
-        });
-
-        container.innerHTML = events.map(ev => {
+        container.innerHTML = '<div class="events-columns">' + events.map(ev => {
             const ago = yearsAgo(ev.year);
             const catBadge = getCategoryBadge(ev.category);
             const thumb = ev.thumbnail
                 ? `<img src="${escapeHtml(ev.thumbnail)}" class="event-thumb" alt="" onerror="this.style.display='none'">`
                 : '';
-
-            // Embedded social post for this event
-            let tweetHtml = '';
-            const tweets = tweetsByYear[ev.year];
-            if (tweets && tweets.length > 0) {
-                const post = tweets.shift();
-                tweetHtml = buildSocialPostHtml(post);
-            }
 
             return `
                 <article class="news-item">
@@ -650,12 +683,27 @@
                             <h4>${escapeHtml(ev.text)} ${catBadge}</h4>
                             ${ev.extract ? `<p class="event-extract">${escapeHtml(ev.extract.length > 200 ? ev.extract.substring(0, 200) + '...' : ev.extract)}</p>` : ''}
                             <p class="event-meta">${ago}</p>
-                            ${tweetHtml}
                         </div>
                     </div>
                 </article>
             `;
-        }).join('');
+        }).join('') + '</div>';
+    }
+
+    function renderSocialPosts() {
+        const section = document.getElementById('socialSection');
+        const container = document.getElementById('socialContent');
+        const posts = allData.socialPosts || [];
+
+        if (posts.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = '';
+        container.innerHTML = '<div class="social-posts-grid">' +
+            posts.map(post => buildSocialPostHtml(post)).join('') +
+            '</div>';
     }
 
     function renderBirths() {
@@ -736,24 +784,47 @@
             return;
         }
         section.style.display = '';
+
+        const sourceIcons = {
+            'ynet': 'fas fa-bolt',
+            'וואלה': 'fas fa-fire',
+            'Google News': 'fab fa-google',
+            'מעריב': 'fas fa-newspaper',
+            'ישראל היום': 'fas fa-sun',
+            'כלכליסט': 'fas fa-chart-line',
+            'default': 'fas fa-newspaper'
+        };
+
         container.innerHTML = '<div class="news-list">' +
-            news.slice(0, 8).map(n => {
-                const sourceIcons = {
-                    'ynet': 'fas fa-bolt',
-                    'וואלה': 'fas fa-fire',
-                    'Google News': 'fab fa-google',
-                    'default': 'fas fa-newspaper'
-                };
+            news.slice(0, 10).map(n => {
                 const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
+                const hasImage = n.image && n.image.startsWith('http');
+
+                if (hasImage) {
+                    return `
+                    <div class="news-card">
+                        <div class="news-card-with-image">
+                            <img src="${escapeHtml(n.image)}" class="news-card-image" alt="" onerror="this.style.display='none'">
+                            <div class="news-card-text">
+                                <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
+                                    ${escapeHtml(n.title)}
+                                </a>
+                                ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 100))}${n.summary.length > 100 ? '...' : ''}</p>` : ''}
+                                <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
                 return `
                 <div class="news-card">
                     <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                        <strong>${escapeHtml(n.title)}</strong>
+                        ${escapeHtml(n.title)}
                     </a>
                     ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 120))}${n.summary.length > 120 ? '...' : ''}</p>` : ''}
-                    <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || 'ynet')}</span>
-                </div>
-            `}).join('') +
+                    <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
+                </div>`;
+            }).join('') +
             '</div>';
     }
 
@@ -764,7 +835,6 @@
             (allData.events || []).filter(e => e.isAncient)
         );
 
-        // Deduplicate by text
         const seen = new Set();
         const unique = ancientEvents.filter(e => {
             const key = e.text;
@@ -820,6 +890,41 @@
         }).join('');
     }
 
+    // ====== Auto-refresh: poll for updated data from background collector ======
+    let refreshAttempts = 0;
+    const MAX_REFRESH = 12;
+
+    function startAutoRefresh() {
+        if (refreshAttempts >= MAX_REFRESH) return;
+
+        setTimeout(async () => {
+            refreshAttempts++;
+            try {
+                const resp = await fetch('today.json?_=' + Date.now());
+                if (!resp.ok) return startAutoRefresh();
+                const data = await resp.json();
+
+                const hasTranslations = data.stats && data.stats.translated > 0;
+                const hasSocialPosts = data.socialPosts && data.socialPosts.length > 0;
+                const hasAncient = data.ancientEvents && data.ancientEvents.length > 0;
+
+                const currentHas = allData && allData.socialPosts && allData.socialPosts.length > 0;
+
+                if ((hasTranslations || hasSocialPosts || hasAncient) && !currentHas) {
+                    console.log('Auto-refresh: updated data detected, re-rendering');
+                    if (!data.sourceStats) data.sourceStats = data.stats || { he: 0, en: 0 };
+                    allData = data;
+                    renderAll();
+                    return;
+                }
+            } catch (e) {
+                console.log('Auto-refresh check failed:', e.message);
+            }
+
+            if (refreshAttempts < MAX_REFRESH) startAutoRefresh();
+        }, 30000);
+    }
+
     // ====== Init ======
     document.addEventListener('DOMContentLoaded', function () {
         if (!isSubscriber) {
@@ -837,7 +942,12 @@
         initCategoryTabs();
         currentDate = new Date();
         updateDateDisplay();
-        loadEventsForDate();
+        loadEventsForDate().then(() => {
+            if (allData && (!allData.socialPosts || allData.socialPosts.length === 0)) {
+                console.log('Starting auto-refresh to wait for background collector...');
+                startAutoRefresh();
+            }
+        });
     });
     </script>
 </body>
