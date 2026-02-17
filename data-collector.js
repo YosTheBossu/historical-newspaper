@@ -283,11 +283,55 @@ function parseRssItems(xmlText) {
 }
 
 // ====== DeepSeek API ======
+const DEEPSEEK_URLS = [
+    'https://api.deepseek.com/chat/completions',
+    'https://api.deepseek.com/v1/chat/completions'
+];
+let workingDeepSeekUrl = null;
+
+async function testDeepSeekConnectivity() {
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        console.log('  [DeepSeek Test] No API key, skipping connectivity test');
+        return false;
+    }
+
+    const testBody = {
+        model: CONFIG.DEEPSEEK_MODEL,
+        messages: [{ role: 'user', content: 'Say "OK" in one word' }],
+        temperature: 0,
+        max_tokens: 10
+    };
+
+    for (const url of DEEPSEEK_URLS) {
+        try {
+            console.log(`  [DeepSeek Test] Trying ${url}...`);
+            const result = await httpPost(url, testBody, {
+                'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
+            });
+            const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+            if (content) {
+                console.log(`  [DeepSeek Test] SUCCESS with ${url} - Response: "${content.trim()}"`);
+                workingDeepSeekUrl = url;
+                return true;
+            } else {
+                console.log(`  [DeepSeek Test] ${url} returned empty content. Keys: ${Object.keys(result || {}).join(', ')}`);
+            }
+        } catch (err) {
+            console.error(`  [DeepSeek Test] ${url} FAILED: ${err.message}`);
+        }
+    }
+
+    console.error('  [DeepSeek Test] ALL URLs FAILED - translations and social posts will not work');
+    return false;
+}
+
 async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
     if (!CONFIG.DEEPSEEK_API_KEY) {
         console.log('  DeepSeek API key not set, skipping');
         return null;
     }
+
+    const url = workingDeepSeekUrl || DEEPSEEK_URLS[0];
 
     const body = {
         model: CONFIG.DEEPSEEK_MODEL,
@@ -300,7 +344,7 @@ async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
     };
 
     try {
-        const result = await httpPost('https://api.deepseek.com/chat/completions', body, {
+        const result = await httpPost(url, body, {
             'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
         });
 
@@ -310,7 +354,23 @@ async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
         }
         return content || null;
     } catch (err) {
-        console.error(`  DeepSeek API call failed: ${err.message}`);
+        console.error(`  DeepSeek API call failed (${url}): ${err.message}`);
+        // Try fallback URL if primary failed
+        if (url === DEEPSEEK_URLS[0] && DEEPSEEK_URLS[1]) {
+            console.log(`  Trying fallback URL: ${DEEPSEEK_URLS[1]}`);
+            try {
+                const result2 = await httpPost(DEEPSEEK_URLS[1], body, {
+                    'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
+                });
+                const content2 = result2.choices && result2.choices[0] && result2.choices[0].message && result2.choices[0].message.content;
+                if (content2) {
+                    workingDeepSeekUrl = DEEPSEEK_URLS[1];
+                    return content2;
+                }
+            } catch (err2) {
+                console.error(`  Fallback URL also failed: ${err2.message}`);
+            }
+        }
         throw err;
     }
 }
@@ -640,12 +700,19 @@ async function collectDailyData() {
     }
     console.log(`  Total news: ${data.news.length} from ${successfulSources} sources`);
 
-    // --- Step 5: Translate English entries with DeepSeek ---
-    console.log('5. Translating English content with DeepSeek...');
+    // --- Step 5: Test DeepSeek connectivity ---
+    console.log('5. Testing DeepSeek API connectivity...');
+    const deepseekOk = await testDeepSeekConnectivity();
+    if (deepseekOk) {
+        console.log(`  Using DeepSeek URL: ${workingDeepSeekUrl}`);
+    }
+
+    // --- Step 6: Translate English entries with DeepSeek ---
+    console.log('6. Translating English content with DeepSeek...');
     await translateAllEnglishEntries(data);
 
-    // --- Step 6: Classify events into categories ---
-    console.log('6. Classifying events into categories...');
+    // --- Step 7: Classify events into categories ---
+    console.log('7. Classifying events into categories...');
     const catCounts = {};
     for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
         for (const entry of (data[cat] || [])) {
@@ -684,12 +751,12 @@ async function collectDailyData() {
     data.births = data.births.slice(0, CONFIG.MAX_BIRTHS);
     data.deaths = data.deaths.slice(0, CONFIG.MAX_DEATHS);
 
-    // --- Step 7: Generate social media posts with DeepSeek ---
-    console.log('7. Generating social media posts with DeepSeek...');
+    // --- Step 8: Generate social media posts with DeepSeek ---
+    console.log('8. Generating social media posts with DeepSeek...');
     data.socialPosts = await generateSocialPosts(data);
 
-    // --- Step 8: Generate ancient/biblical events with DeepSeek ---
-    console.log('8. Generating ancient/biblical events...');
+    // --- Step 9: Generate ancient/biblical events with DeepSeek ---
+    console.log('9. Generating ancient/biblical events...');
     const ancientGenerated = await generateAncientEvents(month, day);
     if (ancientGenerated.length > 0) {
         data.ancientEvents = ancientGenerated;
@@ -701,7 +768,7 @@ async function collectDailyData() {
         }
     }
 
-    // --- Step 9: Mark Israeli headline ---
+    // --- Step 10: Mark Israeli headline ---
     // Prefer natively Hebrew Israeli events (more likely truly Israeli)
     const israelHeadlineNative = data.events.find(e =>
         e.category === 'israel' && e.lang === 'he' && !e.isAncient && e.originalLang !== 'en'

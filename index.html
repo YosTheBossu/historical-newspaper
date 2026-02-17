@@ -892,10 +892,14 @@
 
     // ====== Auto-refresh: poll for updated data from background collector ======
     let refreshAttempts = 0;
-    const MAX_REFRESH = 12;
+    const MAX_REFRESH = 20;
+    const REFRESH_INTERVAL = 15000; // 15 seconds
 
     function startAutoRefresh() {
-        if (refreshAttempts >= MAX_REFRESH) return;
+        if (refreshAttempts >= MAX_REFRESH) {
+            console.log('Auto-refresh: max attempts reached, stopping');
+            return;
+        }
 
         setTimeout(async () => {
             refreshAttempts++;
@@ -907,22 +911,38 @@
                 const hasTranslations = data.stats && data.stats.translated > 0;
                 const hasSocialPosts = data.socialPosts && data.socialPosts.length > 0;
                 const hasAncient = data.ancientEvents && data.ancientEvents.length > 0;
+                const hasNews = data.news && data.news.length > 0;
 
-                const currentHas = allData && allData.socialPosts && allData.socialPosts.length > 0;
+                // Compare with current data — detect ANY improvement
+                const currentTranslated = allData && allData.stats && allData.stats.translated || 0;
+                const currentSocial = allData && allData.socialPosts && allData.socialPosts.length || 0;
+                const currentAncient = allData && allData.ancientEvents && allData.ancientEvents.length || 0;
 
-                if ((hasTranslations || hasSocialPosts || hasAncient) && !currentHas) {
-                    console.log('Auto-refresh: updated data detected, re-rendering');
+                const newTranslated = (data.stats && data.stats.translated) || 0;
+                const newSocial = (data.socialPosts && data.socialPosts.length) || 0;
+                const newAncient = (data.ancientEvents && data.ancientEvents.length) || 0;
+
+                const improved = (newTranslated > currentTranslated) ||
+                                 (newSocial > currentSocial) ||
+                                 (newAncient > currentAncient);
+
+                if (improved) {
+                    console.log(`Auto-refresh: improved data detected (translations: ${currentTranslated}→${newTranslated}, social: ${currentSocial}→${newSocial}, ancient: ${currentAncient}→${newAncient})`);
                     if (!data.sourceStats) data.sourceStats = data.stats || { he: 0, en: 0 };
                     allData = data;
                     renderAll();
+                    // Keep refreshing in case more data comes
+                    if (refreshAttempts < MAX_REFRESH) startAutoRefresh();
                     return;
                 }
+
+                console.log(`Auto-refresh: attempt ${refreshAttempts}/${MAX_REFRESH} - no change yet`);
             } catch (e) {
                 console.log('Auto-refresh check failed:', e.message);
             }
 
             if (refreshAttempts < MAX_REFRESH) startAutoRefresh();
-        }, 30000);
+        }, REFRESH_INTERVAL);
     }
 
     // ====== Init ======
@@ -943,7 +963,11 @@
         currentDate = new Date();
         updateDateDisplay();
         loadEventsForDate().then(() => {
-            if (allData && (!allData.socialPosts || allData.socialPosts.length === 0)) {
+            // Always start auto-refresh to pick up translations/social posts from background collector
+            const needsRefresh = !allData ||
+                !allData.socialPosts || allData.socialPosts.length === 0 ||
+                !allData.stats || allData.stats.translated === 0;
+            if (needsRefresh) {
                 console.log('Starting auto-refresh to wait for background collector...');
                 startAutoRefresh();
             }
