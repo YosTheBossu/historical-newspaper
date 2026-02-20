@@ -3,1047 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>היום בהיסטוריה - העיתון היומי</title>
+    <title>דברי הימים — עיתון היסטורי יומי</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@400;700&family=David+Libre:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=David+Libre:wght@400;500;700&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <!-- Red top bar -->
-        <div class="top-red-bar"></div>
-
-        <!-- Newspaper Masthead -->
-        <header class="newspaper-header">
-            <div class="masthead">
-                <div class="masthead-side masthead-right">
-                    <span class="hebrew-date" id="hebrewDate"></span>
-                    <span class="edition-info">מהדורה דיגיטלית</span>
-                </div>
-                <div class="masthead-center">
-                    <h1 class="newspaper-title">היום בהיסטוריה</h1>
-                </div>
-                <div class="masthead-side masthead-left">
-                    <span class="masthead-date" id="currentDate">טוען...</span>
-                    <span class="edition-info">גיליון יומי | חינם</span>
-                </div>
-            </div>
-            <div class="header-double-line"></div>
-            <div class="subtitle-bar">
-                <span class="tagline" id="dailyHeadline">העיתון שמחיה את העבר - נתונים חיים ממקורות ישראליים ועולמיים</span>
-                <span>ויקיפדיה | YNET | וואלה | ישראל היום | מעריב | כלכליסט</span>
-            </div>
-
-            <div class="controls">
-                <button onclick="changeDate(-1)" class="control-btn nav-btn" id="btnPrev">
-                    <i class="fas fa-chevron-right"></i> אתמול
-                    <i class="fas fa-lock lock-icon"></i>
-                </button>
-                <button onclick="goToToday()" class="control-btn today-btn">
-                    <i class="fas fa-calendar-day"></i> היום
-                </button>
-                <button onclick="changeDate(1)" class="control-btn nav-btn" id="btnNext">
-                    מחר <i class="fas fa-chevron-left"></i>
-                    <i class="fas fa-lock lock-icon"></i>
-                </button>
-            </div>
-        </header>
-
-        <!-- Breaking news ticker -->
-        <div id="breakingTicker" class="breaking-ticker" style="display:none;">
-            <span class="breaking-label">מבזק</span>
-            <span class="breaking-text" id="breakingText"></span>
+    <!-- Top red accent bar -->
+    <div class="top-bar">
+        <div class="top-bar-inner">
+            <span>גיליון מיוחד — היום בהיסטוריה</span>
+            <span id="edition-text">מהדורת בוקר</span>
         </div>
-
-        <!-- Stats bar -->
-        <div id="statsBar" class="stats-bar" style="display:none;"></div>
-
-        <!-- Loading -->
-        <div id="loading" class="loading-indicator">
-            <div class="spinner"></div>
-            <p>טוען אירועים היסטוריים...</p>
-            <p class="loading-sub">מביא נתונים ממקורות ישראליים, ויקיפדיה ועוד</p>
-        </div>
-
-        <!-- Error -->
-        <div id="errorMsg" class="error-message" style="display:none;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>לא הצלחנו לטעון נתונים. נסה לרענן את הדף.</p>
-            <button onclick="loadEventsForDate()" class="control-btn">נסה שוב</button>
-        </div>
-
-        <!-- Dynamic Content -->
-        <div id="content" style="display: none;">
-            <div class="content-area">
-
-                <!-- Main headline -->
-                <section id="mainHeadline" class="main-headline"></section>
-
-                <!-- Category filter tabs -->
-                <div class="category-tabs" id="categoryTabs">
-                    <button class="cat-tab active" data-cat="all"><i class="fas fa-globe"></i> הכל</button>
-                    <button class="cat-tab" data-cat="israel"><i class="fas fa-star-of-david"></i> ישראל</button>
-                    <button class="cat-tab" data-cat="politics"><i class="fas fa-landmark"></i> פוליטיקה</button>
-                    <button class="cat-tab" data-cat="military"><i class="fas fa-shield-alt"></i> ביטחון</button>
-                    <button class="cat-tab" data-cat="sports"><i class="fas fa-futbol"></i> ספורט</button>
-                    <button class="cat-tab" data-cat="culture"><i class="fas fa-palette"></i> תרבות</button>
-                    <button class="cat-tab" data-cat="science"><i class="fas fa-flask"></i> מדע</button>
-                </div>
-
-                <!-- Today's news from Israel -->
-                <section id="newsSection" class="news-section news-section-highlight" style="display:none;">
-                    <h3><i class="fas fa-newspaper"></i> חדשות היום מישראל</h3>
-                    <div id="newsContent"></div>
-                </section>
-
-                <!-- Historical events - two columns -->
-                <section class="news-section">
-                    <h3><i class="fas fa-landmark"></i> אירועים היסטוריים</h3>
-                    <div id="eventsContent"></div>
-                </section>
-
-                <!-- Historical social posts -->
-                <section id="socialSection" class="news-section" style="display:none;">
-                    <h3><i class="fab fa-x-twitter"></i> ציוצים היסטוריים</h3>
-                    <div id="socialContent"></div>
-                </section>
-
-                <!-- Holidays -->
-                <section id="holidaysSection" class="news-section" style="display:none;">
-                    <h3><i class="fas fa-star"></i> חגים ואירועים מיוחדים</h3>
-                    <div id="holidaysContent"></div>
-                </section>
-
-                <!-- Columns - births and deaths -->
-                <div class="columns">
-                    <div class="column">
-                        <section class="news-section">
-                            <h3><i class="fas fa-birthday-cake"></i> נולדו היום</h3>
-                            <div id="birthsContent"></div>
-                        </section>
-                    </div>
-                    <div class="column">
-                        <section class="news-section">
-                            <h3><i class="fas fa-star-of-life"></i> נפטרו היום</h3>
-                            <div id="deathsContent"></div>
-                        </section>
-                    </div>
-                </div>
-
-                <!-- Ancient events -->
-                <section id="ancientSection" class="news-section ancient-section" style="display:none;">
-                    <h3><i class="fas fa-scroll"></i> היום בהיסטוריה העתיקה</h3>
-                    <div id="ancientContent"></div>
-                </section>
-
-                <!-- Timeline -->
-                <section class="news-section" id="timelineSection">
-                    <h3><i class="fas fa-calendar-alt"></i> עוד היום בהיסטוריה</h3>
-                    <ul id="timelineContent" class="timeline"></ul>
-                </section>
-
-                <!-- Premium banner -->
-                <div id="premiumBanner" class="premium-banner">
-                    <div class="premium-inner">
-                        <i class="fas fa-crown premium-icon"></i>
-                        <div class="premium-text">
-                            <h3>רוצה לראות תאריכים אחרים?</h3>
-                            <p>עם מנוי פרימיום תוכל לגלול אחורה ולראות כל יום בהיסטוריה. גם תקבל גישה לארכיון מלא, תמונות היסטוריות, ותכנים בלעדיים.</p>
-                            <div class="premium-features">
-                                <span><i class="fas fa-check"></i> ניווט בין תאריכים</span>
-                                <span><i class="fas fa-check"></i> ארכיון מלא</span>
-                                <span><i class="fas fa-check"></i> ללא פרסומות</span>
-                            </div>
-                        </div>
-                        <button class="premium-btn" onclick="handleSubscribe()">
-                            <i class="fas fa-unlock"></i> הירשם עכשיו
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer class="newspaper-footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>אודות העיתון</h4>
-                    <p>"היום בהיסטוריה" מביא לכם בכל יום את האירועים החשובים שהתרחשו בתאריך הזה לאורך השנים.</p>
-                </div>
-                <div class="footer-section">
-                    <h4>מקור הנתונים</h4>
-                    <p>הנתונים מגיעים מויקיפדיה, YNET, וואלה, ישראל היום, מעריב, כלכליסט ומקורות נוספים.</p>
-                </div>
-                <div class="footer-section">
-                    <h4>צרו קשר</h4>
-                    <p>הצעות, תיקונים, רעיונות?<br>history@newspaper.co.il</p>
-                </div>
-            </div>
-            <div class="copyright">
-                &copy; 2026 "היום בהיסטוריה" - כל הזכויות שמורות
-            </div>
-        </footer>
     </div>
 
-    <script>
-    // ====== Configuration ======
-    const API = {
-        HE: 'https://he.wikipedia.org/api/rest_v1/feed/onthisday/all',
-        EN: 'https://en.wikipedia.org/api/rest_v1/feed/onthisday/all',
-        HEBCAL: 'https://www.hebcal.com/converter'
-    };
-
-    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12, NEWS: 3, SOCIAL: 8 };
-    const HEADLINE_CONFIG = {
-        minHistoricalYears: Math.max(1, Number(new URLSearchParams(window.location.search).get('minHistoricalYears')) || 25)
-    };
-
-    const HEADLINE_WEIGHTS = {
-        verifiedIsraeli: 45,
-        historicalImportance: 30,
-        descriptionDepth: 15,
-        image: 10
-    };
-
-    const CATEGORY_LABELS = {
-        israel: 'ישראל',
-        politics: 'פוליטיקה',
-        military: 'ביטחון',
-        sports: 'ספורט',
-        culture: 'תרבות',
-        science: 'מדע',
-        general: 'כללי'
-    };
-
-    const CATEGORY_COLORS = {
-        israel:   { bg: '#dbeafe', text: '#1e3a5f' },
-        politics: { bg: '#fce4ec', text: '#7b1a2c' },
-        military: { bg: '#e8f5e9', text: '#1b5e20' },
-        sports:   { bg: '#fff3e0', text: '#bf360c' },
-        culture:  { bg: '#f3e5f5', text: '#4a148c' },
-        science:  { bg: '#e1f5fe', text: '#01579b' },
-        general:  { bg: '#f5f5f5', text: '#424242' }
-    };
-
-    // ====== State ======
-    let currentDate = new Date();
-    let allData = null;
-    let activeCategory = 'all';
-    let isSubscriber = localStorage.getItem('newspaper_sub') === 'true';
-
-    if (new URLSearchParams(window.location.search).get('subscribe') === 'true') {
-        localStorage.setItem('newspaper_sub', 'true');
-        isSubscriber = true;
-    }
-
-    // ====== Helpers ======
-    function pad2(n) { return String(n).padStart(2, '0'); }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        const el = document.createElement('span');
-        el.textContent = text;
-        return el.innerHTML;
-    }
-
-    function yearsAgo(year) {
-        if (!year) return '';
-        const diff = currentDate.getFullYear() - year;
-        if (diff <= 0) return '';
-        if (diff === 1) return 'לפני שנה';
-        return `לפני ${diff} שנים`;
-    }
-
-    function formatNumber(num) {
-        return num >= 1000 ? (num / 1000).toFixed(1) + 'K' : String(num);
-    }
-
-    function getCategoryBadge(category) {
-        if (!category || category === 'general') return '';
-        const label = CATEGORY_LABELS[category] || category;
-        const colors = CATEGORY_COLORS[category] || CATEGORY_COLORS.general;
-        return `<span class="category-badge" style="background-color:${colors.bg};color:${colors.text}">${escapeHtml(label)}</span>`;
-    }
-
-    function clamp(n, min, max) {
-        return Math.max(min, Math.min(max, n));
-    }
-
-    function getHeadlineScore(event) {
-        if (!event || !event.year) return 0;
-        const ageYears = Math.max(0, currentDate.getFullYear() - event.year);
-        const verifiedIsraeliStrength = event.category === 'israel'
-            ? (event.lang === 'he' && event.originalLang !== 'en' ? 1 : 0.7)
-            : 0;
-        const historicalImportance = clamp(ageYears / 150, 0, 1);
-        const descriptionDepth = clamp(((event.extract || '').trim().length / 280), 0, 1);
-        const image = event.thumbnail ? 1 : 0;
-
-        return Number((
-            (verifiedIsraeliStrength * HEADLINE_WEIGHTS.verifiedIsraeli) +
-            (historicalImportance * HEADLINE_WEIGHTS.historicalImportance) +
-            (descriptionDepth * HEADLINE_WEIGHTS.descriptionDepth) +
-            (image * HEADLINE_WEIGHTS.image)
-        ).toFixed(2));
-    }
-
-    // ====== Data Fetching ======
-    async function loadFromCachedJson() {
-        const todayStr = currentDate.toISOString().slice(0, 10);
-        const resp = await fetch('today.json?_=' + Date.now());
-        if (!resp.ok) throw new Error('No cached data');
-        const data = await resp.json();
-        if (data.date !== todayStr) {
-            // Keep enriched server data even when cache date lags behind local timezone.
-            // Falling back to live APIs removes translations/social posts and hurts UX.
-            data.isStale = true;
-            console.warn(`today.json date (${data.date}) differs from local date (${todayStr}), using cached enriched data`);
-        }
-        if (!data.sourceStats) {
-            data.sourceStats = data.stats || { he: 0, en: 0 };
-        }
-        console.log('Loaded from today.json (server-enriched data)');
-        return data;
-    }
-
-    async function fetchWikiAPI(baseUrl, month, day) {
-        const url = `${baseUrl}/${pad2(month)}/${pad2(day)}`;
-        const resp = await fetch(url, {
-            headers: { 'Api-User-Agent': 'HistoricalNewspaper/1.0 (educational project)' }
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        return resp.json();
-    }
-
-    function processEntry(entry, lang) {
-        const page = (entry.pages || [])[0] || {};
-        return {
-            year: entry.year || 0,
-            text: entry.text || '',
-            lang: lang,
-            extract: page.extract || null,
-            thumbnail: (page.thumbnail && page.thumbnail.source) || null,
-            pageTitle: page.title || '',
-            category: 'general'
-        };
-    }
-
-    // Client-side category classifier (for fallback mode without server data)
-    const CLIENT_KEYWORDS = {
-        israel: ['ישראל', 'ירושלים', 'תל אביב', 'חיפה', 'כנסת', 'צה"ל', 'צהל', 'ציונ',
-            'israel', 'israeli', 'jerusalem', 'tel aviv', 'knesset', 'idf', 'kibbutz', 'mossad'],
-        politics: ['נשיא', 'ממשלה', 'בחירות', 'מלך', 'קיסר', 'president', 'king', 'queen', 'election', 'parliament', 'empire', 'kingdom', 'republic', 'treaty'],
-        military: ['מלחמ', 'קרב', 'צבא', 'טרור', 'war', 'battle', 'army', 'attack', 'invasion', 'bombing', 'siege', 'military'],
-        sports: ['אולימפ', 'כדורגל', 'אליפות', 'olympic', 'football', 'soccer', 'championship', 'world cup', 'medal', 'tournament'],
-        culture: ['סרט', 'מוסיקה', 'סופר', 'אוסקר', 'נובל', 'film', 'movie', 'music', 'oscar', 'nobel', 'author', 'singer', 'opera'],
-        science: ['מדע', 'חלל', 'המצא', 'science', 'space', 'nasa', 'computer', 'invent', 'discover', 'satellite', 'rocket']
-    };
-
-    function classifyClient(entry) {
-        const text = ((entry.text || '') + ' ' + (entry.extract || '')).toLowerCase();
-        for (const [cat, keywords] of Object.entries(CLIENT_KEYWORDS)) {
-            for (const kw of keywords) {
-                if (text.includes(kw.toLowerCase())) return cat;
-            }
-        }
-        return 'general';
-    }
-
-    const CLIENT_TRANSLATION_GLOSSARY = {
-        war: 'מלחמה', battle: 'קרב', empire: 'אימפריה', king: 'מלך', queen: 'מלכה',
-        president: 'נשיא', minister: 'שר', israel: 'ישראל', jerusalem: 'ירושלים',
-        independence: 'עצמאות', revolution: 'מהפכה', born: 'נולד', died: 'נפטר',
-        treaty: 'הסכם', law: 'חוק', state: 'מדינה', city: 'עיר', army: 'צבא',
-        science: 'מדע', university: 'אוניברסיטה', olympic: 'אולימפי', football: 'כדורגל'
-    };
-
-    function clientTransliterateToken(token) {
-        const map = {
-            a: 'א', b: 'ב', c: 'ק', d: 'ד', e: 'ה', f: 'פ', g: 'ג', h: 'ה', i: 'י', j: 'ג׳',
-            k: 'ק', l: 'ל', m: 'מ', n: 'נ', o: 'ו', p: 'פ', q: 'ק', r: 'ר', s: 'ס', t: 'ט',
-            u: 'ו', v: 'ו', w: 'ו', x: 'קס', y: 'י', z: 'ז'
-        };
-        return token.toLowerCase().split('').map(ch => map[ch] || ch).join('');
-    }
-
-    function clientTranslateText(text) {
-        if (!text) return '';
-        return String(text).replace(/[A-Za-z][A-Za-z'’-]*/g, (word) => {
-            const key = word.toLowerCase();
-            if (CLIENT_TRANSLATION_GLOSSARY[key]) return CLIENT_TRANSLATION_GLOSSARY[key];
-            if (/^[A-Z][a-z]/.test(word) || word.length > 7) return clientTransliterateToken(word);
-            return word;
-        });
-    }
-
-    function clientTranslateEntry(entry) {
-        if (!entry || entry.lang !== 'en') return entry;
-        entry.text = clientTranslateText(entry.text);
-        if (entry.extract) entry.extract = clientTranslateText(entry.extract);
-        entry.originalLang = 'en';
-        entry.lang = 'he';
-        entry.translationMode = 'fallback';
-        return entry;
-    }
-
-    async function loadFromLiveAPIs() {
-        const m = currentDate.getMonth() + 1;
-        const d = currentDate.getDate();
-        const y = currentDate.getFullYear();
-
-        const [heRes, enRes, hebRes] = await Promise.allSettled([
-            fetchWikiAPI(API.HE, m, d),
-            fetchWikiAPI(API.EN, m, d),
-            fetch(`${API.HEBCAL}?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json())
-        ]);
-
-        const he = heRes.status === 'fulfilled' ? heRes.value : null;
-        const en = enRes.status === 'fulfilled' ? enRes.value : null;
-        const heb = hebRes.status === 'fulfilled' ? hebRes.value : null;
-
-        if (!he && !en) throw new Error('No data sources available');
-
-        const data = {
-            events: [], births: [], deaths: [],
-            selected: [], holidays: [], socialPosts: [], news: [],
-            hebrewDate: (heb && heb.hebrew) || '',
-            sourceStats: { he: 0, en: 0 }
-        };
-
-        function addUnique(target, source, lang) {
-            const existingYears = new Set(target.map(e => e.year));
-            let added = 0;
-            for (const e of source) {
-                if (!existingYears.has(e.year)) {
-                    target.push(processEntry(e, lang));
-                    existingYears.add(e.year);
-                    added++;
-                }
-            }
-            return added;
-        }
-
-        if (he) {
-            for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
-                for (const item of (he[cat] || [])) {
-                    data[cat].push(processEntry(item, 'he'));
-                    data.sourceStats.he++;
-                }
-            }
-        }
-
-        if (en) {
-            for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
-                data.sourceStats.en += addUnique(data[cat], en[cat] || [], 'en');
-            }
-        }
-
-        for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
-            for (const entry of data[cat]) {
-                clientTranslateEntry(entry);
-            }
-        }
-
-        data.translationMode = 'fallback';
-
-        // Classify and sort client-side
-        for (const cat of ['events', 'births', 'deaths', 'selected']) {
-            for (const entry of data[cat]) {
-                entry.category = classifyClient(entry);
-            }
-        }
-
-        data.events.sort((a, b) => {
-            if (a.category === 'israel' && b.category !== 'israel') return -1;
-            if (a.category !== 'israel' && b.category === 'israel') return 1;
-            return b.year - a.year;
-        });
-        data.births.sort((a, b) => b.year - a.year);
-        data.deaths.sort((a, b) => b.year - a.year);
-
-        console.log('Loaded from live Wikipedia APIs (fallback)');
-        return data;
-    }
-
-    async function loadData() {
-        try {
-            return await loadFromCachedJson();
-        } catch (e) {
-            console.log('Cached data unavailable, trying live APIs...', e.message);
-        }
-        return await loadFromLiveAPIs();
-    }
-
-    // ====== Date Display ======
-    function updateDateDisplay() {
-        const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDate').textContent =
-            currentDate.toLocaleDateString('he-IL', opts);
-    }
-
-    // ====== Date Navigation ======
-    function changeDate(days) {
-        if (!isSubscriber) {
-            showPremiumPrompt();
-            return;
-        }
-        currentDate = new Date(currentDate.getTime() + days * 86400000);
-        updateDateDisplay();
-        loadEventsForDate();
-    }
-
-    function goToToday() {
-        currentDate = new Date();
-        updateDateDisplay();
-        loadEventsForDate();
-    }
-
-    function showPremiumPrompt() {
-        const banner = document.getElementById('premiumBanner');
-        if (banner) {
-            banner.classList.add('highlight');
-            banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => banner.classList.remove('highlight'), 2000);
-        }
-    }
-
-    function handleSubscribe() {
-        alert('מערכת המנויים בבנייה. בקרוב תוכל להירשם!');
-    }
-
-    // ====== Category Tabs ======
-    function initCategoryTabs() {
-        document.querySelectorAll('.cat-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                activeCategory = tab.dataset.cat;
-                renderEvents();
-                renderTimeline();
-            });
-        });
-    }
-
-    // ====== Main Loader ======
-    async function loadEventsForDate() {
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('content').style.display = 'none';
-        document.getElementById('errorMsg').style.display = 'none';
-        document.getElementById('statsBar').style.display = 'none';
-        document.getElementById('breakingTicker').style.display = 'none';
-
-        try {
-            allData = await loadData();
-
-            if (allData.hebrewDate) {
-                document.getElementById('hebrewDate').textContent = allData.hebrewDate;
-            }
-
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('content').style.display = 'block';
-            document.getElementById('statsBar').style.display = '';
-            renderAll();
-        } catch (err) {
-            console.error('Fetch error:', err);
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('errorMsg').style.display = 'flex';
-        }
-    }
-
-    // ====== Social Post Builder ======
-    function buildSocialPostHtml(post) {
-        const initial = (post.author || '?').charAt(0);
-        const platform = post.platform || 'twitter';
-
-        const platforms = {
-            twitter: {
-                cls: 'social-twitter',
-                icon: 'fab fa-x-twitter',
-                iconColor: '#000',
-                avatarBg: '#000',
-                name: 'X',
-                verifiedColor: '#1d9bf0',
-                stats: [
-                    { icon: 'far fa-comment', val: post.replies },
-                    { icon: 'fas fa-retweet', val: post.retweets },
-                    { icon: 'far fa-heart', val: post.likes }
-                ]
-            },
-            facebook: {
-                cls: 'social-facebook',
-                icon: 'fab fa-facebook',
-                iconColor: '#1877f2',
-                avatarBg: '#1877f2',
-                name: 'Facebook',
-                verifiedColor: '#1877f2',
-                stats: [
-                    { icon: 'fas fa-thumbs-up', val: post.likes },
-                    { icon: 'far fa-comment-alt', val: post.replies },
-                    { icon: 'fas fa-share', val: post.retweets }
-                ]
-            },
-            instagram: {
-                cls: 'social-instagram',
-                icon: 'fab fa-instagram',
-                iconColor: '#e4405f',
-                avatarBg: '#c13584',
-                name: 'Instagram',
-                verifiedColor: '#3897f0',
-                stats: [
-                    { icon: 'far fa-heart', val: post.likes },
-                    { icon: 'far fa-comment', val: post.replies },
-                    { icon: 'far fa-paper-plane', val: post.retweets }
-                ]
-            }
-        };
-
-        const p = platforms[platform] || platforms.twitter;
-
-        return `
-            <div class="social-post ${p.cls}">
-                <div class="social-post-header">
-                    <div class="social-avatar" style="background-color:${p.avatarBg}">${escapeHtml(initial)}</div>
-                    <div class="social-author-info">
-                        <strong>${escapeHtml(post.author || '')} <i class="fas fa-check-circle" style="color:${p.verifiedColor};font-size:11px"></i></strong>
-                        <span>${escapeHtml(post.handle || '')}</span>
-                    </div>
-                    <div class="social-platform-badge">
-                        <i class="${p.icon}" style="color:${p.iconColor};font-size:18px"></i>
-                    </div>
-                </div>
-                <div class="social-post-body">${escapeHtml(post.content || '')}</div>
-                <div class="social-post-actions">
-                    ${p.stats.map(s => `<span><i class="${s.icon}"></i> ${formatNumber(s.val || 0)}</span>`).join('')}
-                </div>
+    <!-- Masthead -->
+    <header class="masthead">
+        <div class="masthead-inner">
+            <div class="masthead-date masthead-date-right" id="hebrew-date"></div>
+            <div class="masthead-center">
+                <h1 class="newspaper-title">דברי הימים</h1>
+                <div class="newspaper-subtitle">אירועים שעיצבו את ישראל והעולם — היום בהיסטוריה</div>
             </div>
-        `;
-    }
+            <div class="masthead-date masthead-date-left" id="gregorian-date"></div>
+        </div>
+        <div class="masthead-rule"></div>
+    </header>
 
-    // ====== Render ======
-    function renderAll() {
-        if (!allData) return;
-        renderStatsBar();
-        renderBreakingTicker();
-        renderMainHeadline();
-        renderNews();
-        renderEvents();
-        renderSocialPosts();
-        renderBirths();
-        renderDeaths();
-        renderHolidays();
-        renderAncientEvents();
-        renderTimeline();
-    }
+    <!-- Breaking news ticker -->
+    <div class="ticker-bar">
+        <span class="ticker-label">עדכונים</span>
+        <div class="ticker-track">
+            <div class="ticker-scroll" id="ticker-scroll"></div>
+        </div>
+    </div>
 
-    function renderStatsBar() {
-        const bar = document.getElementById('statsBar');
-        const israelCount = (allData.events || []).filter(e => e.category === 'israel').length;
-        const translationMode = allData.translationMode || (allData.stats && allData.stats.translated > 0 ? 'deepseek' : 'fallback');
-        const translationLabel = translationMode === 'deepseek' ? 'DeepSeek' : 'Fallback';
-        bar.innerHTML = `
-            <span><i class="fas fa-star-of-david"></i> ${israelCount} ישראל</span>
-            <span><i class="fas fa-landmark"></i> ${allData.events.length} אירועים</span>
-            <span><i class="fas fa-birthday-cake"></i> ${allData.births.length} לידות</span>
-            <span><i class="fas fa-star-of-life"></i> ${allData.deaths.length} פטירות</span>
-            <span><i class="fas fa-language"></i> תרגום: ${translationLabel}</span>
-            ${(allData.socialPosts || []).length > 0 ? `<span><i class="fab fa-x-twitter"></i> ${allData.socialPosts.length} ציוצים</span>` : ''}
-            ${(allData.news || []).length > 0 ? `<span><i class="fas fa-newspaper"></i> ${allData.news.length} חדשות</span>` : ''}
-        `;
-    }
+    <!-- Main headline -->
+    <section class="headline-section" id="headline-section"></section>
 
-    function renderBreakingTicker() {
-        const ticker = document.getElementById('breakingTicker');
-        const textEl = document.getElementById('breakingText');
+    <!-- Secondary headlines -->
+    <section class="secondary-headlines" id="secondary-headlines"></section>
 
-        // Use the first Israeli event or headline for the ticker
-        let tickerText = '';
-        if (allData.headline) {
-            tickerText = `${allData.headline.year}: ${allData.headline.text}`;
-        } else {
-            const israelEv = (allData.events || []).find(e => e.category === 'israel');
-            if (israelEv) {
-                tickerText = `${israelEv.year}: ${israelEv.text}`;
-            }
-        }
+    <div class="section-rule"></div>
 
-        if (tickerText) {
-            textEl.textContent = tickerText;
-            ticker.style.display = 'flex';
-        }
-    }
+    <!-- Two-column newspaper body -->
+    <main class="newspaper-body" id="newspaper-body">
+        <div class="column column-right" id="column-right"></div>
+        <div class="column-divider"></div>
+        <div class="column column-left" id="column-left"></div>
+    </main>
 
-    function renderMainHeadline() {
-        const el = document.getElementById('mainHeadline');
+    <!-- Births & Deaths -->
+    <section class="people-section" id="people-section"></section>
 
-        const pool = [...(allData.selected || []), ...(allData.events || [])];
-        const minYear = currentDate.getFullYear() - HEADLINE_CONFIG.minHistoricalYears;
-        const eligiblePool = pool.filter(e => e && !e.isAncient && e.year && e.year <= minYear);
-        const fallbackPool = pool.filter(e => e && !e.isAncient);
-        const scoredPool = (eligiblePool.length > 0 ? eligiblePool : fallbackPool)
-            .map(e => ({ ...e, headlineScore: typeof e.headlineScore === 'number' ? e.headlineScore : getHeadlineScore(e) }))
-            .sort((a, b) => b.headlineScore - a.headlineScore);
+    <!-- Footer -->
+    <footer class="newspaper-footer">
+        <div class="footer-inner">
+            <span>© דברי הימים — עיתון היסטורי יומי | נתונים מוויקיפדיה</span>
+            <span id="stats-bar"></span>
+        </div>
+    </footer>
 
-        const ev = scoredPool[0] || null;
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>טוען את גיליון היום...</p>
+    </div>
 
-        if (!ev) {
-            el.innerHTML = '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
-            return;
-        }
+<script>
+// ====== Section Config ======
+var SECTION_NAMES = {
+    israel:'ישראל', politics:'מדיני', military:'צבאי ובטחוני',
+    science:'מדע וטכנולוגיה', culture:'תרבות ובידור', sports:'ספורט',
+    economy:'כלכלה', religion:'דת ומסורת', world:'עולמי', general:'כללי'
+};
+var SECTION_COLORS = {
+    israel:'#0038b8', politics:'#8B0000', military:'#2F4F4F',
+    science:'#006400', culture:'#800080', sports:'#FF8C00',
+    economy:'#8B4513', religion:'#4B0082', world:'#191970', general:'#444'
+};
 
-        const ago = yearsAgo(ev.year);
-        const catBadge = getCategoryBadge(ev.category);
-        const isIsrael = ev.category === 'israel';
-
-        const imgHtml = ev.thumbnail
-            ? `<div class="headline-image-wrap">
-                 <img src="${escapeHtml(ev.thumbnail)}" alt="" class="headline-image"
-                      onerror="this.parentElement.style.display='none'">
-               </div>`
-            : '';
-
-        el.innerHTML = `
-            <div class="headline-category">${isIsrael ? '<i class="fas fa-star-of-david"></i> ' : ''}אירוע מרכזי ${catBadge}</div>
-            <div class="headline-layout">
-                <div class="headline-text">
-                    <h2>${escapeHtml(String(ev.year))} - ${escapeHtml(ev.text)}</h2>
-                    <div class="headline-meta">
-                        <span class="byline"><i class="fas fa-book"></i> ${ev.lang === 'he' ? 'ויקיפדיה העברית' : 'ויקיפדיה'}</span>
-                        <span class="time">${ago || ''}</span>
-                        <span class="time"><i class="fas fa-chart-line"></i> ציון: ${ev.headlineScore || getHeadlineScore(ev)}</span>
-                    </div>
-                    ${ev.extract ? `<p class="headline-extract">${escapeHtml(ev.extract)}</p>` : ''}
-                </div>
-                ${imgHtml}
-            </div>
-        `;
-
-        const sub = ev.text.length > 80 ? ev.text.substring(0, 80) + '...' : ev.text;
-        document.getElementById('dailyHeadline').textContent = `${ago} | ${sub}`;
-    }
-
-    function renderEvents() {
-        const container = document.getElementById('eventsContent');
-        let events = allData.events;
-
-        if (activeCategory !== 'all') {
-            events = events.filter(e => e.category === activeCategory);
-        }
-        events = events.slice(0, LIMITS.EVENTS);
-
-        if (events.length === 0) {
-            container.innerHTML = `<p class="no-events">לא נמצאו אירועים בקטגוריה זו.</p>`;
-            return;
-        }
-
-        container.innerHTML = '<div class="events-columns">' + events.map(ev => {
-            const ago = yearsAgo(ev.year);
-            const catBadge = getCategoryBadge(ev.category);
-            const thumb = ev.thumbnail
-                ? `<img src="${escapeHtml(ev.thumbnail)}" class="event-thumb" alt="" onerror="this.style.display='none'">`
-                : '';
-
-            return `
-                <article class="news-item">
-                    <div class="event-year-badge">${ev.year}</div>
-                    <div class="event-body">
-                        ${thumb}
-                        <div class="event-text">
-                            <h4>${escapeHtml(ev.text)} ${catBadge}</h4>
-                            ${ev.extract ? `<p class="event-extract">${escapeHtml(ev.extract.length > 200 ? ev.extract.substring(0, 120) + '...' : ev.extract)}</p>` : ''}
-                            <p class="event-meta">${ago}</p>
-                        </div>
-                    </div>
-                </article>
-            `;
-        }).join('') + '</div>';
-    }
-
-    function renderSocialPosts() {
-        const section = document.getElementById('socialSection');
-        const container = document.getElementById('socialContent');
-        const posts = allData.socialPosts || [];
-
-        section.style.display = '';
-
-        if (posts.length === 0) {
-            container.innerHTML = '<p class="no-events">פוסטים חברתיים עדיין לא זמינים. ננסה לרענן בקרוב.</p>';
-            return;
-        }
-
-        container.innerHTML = '<div class="social-posts-grid">' +
-            posts.slice(0, LIMITS.SOCIAL).map(post => buildSocialPostHtml(post)).join('') +
-            '</div>';
-    }
-
-    function renderBirths() {
-        const container = document.getElementById('birthsContent');
-        const births = allData.births.slice(0, LIMITS.BIRTHS);
-        if (births.length === 0) {
-            container.innerHTML = '<p class="no-events">לא נמצאו נתונים.</p>';
-            return;
-        }
-
-        container.innerHTML = '<div class="birthdays">' +
-            births.map(b => {
-                const age = currentDate.getFullYear() - b.year;
-                const thumb = b.thumbnail
-                    ? `<img src="${escapeHtml(b.thumbnail)}" class="person-thumb" alt="" onerror="this.outerHTML='<div class=\\'person-thumb-placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
-                    : '<div class="person-thumb-placeholder"><i class="fas fa-user"></i></div>';
-                const catBadge = getCategoryBadge(b.category);
-                return `<div class="birthday-item person-card">
-                    ${thumb}
-                    <div class="person-info">
-                        <strong>${escapeHtml(b.text)}</strong> ${catBadge}
-                        <span class="person-year">(${b.year})${age > 0 ? ` - בן/בת ${age}` : ''}</span>
-                    </div>
-                </div>`;
-            }).join('') +
-            '</div>';
-    }
-
-    function renderDeaths() {
-        const container = document.getElementById('deathsContent');
-        const deaths = allData.deaths.slice(0, LIMITS.DEATHS);
-        if (deaths.length === 0) {
-            container.innerHTML = '<p class="no-events">לא נמצאו נתונים.</p>';
-            return;
-        }
-
-        container.innerHTML = '<div class="birthdays deaths-list">' +
-            deaths.map(d => {
-                const thumb = d.thumbnail
-                    ? `<img src="${escapeHtml(d.thumbnail)}" class="person-thumb" alt="" onerror="this.outerHTML='<div class=\\'person-thumb-placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
-                    : '<div class="person-thumb-placeholder"><i class="fas fa-user"></i></div>';
-                const catBadge = getCategoryBadge(d.category);
-                return `<div class="birthday-item person-card">
-                    ${thumb}
-                    <div class="person-info">
-                        <strong>${escapeHtml(d.text)}</strong> ${catBadge}
-                        <span class="person-year">(${d.year})</span>
-                    </div>
-                </div>`;
-            }).join('') +
-            '</div>';
-    }
-
-    function renderHolidays() {
-        const section = document.getElementById('holidaysSection');
-        const container = document.getElementById('holidaysContent');
-        if (!allData.holidays || allData.holidays.length === 0) {
-            section.style.display = 'none';
-            return;
-        }
-        section.style.display = '';
-        container.innerHTML = '<div class="holidays-list">' +
-            allData.holidays.map(h => {
-                return `<div class="holiday-item">
-                    <i class="fas fa-star holiday-star"></i>
-                    <span>${escapeHtml(h.text)}</span>
-                </div>`;
-            }).join('') +
-            '</div>';
-    }
-
-    function renderNews() {
-        const section = document.getElementById('newsSection');
-        const container = document.getElementById('newsContent');
-        const news = allData.news || [];
-        if (news.length === 0) {
-            section.style.display = 'none';
-            return;
-        }
-        section.style.display = '';
-
-        const sourceIcons = {
-            'ynet': 'fas fa-bolt',
-            'וואלה': 'fas fa-fire',
-            'Google News': 'fab fa-google',
-            'מעריב': 'fas fa-newspaper',
-            'ישראל היום': 'fas fa-sun',
-            'כלכליסט': 'fas fa-chart-line',
-            'default': 'fas fa-newspaper'
-        };
-
-        container.innerHTML = '<div class="news-list">' +
-            news.slice(0, LIMITS.NEWS).map(n => {
-                const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
-                const hasImage = n.image && n.image.startsWith('http');
-                const displayTitle = n.translatedTitle || n.title || '';
-                const displaySummary = n.translatedSummary || n.summary || '';
-
-                if (hasImage) {
-                    return `
-                    <div class="news-card">
-                        <div class="news-card-with-image">
-                            <img src="${escapeHtml(n.image)}" class="news-card-image" alt="" onerror="this.style.display='none'">
-                            <div class="news-card-text">
-                                <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                                    ${escapeHtml(displayTitle)}
-                                </a>
-                                ${displaySummary ? `<p class="news-summary">${escapeHtml(displaySummary.substring(0, 100))}${displaySummary.length > 100 ? '...' : ''}</p>` : ''}
-                                <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                }
-
-                return `
-                <div class="news-card">
-                    <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                        ${escapeHtml(displayTitle)}
-                    </a>
-                    ${displaySummary ? `<p class="news-summary">${escapeHtml(displaySummary.substring(0, 120))}${displaySummary.length > 120 ? '...' : ''}</p>` : ''}
-                    <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
-                </div>`;
-            }).join('') +
-            '</div>';
-    }
-
-    function renderAncientEvents() {
-        const section = document.getElementById('ancientSection');
-        const container = document.getElementById('ancientContent');
-        const ancientEvents = (allData.ancientEvents || []).concat(
-            (allData.events || []).filter(e => e.isAncient)
-        );
-
-        const seen = new Set();
-        const unique = ancientEvents.filter(e => {
-            const key = e.text;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
+// ====== Data Loading ======
+function loadData() {
+    return fetch('today.json?t=' + Date.now())
+        .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+        .then(function(d) { if (d && d.events && d.events.length > 0) return d; throw new Error(); })
+        .catch(function() {
+            return fetch('example-events.json')
+                .then(function(r2) { return r2.ok ? r2.json() : null; })
+                .catch(function() { return null; });
         });
+}
 
-        if (unique.length === 0) {
-            section.style.display = 'none';
-            return;
-        }
+// ====== Helpers ======
+function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n||0); }
+function fmtYear(y) { return y < 0 ? Math.abs(y)+' לפנה"ס' : String(y); }
+function calcYearsAgo(y) { return Math.abs(new Date().getFullYear() - y); }
+function esc(s) { if (!s) return ''; var d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
 
-        section.style.display = '';
-        unique.sort((a, b) => a.year - b.year);
-
-        container.innerHTML = '<div class="ancient-events-list">' +
-            unique.map(ev => {
-                const yearDisplay = ev.year < 0
-                    ? `${Math.abs(ev.year)} לפנה"ס`
-                    : String(ev.year);
-                const catBadge = getCategoryBadge(ev.category);
-                return `
-                    <div class="ancient-event-item">
-                        <div class="ancient-year">${escapeHtml(yearDisplay)}</div>
-                        <div class="ancient-text">
-                            <span>${escapeHtml(ev.text)}</span> ${catBadge}
-                        </div>
-                    </div>
-                `;
-            }).join('') +
-            '</div>';
+// ====== Render Functions ======
+function renderDates(data) {
+    document.getElementById('hebrew-date').textContent = data.hebrewDate || '';
+    if (data.date) {
+        var d = new Date(data.date + 'T00:00:00');
+        document.getElementById('gregorian-date').textContent =
+            d.toLocaleDateString('he-IL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     }
+    var h = new Date().getHours();
+    document.getElementById('edition-text').textContent =
+        h < 12 ? 'מהדורת בוקר' : h < 18 ? 'מהדורת צהריים' : 'מהדורת ערב';
+}
 
-    function renderTimeline() {
-        const section = document.getElementById('timelineSection');
-        const container = document.getElementById('timelineContent');
-        let remaining = allData.events.slice(LIMITS.EVENTS);
+function renderTicker(data) {
+    var el = document.getElementById('ticker-scroll');
+    var items = [].concat(data.selected||[], data.events||[]).slice(0, 12);
+    var html = items.map(function(e) {
+        return '<span class="ticker-item"><b>'+fmtYear(e.year)+'</b>: '+esc(e.text)+'</span>';
+    }).join('<span class="ticker-sep">◆</span>');
+    el.innerHTML = html + html; // duplicate for seamless scroll
+}
 
-        if (activeCategory !== 'all') {
-            remaining = allData.events.filter(e => e.category === activeCategory).slice(LIMITS.EVENTS);
-        }
+function renderSocialPost(post) {
+    if (!post) return '';
+    var icons = {twitter:'𝕏', facebook:'f', instagram:'◻'};
+    return '<div class="social-embed '+(post.platform||'twitter')+'">'
+        + '<div class="social-header">'
+        + '<span class="social-icon">'+(icons[post.platform]||'💬')+'</span>'
+        + '<span class="social-author">'+esc(post.author)+'</span>'
+        + '<span class="social-handle">'+esc(post.handle)+'</span>'
+        + '</div>'
+        + '<p class="social-text">'+esc(post.content)+'</p>'
+        + '<div class="social-stats">'
+        + '<span>❤️ '+fmtNum(post.likes)+'</span>'
+        + '<span>🔄 '+fmtNum(post.retweets)+'</span>'
+        + '<span>💬 '+fmtNum(post.replies)+'</span>'
+        + '</div></div>';
+}
 
-        if (remaining.length === 0) {
-            section.style.display = 'none';
-            return;
-        }
-        section.style.display = '';
+function renderHeadline(data) {
+    var sec = document.getElementById('headline-section');
+    var h = data.headline;
+    if (!h) { sec.innerHTML = '<h2 class="main-headline">היום בהיסטוריה</h2>'; return; }
+    var catName = SECTION_NAMES[h.category] || 'היסטוריה';
+    var catColor = SECTION_COLORS[h.category] || '#333';
 
-        container.innerHTML = remaining.slice(0, 20).reverse().map(ev => {
-            const catBadge = getCategoryBadge(ev.category);
-            return `<li><strong>${ev.year}</strong> - ${escapeHtml(ev.text)} ${catBadge}</li>`;
-        }).join('');
+    sec.innerHTML = '<div class="headline-wrap">'
+        + (h.thumbnail ? '<div class="headline-img"><img src="'+esc(h.thumbnail)+'" alt=""></div>' : '')
+        + '<div class="headline-body">'
+        + '<span class="headline-badge" style="background:'+catColor+'">'+esc(catName)+'</span>'
+        + '<h2 class="main-headline">'+esc(h.text)+'</h2>'
+        + '<div class="headline-meta">'
+        + '<span class="headline-year">'+fmtYear(h.year)+'</span>'
+        + '<span class="meta-sep">|</span>'
+        + '<span class="headline-ago">לפני '+calcYearsAgo(h.year)+' שנים</span>'
+        + (h.source ? '<span class="meta-sep">|</span><span class="headline-source">'+esc(h.source)+'</span>' : '')
+        + '</div>'
+        + (h.extract ? '<p class="headline-extract">'+esc(h.extract)+'</p>' : '')
+        + renderSocialPost(h.socialPost)
+        + '</div></div>';
+}
+
+function renderSecondaryHeadlines(data) {
+    var sec = document.getElementById('secondary-headlines');
+    var headline = data.headline;
+    var pool = [].concat(data.selected||[], data.events||[])
+        .filter(function(e) { return !headline || e.year !== headline.year || e.text !== headline.text; });
+    var picked = [], usedCats = {};
+    for (var i = 0; i < pool.length && picked.length < 3; i++) {
+        if (!usedCats[pool[i].category]) { picked.push(pool[i]); usedCats[pool[i].category] = true; }
     }
-
-    // ====== Auto-refresh: poll for updated data from background collector ======
-    let refreshAttempts = 0;
-    const MAX_REFRESH = 20;
-    const REFRESH_INTERVAL = 15000; // 15 seconds
-
-    function startAutoRefresh() {
-        if (refreshAttempts >= MAX_REFRESH) {
-            console.log('Auto-refresh: max attempts reached, stopping');
-            return;
-        }
-
-        setTimeout(async () => {
-            refreshAttempts++;
-            try {
-                const resp = await fetch('today.json?_=' + Date.now());
-                if (!resp.ok) return startAutoRefresh();
-                const data = await resp.json();
-
-                const hasTranslations = data.stats && data.stats.translated > 0;
-                const hasSocialPosts = data.socialPosts && data.socialPosts.length > 0;
-                const hasAncient = data.ancientEvents && data.ancientEvents.length > 0;
-                const hasNews = data.news && data.news.length > 0;
-
-                // Compare with current data — detect ANY improvement
-                const currentTranslated = allData && allData.stats && allData.stats.translated || 0;
-                const currentSocial = allData && allData.socialPosts && allData.socialPosts.length || 0;
-                const currentAncient = allData && allData.ancientEvents && allData.ancientEvents.length || 0;
-
-                const newTranslated = (data.stats && data.stats.translated) || 0;
-                const newSocial = (data.socialPosts && data.socialPosts.length) || 0;
-                const newAncient = (data.ancientEvents && data.ancientEvents.length) || 0;
-
-                const improved = (newTranslated > currentTranslated) ||
-                                 (newSocial > currentSocial) ||
-                                 (newAncient > currentAncient);
-
-                if (improved) {
-                    console.log(`Auto-refresh: improved data detected (translations: ${currentTranslated}→${newTranslated}, social: ${currentSocial}→${newSocial}, ancient: ${currentAncient}→${newAncient})`);
-                    if (!data.sourceStats) data.sourceStats = data.stats || { he: 0, en: 0 };
-                    allData = data;
-                    renderAll();
-                    // Keep refreshing in case more data comes
-                    if (refreshAttempts < MAX_REFRESH) startAutoRefresh();
-                    return;
-                }
-
-                console.log(`Auto-refresh: attempt ${refreshAttempts}/${MAX_REFRESH} - no change yet`);
-            } catch (e) {
-                console.log('Auto-refresh check failed:', e.message);
-            }
-
-            if (refreshAttempts < MAX_REFRESH) startAutoRefresh();
-        }, REFRESH_INTERVAL);
+    for (var j = 0; j < pool.length && picked.length < 3; j++) {
+        if (picked.indexOf(pool[j]) === -1) picked.push(pool[j]);
     }
+    if (!picked.length) { sec.style.display='none'; return; }
 
-    // ====== Init ======
-    document.addEventListener('DOMContentLoaded', function () {
-        if (!isSubscriber) {
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.add('locked');
-            });
-        } else {
-            document.querySelectorAll('.lock-icon').forEach(icon => {
-                icon.style.display = 'none';
-            });
-            const banner = document.getElementById('premiumBanner');
-            if (banner) banner.style.display = 'none';
-        }
+    sec.innerHTML = '<div class="secondary-grid">' + picked.map(function(e) {
+        var catName = SECTION_NAMES[e.category]||'';
+        var catColor = SECTION_COLORS[e.category]||'#333';
+        return '<div class="secondary-card">'
+            + (e.thumbnail ? '<img src="'+esc(e.thumbnail)+'" alt="" class="secondary-img" loading="lazy">' : '')
+            + '<span class="secondary-badge" style="background:'+catColor+'">'+esc(catName)+'</span>'
+            + '<h3 class="secondary-title">'+esc(e.text)+'</h3>'
+            + '<span class="secondary-year">'+fmtYear(e.year)+' — לפני '+calcYearsAgo(e.year)+' שנים</span>'
+            + '</div>';
+    }).join('') + '</div>';
+}
 
-        initCategoryTabs();
-        currentDate = new Date();
-        updateDateDisplay();
-        loadEventsForDate().then(() => {
-            // Always start auto-refresh to pick up translations/social posts from background collector
-            const needsRefresh = !allData ||
-                !allData.socialPosts || allData.socialPosts.length === 0 ||
-                !allData.stats || allData.stats.translated === 0;
-            if (needsRefresh) {
-                console.log('Starting auto-refresh to wait for background collector...');
-                startAutoRefresh();
-            }
+function renderArticle(ev) {
+    return '<article class="article">'
+        + '<div class="article-top">'
+        + '<span class="article-year-badge">'+fmtYear(ev.year)+'</span>'
+        + '<span class="article-ago">לפני '+calcYearsAgo(ev.year)+' שנים</span>'
+        + '</div>'
+        + '<h3 class="article-title">'+esc(ev.text)+'</h3>'
+        + (ev.extract ? '<p class="article-body">'+esc(ev.extract)+'</p>' : '')
+        + (ev.thumbnail ? '<div class="article-img"><img src="'+esc(ev.thumbnail)+'" alt="" loading="lazy"></div>' : '')
+        + renderSocialPost(ev.socialPost)
+        + '<div class="article-bottom">'
+        + (ev.source ? '<span class="article-source">'+esc(ev.source)+'</span>' : '')
+        + '</div></article>';
+}
+
+function renderSection(cat, events) {
+    var color = SECTION_COLORS[cat]||'#333';
+    var name = SECTION_NAMES[cat]||cat;
+    var items = events.slice(0, 6);
+    return '<div class="section-block">'
+        + '<div class="section-hdr" style="border-right-color:'+color+';border-left-color:'+color+'">'
+        + '<span class="section-hdr-text" style="color:'+color+'">'+esc(name)+'</span>'
+        + '<span class="section-count">'+events.length+' אירועים</span>'
+        + '</div>'
+        + items.map(function(e) { return renderArticle(e); }).join('<div class="article-sep"></div>')
+        + '</div>';
+}
+
+function renderSections(data) {
+    var sections = data.sections || {};
+    // Build from events if sections not provided
+    if (Object.keys(sections).length === 0 && data.events) {
+        data.events.forEach(function(e) {
+            var cat = e.category || 'general';
+            if (!sections[cat]) sections[cat] = [];
+            sections[cat].push(e);
         });
+    }
+    var rightCats = ['israel','politics','military','religion'];
+    var leftCats = ['economy','sports','culture','science','world','general'];
+
+    document.getElementById('column-right').innerHTML =
+        rightCats.filter(function(c){return sections[c] && sections[c].length;})
+            .map(function(c){return renderSection(c, sections[c]);}).join('');
+    document.getElementById('column-left').innerHTML =
+        leftCats.filter(function(c){return sections[c] && sections[c].length;})
+            .map(function(c){return renderSection(c, sections[c]);}).join('');
+}
+
+function personCard(p) {
+    return '<div class="person-card">'
+        + (p.thumbnail ? '<img src="'+esc(p.thumbnail)+'" alt="" class="person-thumb" loading="lazy">' : '<div class="person-thumb-placeholder"></div>')
+        + '<div class="person-info">'
+        + '<span class="person-name">'+esc(p.text)+'</span>'
+        + '<span class="person-year">'+fmtYear(p.year)+'</span>'
+        + '</div></div>';
+}
+
+function renderPeople(data) {
+    var sec = document.getElementById('people-section');
+    var births = (data.births||[]).slice(0, 10);
+    var deaths = (data.deaths||[]).slice(0, 8);
+    if (!births.length && !deaths.length) { sec.style.display='none'; return; }
+
+    sec.innerHTML = '<div class="people-wrap">'
+        + (births.length ? '<div class="people-col"><div class="people-hdr births-hdr"><span>נולדו היום בהיסטוריה</span></div><div class="people-list">'+births.map(personCard).join('')+'</div></div>' : '')
+        + (deaths.length ? '<div class="people-col"><div class="people-hdr deaths-hdr"><span>נפטרו היום בהיסטוריה</span></div><div class="people-list">'+deaths.map(personCard).join('')+'</div></div>' : '')
+        + '</div>';
+}
+
+function renderStats(data) {
+    var s = data.stats||{};
+    document.getElementById('stats-bar').textContent =
+        (s.total||0)+' אירועים | '+(s.israelEvents||0)+' ישראליים | '+(s.he||0)+' עברית '+(s.en||0)+' אנגלית | '+(s.llmProvider||'');
+}
+
+// ====== Main ======
+function renderNewspaper(data) {
+    renderDates(data);
+    renderTicker(data);
+    renderHeadline(data);
+    renderSecondaryHeadlines(data);
+    renderSections(data);
+    renderPeople(data);
+    renderStats(data);
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadData().then(function(data) {
+        if (data) { renderNewspaper(data); }
+        else {
+            document.getElementById('loading-overlay').innerHTML =
+                '<p style="color:#8B0000;font-size:1.2em">לא נמצאו נתונים. ממתין לאיסוף ראשוני...</p>';
+        }
+        // Auto-refresh
+        var lastGen = data ? (data.generatedAt||'') : '';
+        setInterval(function() {
+            loadData().then(function(fresh) {
+                if (fresh && fresh.generatedAt !== lastGen) {
+                    lastGen = fresh.generatedAt;
+                    renderNewspaper(fresh);
+                }
+            });
+        }, 30000);
     });
-    </script>
+});
+</script>
 </body>
 </html>

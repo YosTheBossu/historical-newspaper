@@ -2,14 +2,25 @@
 set -e
 
 echo "[entrypoint] Exporting environment for cron..."
-# Write env vars so cron jobs can access DEEPSEEK_API_KEY
-printenv | grep -E '^DEEPSEEK_' > /etc/collector.env 2>/dev/null || true
+# Write env vars so cron jobs can access API keys
+printenv | grep -E '^(DEEPSEEK_|OPENROUTER_)' > /etc/collector.env 2>/dev/null || true
 
 # Show API key status in docker logs
+if [ -n "$OPENROUTER_API_KEY" ]; then
+    echo "[entrypoint] OPENROUTER_API_KEY: set (${OPENROUTER_API_KEY:0:12}...)"
+    echo "[entrypoint] Primary LLM: OpenRouter"
+else
+    echo "[entrypoint] OPENROUTER_API_KEY: NOT SET"
+fi
+
 if [ -n "$DEEPSEEK_API_KEY" ]; then
     echo "[entrypoint] DEEPSEEK_API_KEY: set (${DEEPSEEK_API_KEY:0:8}...)"
 else
-    echo "[entrypoint] WARNING: DEEPSEEK_API_KEY is NOT SET - translations will not work!"
+    echo "[entrypoint] DEEPSEEK_API_KEY: NOT SET"
+fi
+
+if [ -z "$OPENROUTER_API_KEY" ] && [ -z "$DEEPSEEK_API_KEY" ]; then
+    echo "[entrypoint] WARNING: No LLM API keys set — translations and AI features will not work!"
 fi
 
 echo "[entrypoint] Starting cron daemon..."
