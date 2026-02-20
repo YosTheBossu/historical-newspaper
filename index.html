@@ -203,10 +203,11 @@ function renderArticle(ev) {
 }
 
 function renderSection(cat, events) {
+    var color = SECTION_COLORS[cat]||'#333';
     var name = SECTION_NAMES[cat]||cat;
     var items = events.slice(0, 6);
     return '<div class="section-block">'
-        + '<div class="section-hdr">'
+        + '<div class="section-hdr" style="color:'+color+'">'
         + '<span class="section-hdr-text">'+esc(name)+'</span>'
         + '<span class="section-count">'+events.length+' אירועים</span>'
         + '</div>'

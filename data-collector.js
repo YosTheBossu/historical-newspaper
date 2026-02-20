@@ -10,7 +10,7 @@ const fs = require('fs');
 const CONFIG = {
     // LLM APIs — OpenRouter (primary, free models), DeepSeek (fallback)
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
-    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || 'deepseek/deepseek-r1-0528:free',
     OPENROUTER_URL: 'https://openrouter.ai/api/v1/chat/completions',
     DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || '',
     DEEPSEEK_MODEL: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
@@ -19,10 +19,11 @@ const CONFIG = {
     WIKI_EN: 'https://en.wikipedia.org/api/rest_v1/feed/onthisday/all',
     HEBCAL: 'https://www.hebcal.com/converter',
     USER_AGENT: 'HistoricalNewspaperBot/1.0 (educational project)',
-    TRANSLATE_BATCH_SIZE: 7,
-    MAX_EVENTS: 60,
-    MAX_BIRTHS: 30,
-    MAX_DEATHS: 25,
+    TRANSLATE_BATCH_SIZE: 5,
+    API_DELAY_MS: 4000,
+    MAX_EVENTS: 40,
+    MAX_BIRTHS: 15,
+    MAX_DEATHS: 12,
     ANCIENT_EVENT_SLOTS: 8,
     MIN_HISTORICAL_YEARS: Math.max(1, parseInt(process.env.MIN_HISTORICAL_YEARS || '25', 10) || 25)
 };
@@ -565,11 +566,10 @@ function basicFallbackTranslate(text) {
 }
 
 function applyFallbackTranslation(entry) {
-    entry.text = basicFallbackTranslate(entry.text);
-    if (entry.extract) entry.extract = basicFallbackTranslate(entry.extract);
+    // Keep original English — much better than gibberish transliteration
     entry.originalLang = 'en';
-    entry.lang = 'he';
-    entry.translationMode = 'fallback';
+    entry.lang = 'en';
+    entry.translationMode = 'untranslated';
     return entry;
 }
 
@@ -645,12 +645,14 @@ Rules:
 }
 
 async function translateAllEnglishEntries(data) {
-    const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
+    // Only translate events and selected (births/deaths kept shorter, less important)
+    const categories = ['events', 'selected'];
+    const skipCategories = ['births', 'deaths', 'holidays'];
     let totalEN = 0;
 
     if (!hasLLMKey()) {
         console.log('  No LLM key available, dropping English entries to prevent gibberish');
-        for (const cat of categories) {
+        for (const cat of [...categories, ...skipCategories]) {
             data[cat] = (data[cat] || []).filter(e => e.lang !== 'en');
         }
         data.translationMode = 'none';
@@ -667,6 +669,10 @@ async function translateAllEnglishEntries(data) {
         for (let i = 0; i < enEntries.length; i += CONFIG.TRANSLATE_BATCH_SIZE) {
             const batch = enEntries.slice(i, i + CONFIG.TRANSLATE_BATCH_SIZE);
             await translateBatch(batch);
+            // Delay between batches to avoid rate limiting
+            if (i + CONFIG.TRANSLATE_BATCH_SIZE < enEntries.length) {
+                await new Promise(r => setTimeout(r, CONFIG.API_DELAY_MS));
+            }
         }
     }
 
@@ -687,7 +693,7 @@ async function translateAllEnglishEntries(data) {
     }
 
     // Final fallback: drop any entries that remained untranslated
-    for (const cat of categories) {
+    for (const cat of [...categories, ...skipCategories]) {
         data[cat] = (data[cat] || []).filter(e => e.lang !== 'en');
     }
 
@@ -696,7 +702,7 @@ async function translateAllEnglishEntries(data) {
         data[cat] = (data[cat] || []).filter(e => isProbablyHebrew(e.text) && (!e.extract || isProbablyHebrew(e.extract)));
     }
 
-    data.translationMode = 'deepseek';
+    data.translationMode = hasLLMKey() ? 'openrouter' : 'none';
 
     console.log(`  Total processed for translation: ${totalEN} entries`);
     return data;
@@ -1084,7 +1090,18 @@ async function collectDailyData() {
 
     // --- Step 7: Generate social media posts ---
     console.log('7. Generating social media posts...');
-    data.socialPosts = await generateSocialPosts(data);
+    // Always generate template-based posts first (fast, guaranteed)
+    data.socialPosts = generateDeterministicSocialPosts(data);
+    console.log(`  Generated ${data.socialPosts.length} template social posts`);
+    // Try AI-generated posts if we have API budget left
+    if (hasLLMKey() && data.socialPosts.length < 6) {
+        try {
+            const aiPosts = await generateSocialPosts(data);
+            if (aiPosts.length > 0) data.socialPosts = aiPosts;
+        } catch (e) {
+            console.log('  AI social posts failed, keeping templates');
+        }
+    }
 
     // --- Step 8: Generate ancient/biblical events ---
     console.log('8. Generating ancient/biblical events...');
@@ -1163,11 +1180,11 @@ async function main() {
     console.log(`[Diagnostics] DEEPSEEK_API_KEY: ${CONFIG.DEEPSEEK_API_KEY ? 'set (' + CONFIG.DEEPSEEK_API_KEY.substring(0, 8) + '...)' : 'NOT SET (fallback)'}`);
     console.log(`[Diagnostics] Primary LLM: ${CONFIG.OPENROUTER_API_KEY ? 'OpenRouter' : (CONFIG.DEEPSEEK_API_KEY ? 'DeepSeek' : 'NONE')}`);
 
-    // Safety net: kill the process if collection takes longer than 5 minutes
+    // Safety net: kill the process if collection takes longer than 10 minutes
     const globalTimeout = setTimeout(() => {
-        console.error('Global timeout: collection exceeded 5 minutes, exiting');
+        console.error('Global timeout: collection exceeded 10 minutes, exiting');
         process.exit(1);
-    }, 300000);
+    }, 600000);
     globalTimeout.unref();
 
     try {

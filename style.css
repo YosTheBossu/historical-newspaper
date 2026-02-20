@@ -1,6 +1,6 @@
 /* ========================================
    דברי הימים — עיתון היסטורי יומי
-   עיצוב בהשראת ישראל היום / עיתונות מודפסת
+   בהשראת ישראל היום / ידיעות אחרונות / ynet
    ======================================== */
 
 /* === Reset & Base === */
@@ -8,23 +8,24 @@
 
 body {
     font-family: 'Heebo', 'Arial Hebrew', sans-serif;
-    background: #e6e6e6; /* Outside newspaper background */
-    color: #000000;
-    line-height: 1.4;
+    background: #e6e6e6;
+    color: #1a1a1a;
+    line-height: 1.5;
     direction: rtl;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* === Top Bar === */
+/* === Top Red Bar === */
 .top-bar {
-    background: #ff0000; /* Strong Red */
-    color: #ffffff;
-    font-size: 0.9rem;
+    background: linear-gradient(to left, #b71c1c, #c62828, #d32f2f);
+    color: #fff;
+    font-size: 0.88rem;
     font-weight: 700;
 }
 .top-bar-inner {
     max-width: 1140px;
     margin: 0 auto;
-    padding: 8px 20px;
+    padding: 7px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -32,58 +33,56 @@ body {
 
 /* === Masthead === */
 .masthead {
-    background: #ffffff;
+    background: #fff;
     max-width: 1140px;
     margin: 0 auto;
-    border-bottom: 5px solid #000000;
-    padding-top: 10px;
+    border-bottom: 5px solid #000;
 }
 .masthead-inner {
-    padding: 20px 20px 5px;
+    padding: 18px 24px 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
-.masthead-center { 
-    text-align: center; 
-    flex: 1; 
-}
+.masthead-center { text-align: center; flex: 1; }
 
 .newspaper-title {
-    font-family: 'Frank Ruhl Libre', serif;
-    font-size: 5.5rem;
+    font-family: 'Frank Ruhl Libre', 'David Libre', serif;
+    font-size: 5rem;
     font-weight: 900;
-    color: #000000;
+    color: #000;
     letter-spacing: -2px;
     line-height: 1;
-    margin-bottom: 5px;
-    transform: scaleY(1.1); /* Slightly taller for that classic bold look */
+    margin-bottom: 4px;
 }
 .newspaper-subtitle {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: #ff0000;
-    margin-top: 5px;
+    color: #d32f2f;
+    margin-top: 4px;
 }
-
 .masthead-date {
     font-family: 'David Libre', serif;
     font-size: 1rem;
     color: #000;
     font-weight: 700;
-    min-width: 160px;
+    min-width: 150px;
+    line-height: 1.5;
 }
 .masthead-date-right { text-align: right; }
 .masthead-date-left { text-align: left; }
 
 .masthead-rule {
-    display: none; /* Replaced by bottom border on masthead */
+    max-width: 1140px;
+    margin: 0 auto;
+    height: 4px;
+    background: linear-gradient(to left, #b71c1c, #d32f2f);
 }
 
 /* === Ticker === */
 .ticker-bar {
-    background: #000000;
-    color: #ffffff;
+    background: #000;
+    color: #fff;
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -92,13 +91,15 @@ body {
     border-bottom: 1px solid #ccc;
 }
 .ticker-label {
-    background: #ff0000;
-    color: #ffffff;
-    padding: 8px 16px;
+    background: #d32f2f;
+    color: #fff;
+    padding: 8px 18px;
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     white-space: nowrap;
     flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 .ticker-track {
     overflow: hidden;
@@ -110,29 +111,20 @@ body {
     display: flex;
     align-items: center;
     white-space: nowrap;
-    animation: tickerScroll 50s linear infinite;
+    animation: tickerScroll 60s linear infinite;
     position: absolute;
     height: 100%;
 }
-.ticker-item {
-    padding: 0 16px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    line-height: 36px;
-}
-.ticker-sep {
-    color: #ff0000;
-    padding: 0 4px;
-    font-size: 0.8rem;
-    line-height: 36px;
-}
+.ticker-item { padding: 0 18px; font-size: 0.88rem; font-weight: 500; line-height: 36px; }
+.ticker-item b { color: #ef5350; }
+.ticker-sep { color: #d32f2f; padding: 0 5px; font-size: 0.6rem; line-height: 36px; }
 
 @keyframes tickerScroll {
     0% { transform: translateX(0); }
     100% { transform: translateX(50%); }
 }
 
-/* === Main Content Wrapper === */
+/* === Shared content background === */
 .headline-section,
 .secondary-headlines,
 .section-rule,
@@ -140,139 +132,125 @@ body {
 .people-section {
     max-width: 1140px;
     margin: 0 auto;
-    background: #ffffff;
+    background: #fff;
 }
 
-/* === Headline Section === */
+/* === Headline === */
 .headline-section {
     padding: 24px 24px 20px;
-    border-bottom: 2px solid #000000;
+    border-bottom: 3px solid #d32f2f;
 }
 .headline-wrap {
     display: flex;
-    gap: 30px;
+    gap: 28px;
     align-items: stretch;
 }
 .headline-img {
     flex-shrink: 0;
-    width: 480px;
-    height: 320px;
+    width: 420px;
+    min-height: 260px;
     overflow: hidden;
     border: 1px solid #000;
 }
-.headline-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.headline-body { 
-    flex: 1; 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
+.headline-img img { width: 100%; height: 100%; object-fit: cover; }
+.headline-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
 .headline-badge {
     display: inline-block;
-    color: #fff !important; /* Force white text over colors */
-    font-size: 0.9rem;
+    color: #fff !important;
+    font-size: 0.85rem;
     font-weight: 800;
-    padding: 4px 12px;
+    padding: 4px 14px;
     margin-bottom: 12px;
     align-self: flex-start;
 }
-
 .main-headline {
-    font-family: 'Frank Ruhl Libre', serif;
-    font-size: 3.5rem;
+    font-family: 'Frank Ruhl Libre', 'David Libre', serif;
+    font-size: 3rem;
     font-weight: 900;
-    line-height: 1.1;
-    color: #000000;
+    line-height: 1.15;
+    color: #000;
     margin-bottom: 12px;
     letter-spacing: -1px;
 }
-
 .headline-meta {
     display: flex;
     align-items: center;
     gap: 12px;
     font-size: 1rem;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 16px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 14px;
     flex-wrap: wrap;
 }
 .headline-year {
-    font-size: 1.2rem;
-    color: #ff0000;
-    background: #000;
-    padding: 2px 8px;
+    font-weight: 800;
+    font-size: 1.15rem;
     color: #fff;
+    background: #d32f2f;
+    padding: 2px 10px;
+    font-family: 'Frank Ruhl Libre', serif;
 }
 .meta-sep { color: #ccc; }
-.headline-ago { color: #666; font-weight: 500; }
-.headline-source {
-    color: #0038b8;
-}
+.headline-ago { color: #666; font-style: italic; }
+.headline-source { color: #0038b8; font-weight: 700; }
 .headline-extract {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #111;
-    line-height: 1.6;
-    margin-bottom: 12px;
+    font-size: 1.05rem;
+    color: #222;
+    line-height: 1.7;
+    border-right: 3px solid #d32f2f;
+    padding-right: 14px;
+    margin: 8px 0;
 }
 
 /* === Secondary Headlines === */
 .secondary-headlines {
-    padding: 24px 24px 20px;
-    border-bottom: 4px solid #000000;
+    padding: 20px 24px;
+    border-bottom: 2px solid #000;
 }
 .secondary-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: 20px;
 }
 .secondary-card {
-    position: relative;
-    border-right: 1px solid #ddd;
-    padding-right: 20px;
+    border: 1px solid #e0e0e0;
+    border-top: 4px solid #333;
+    padding: 14px;
+    background: #fafafa;
+    transition: box-shadow 0.2s;
 }
-.secondary-card:first-child {
-    border-right: none;
-    padding-right: 0;
-}
+.secondary-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
 .secondary-img {
     width: 100%;
-    height: 160px;
+    height: 150px;
     object-fit: cover;
-    border: 1px solid #000;
-    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
 }
 .secondary-badge {
     display: inline-block;
     color: #fff !important;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 800;
     padding: 3px 10px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 .secondary-title {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 800;
-    line-height: 1.2;
+    line-height: 1.3;
     color: #000;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
-.secondary-year {
-    font-size: 0.85rem;
-    color: #ff0000;
-    font-weight: 700;
-}
+.secondary-year { font-size: 0.82rem; color: #d32f2f; font-weight: 700; }
 
 /* === Section Rule === */
 .section-rule {
-    display: none;
+    border: none;
+    height: 4px;
+    background: #000;
 }
 
 /* === Newspaper Body (Two Columns) === */
@@ -282,51 +260,47 @@ body {
     padding: 0 24px 24px;
     min-height: 400px;
 }
-.column { padding: 24px 0; }
-.column-right { padding-left: 24px; }
-.column-left { padding-right: 24px; }
+.column { padding: 22px 0; }
+.column-right { padding-left: 22px; }
+.column-left { padding-right: 22px; }
 .column-divider {
-    background: #000000;
+    background: #000;
     width: 1px;
-    margin: 24px 0;
+    margin: 22px 0;
 }
 
-/* === Section Blocks === */
-.section-block {
-    margin-bottom: 32px;
-}
+/* === Section Blocks — COLORED HEADERS === */
+.section-block { margin-bottom: 30px; }
 .section-hdr {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-right: 6px solid;
-    padding: 6px 12px 6px 0;
+    padding: 8px 14px;
     margin-bottom: 16px;
-    background: #000000;
-    color: #ffffff;
+    /* color is set via inline style per category in JS */
+    /* background: currentColor picks up that color for the bg */
+    background: currentColor;
 }
 .section-hdr-text {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 800;
-    color: #ffffff !important;
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .section-count {
-    font-size: 0.85rem;
-    color: #cccccc;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.7) !important;
     font-weight: 500;
-    padding-left: 10px;
 }
 
 /* === Article Cards === */
 .article {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #cccccc;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #ddd;
 }
-.article:last-child {
-    border-bottom: none;
-}
+.article:last-child { border-bottom: none; }
 .article-top {
     display: flex;
     align-items: center;
@@ -334,66 +308,66 @@ body {
     margin-bottom: 6px;
 }
 .article-year-badge {
-    background: #ff0000;
-    color: #ffffff;
-    font-size: 0.85rem;
+    background: #d32f2f;
+    color: #fff;
+    font-size: 0.82rem;
     font-weight: 800;
     padding: 2px 10px;
     font-family: 'Frank Ruhl Libre', serif;
 }
-.article-ago {
-    font-size: 0.85rem;
-    color: #666;
-    font-weight: 500;
-}
+.article-ago { font-size: 0.78rem; color: #888; font-style: italic; }
 .article-title {
-    font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.3rem;
+    font-family: 'Frank Ruhl Libre', 'David Libre', serif;
+    font-size: 1.2rem;
     font-weight: 800;
-    line-height: 1.25;
-    color: #000000;
+    line-height: 1.3;
+    color: #000;
     margin-bottom: 6px;
 }
+.article-title:hover { color: #d32f2f; }
 .article-body {
-    font-size: 1rem;
-    color: #222;
-    line-height: 1.5;
-    margin-bottom: 10px;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 .article-img {
-    margin: 12px 0;
-    border: 1px solid #000;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    overflow: hidden;
 }
 .article-img img {
     width: 100%;
-    height: 180px;
+    height: 160px;
     object-fit: cover;
     display: block;
 }
-.article-bottom {
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 8px;
-}
+.article-bottom { display: flex; justify-content: flex-start; margin-top: 6px; }
 .article-source {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #0038b8;
     font-weight: 700;
+    background: #e3f2fd;
+    padding: 2px 8px;
 }
-.article-sep { display: none; }
+.article-sep { border-top: 1px dashed #e0e0e0; margin: 4px 0; }
 
 /* === Embedded Social Posts === */
 .social-embed {
-    background: #f0f0f0;
-    border: 1px solid #d9d9d9;
+    background: #f5f6f8;
+    border: 1px solid #ddd;
     border-right: 4px solid #1da1f2;
-    padding: 14px;
+    padding: 14px 16px;
     margin: 12px 0;
     font-family: 'Heebo', sans-serif;
 }
-.social-embed.facebook { border-right-color: #1877f2; }
-.social-embed.instagram { border-right-color: #e1306c; }
-
+.social-embed.twitter { border-right-color: #1da1f2; background: #f5faff; }
+.social-embed.facebook { border-right-color: #1877f2; background: #f5f8ff; }
+.social-embed.instagram { border-right-color: #e1306c; background: #fffaf5; }
 .social-header {
     display: flex;
     align-items: center;
@@ -409,134 +383,120 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 0.88rem;
+    font-weight: 800;
     flex-shrink: 0;
 }
 .social-embed.facebook .social-icon { background: #1877f2; }
 .social-embed.instagram .social-icon { background: #e1306c; }
-
-.social-author {
-    font-weight: 800;
-    color: #000;
-    font-size: 0.95rem;
-}
+.social-author { font-weight: 800; color: #000; font-size: 0.92rem; }
 .social-handle {
     color: #666;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 500;
     direction: ltr;
     display: inline-block;
 }
 .social-text {
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 500;
     color: #111;
-    line-height: 1.4;
-    margin-bottom: 10px;
+    line-height: 1.5;
+    margin-bottom: 8px;
 }
 .social-stats {
     display: flex;
     gap: 16px;
-    font-size: 0.85rem;
-    color: #555;
+    font-size: 0.8rem;
+    color: #666;
     font-weight: 500;
-    border-top: 1px solid #ddd;
-    padding-top: 8px;
+    border-top: 1px solid #eee;
+    padding-top: 6px;
 }
 
-/* === People Section (Births / Deaths) === */
+/* === People Section === */
 .people-section {
-    padding: 24px;
-    border-top: 5px solid #000000;
+    padding: 22px 24px 24px;
+    border-top: 4px solid #000;
 }
 .people-wrap {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 28px;
 }
 .people-hdr {
-    padding: 8px 12px;
-    margin-bottom: 16px;
+    padding: 8px 14px;
+    margin-bottom: 14px;
     font-family: 'Frank Ruhl Libre', serif;
     font-weight: 800;
-    font-size: 1.3rem;
-    background: #000;
-    color: #fff;
+    font-size: 1.15rem;
 }
-.births-hdr { border-right: 6px solid #27ae60; }
-.deaths-hdr { border-right: 6px solid #ff0000; }
-
-.people-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+.births-hdr { background: #27ae60; color: #fff; }
+.deaths-hdr { background: #555; color: #fff; }
+.people-list { display: flex; flex-direction: column; gap: 8px; }
 .person-card {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 6px 0;
-    border-bottom: 1px solid #ddd;
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+    transition: background 0.15s;
 }
-.person-thumb, .person-thumb-placeholder {
-    width: 48px;
-    height: 48px;
+.person-card:hover { background: #f8f8f8; }
+.person-thumb {
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 1px solid #000;
+    border: 1px solid #ccc;
 }
 .person-thumb-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
     background: #e0e0e0;
+    flex-shrink: 0;
 }
-.person-info {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
+.person-info { display: flex; flex-direction: column; min-width: 0; }
 .person-name {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #000;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.person-year {
-    font-size: 0.85rem;
-    color: #ff0000;
-    font-weight: 700;
-}
+.person-year { font-size: 0.82rem; color: #d32f2f; font-weight: 700; }
 
 /* === Footer === */
 .newspaper-footer {
     max-width: 1140px;
     margin: 0 auto;
-    background: #000000;
-    color: #ffffff;
-    font-size: 0.85rem;
+    background: #000;
+    color: #ccc;
+    font-size: 0.82rem;
     font-weight: 500;
 }
 .footer-inner {
-    padding: 16px 24px;
+    padding: 14px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* === Loading Overlay === */
+/* === Loading === */
 .loading-overlay {
     position: fixed;
     inset: 0;
-    background: #ffffff;
+    background: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 800;
     color: #000;
 }
@@ -544,32 +504,34 @@ body {
     width: 50px;
     height: 50px;
     border: 4px solid #ddd;
-    border-top-color: #ff0000;
+    border-top-color: #d32f2f;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.7s linear infinite;
     margin-bottom: 20px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* === Mobile Responsive === */
 @media (max-width: 768px) {
-    .masthead-inner { flex-direction: column; gap: 8px; }
-    .masthead-date { text-align: center !important; font-size: 0.9rem; }
-    .newspaper-title { font-size: 4rem; }
-    
+    .masthead-inner { flex-direction: column; gap: 6px; }
+    .masthead-date { text-align: center !important; min-width: auto; font-size: 0.88rem; }
+    .newspaper-title { font-size: 3.2rem; }
     .headline-wrap { flex-direction: column; gap: 16px; }
-    .headline-img { width: 100%; height: auto; aspect-ratio: 16/9; }
-    .main-headline { font-size: 2.2rem; }
-    
+    .headline-img { width: 100%; height: auto; aspect-ratio: 16/9; min-height: auto; }
+    .main-headline { font-size: 2rem; }
     .secondary-grid { grid-template-columns: 1fr; gap: 16px; }
-    .secondary-card { border-right: none; padding-right: 0; border-bottom: 1px solid #ddd; padding-bottom: 16px; }
-    
     .newspaper-body { grid-template-columns: 1fr; padding: 0 16px 16px; }
     .column-divider { display: none; }
     .column-right, .column-left { padding: 12px 0; }
-    
     .people-wrap { grid-template-columns: 1fr; gap: 20px; }
-    
-    .ticker-bar { display: none; /* Hide on mobile to save space */ }
-    .footer-inner { flex-direction: column; gap: 8px; text-align: center; }
+    .ticker-bar { display: none; }
+    .footer-inner { flex-direction: column; gap: 6px; text-align: center; }
+}
+
+@media (max-width: 480px) {
+    .top-bar-inner { font-size: 0.72rem; }
+    .newspaper-title { font-size: 2.4rem; }
+    .main-headline { font-size: 1.5rem; }
+    .headline-section, .secondary-headlines,
+    .newspaper-body, .people-section { padding-right: 14px; padding-left: 14px; }
 }
