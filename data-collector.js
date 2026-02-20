@@ -649,12 +649,11 @@ async function translateAllEnglishEntries(data) {
     let totalEN = 0;
 
     if (!hasLLMKey()) {
-        console.log('  No LLM key available, using fallback translation for English entries');
+        console.log('  No LLM key available, dropping English entries to prevent gibberish');
         for (const cat of categories) {
-            const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
-            enEntries.forEach(applyFallbackTranslation);
+            data[cat] = (data[cat] || []).filter(e => e.lang !== 'en');
         }
-        data.translationMode = 'fallback';
+        data.translationMode = 'none';
         return data;
     }
 
@@ -687,10 +686,14 @@ async function translateAllEnglishEntries(data) {
         }
     }
 
-    // Final fallback for any entries that remained untranslated
+    // Final fallback: drop any entries that remained untranslated
     for (const cat of categories) {
-        const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
-        stillEN.forEach(applyFallbackTranslation);
+        data[cat] = (data[cat] || []).filter(e => e.lang !== 'en');
+    }
+
+    // Secondary filter: Make sure the translated text is actually Hebrew
+    for (const cat of categories) {
+        data[cat] = (data[cat] || []).filter(e => isProbablyHebrew(e.text) && (!e.extract || isProbablyHebrew(e.extract)));
     }
 
     data.translationMode = 'deepseek';

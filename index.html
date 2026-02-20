@@ -124,12 +124,13 @@ function renderTicker(data) {
 
 function renderSocialPost(post) {
     if (!post) return '';
-    var icons = {twitter:'𝕏', facebook:'f', instagram:'◻'};
-    return '<div class="social-embed '+(post.platform||'twitter')+'">'
+    var icons = {twitter:'𝕏', facebook:'f', instagram:'📷'};
+    var pName = post.platform || 'twitter';
+    return '<div class="social-embed '+pName+'">'
         + '<div class="social-header">'
-        + '<span class="social-icon">'+(icons[post.platform]||'💬')+'</span>'
+        + '<span class="social-icon">'+(icons[pName]||'💬')+'</span>'
         + '<span class="social-author">'+esc(post.author)+'</span>'
-        + '<span class="social-handle">'+esc(post.handle)+'</span>'
+        + '<span class="social-handle dir-ltr">'+esc(post.handle)+'</span>'
         + '</div>'
         + '<p class="social-text">'+esc(post.content)+'</p>'
         + '<div class="social-stats">'
@@ -142,14 +143,13 @@ function renderSocialPost(post) {
 function renderHeadline(data) {
     var sec = document.getElementById('headline-section');
     var h = data.headline;
-    if (!h) { sec.innerHTML = '<h2 class="main-headline">היום בהיסטוריה</h2>'; return; }
+    if (!h) { sec.innerHTML = '<h2 class="main-headline">דף חלק</h2>'; return; }
     var catName = SECTION_NAMES[h.category] || 'היסטוריה';
-    var catColor = SECTION_COLORS[h.category] || '#333';
 
     sec.innerHTML = '<div class="headline-wrap">'
         + (h.thumbnail ? '<div class="headline-img"><img src="'+esc(h.thumbnail)+'" alt=""></div>' : '')
         + '<div class="headline-body">'
-        + '<span class="headline-badge" style="background:'+catColor+'">'+esc(catName)+'</span>'
+        + '<span class="headline-badge" style="background: red;">'+esc(catName)+'</span>'
         + '<h2 class="main-headline">'+esc(h.text)+'</h2>'
         + '<div class="headline-meta">'
         + '<span class="headline-year">'+fmtYear(h.year)+'</span>'
@@ -178,10 +178,9 @@ function renderSecondaryHeadlines(data) {
 
     sec.innerHTML = '<div class="secondary-grid">' + picked.map(function(e) {
         var catName = SECTION_NAMES[e.category]||'';
-        var catColor = SECTION_COLORS[e.category]||'#333';
         return '<div class="secondary-card">'
             + (e.thumbnail ? '<img src="'+esc(e.thumbnail)+'" alt="" class="secondary-img" loading="lazy">' : '')
-            + '<span class="secondary-badge" style="background:'+catColor+'">'+esc(catName)+'</span>'
+            + '<span class="secondary-badge" style="background: red;">'+esc(catName)+'</span>'
             + '<h3 class="secondary-title">'+esc(e.text)+'</h3>'
             + '<span class="secondary-year">'+fmtYear(e.year)+' — לפני '+calcYearsAgo(e.year)+' שנים</span>'
             + '</div>';
@@ -204,12 +203,11 @@ function renderArticle(ev) {
 }
 
 function renderSection(cat, events) {
-    var color = SECTION_COLORS[cat]||'#333';
     var name = SECTION_NAMES[cat]||cat;
     var items = events.slice(0, 6);
     return '<div class="section-block">'
-        + '<div class="section-hdr" style="border-right-color:'+color+';border-left-color:'+color+'">'
-        + '<span class="section-hdr-text" style="color:'+color+'">'+esc(name)+'</span>'
+        + '<div class="section-hdr">'
+        + '<span class="section-hdr-text">'+esc(name)+'</span>'
         + '<span class="section-count">'+events.length+' אירועים</span>'
         + '</div>'
         + items.map(function(e) { return renderArticle(e); }).join('<div class="article-sep"></div>')
