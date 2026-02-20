@@ -208,8 +208,8 @@ function renderSection(cat, events) {
     var name = SECTION_NAMES[cat]||cat;
     var items = events.slice(0, 6);
     return '<div class="section-block">'
-        + '<div class="section-hdr" style="border-right-color:'+color+';border-left-color:'+color+'">'
-        + '<span class="section-hdr-text" style="color:'+color+'">'+esc(name)+'</span>'
+        + '<div class="section-hdr" style="color:'+color+'">'
+        + '<span class="section-hdr-text">'+esc(name)+'</span>'
         + '<span class="section-count">'+events.length+' אירועים</span>'
         + '</div>'
         + items.map(function(e) { return renderArticle(e); }).join('<div class="article-sep"></div>')
