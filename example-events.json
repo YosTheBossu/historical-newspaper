@@ -1,116 +1,379 @@
 {
-  "date": "2026-02-11",
-  "hebrewDate": "כ״ד בִּשְׁבָט תשפ״ו",
-  "events": [
-    {
-      "year": 1949,
-      "text": "הכנסת הראשונה של מדינת ישראל מתכנסת לישיבתה הראשונה בירושלים",
-      "category": "israel"
-    },
-    {
-      "year": 1990,
-      "text": "נלסון מנדלה משתחרר מכלא בדרום אפריקה אחרי 27 שנים",
-      "category": "politics"
-    },
-    {
-      "year": 1979,
-      "text": "המהפכה האיסלאמית באיראן: האייתוללה ח'ומייני משתלט על השלטון",
-      "category": "politics"
-    },
-    {
-      "year": 1998,
-      "text": "מכבי תל אביב בכדורסל מנצחת את פנאתינאיקוס היוונית 81-78 במסגרת היורוליג",
-      "category": "sports"
-    },
-    {
-      "year": 2013,
-      "text": "ליונל מסי קובע שיא חדש של הבקעת שערים ב-13 משחקי ליגה רצופים",
-      "category": "sports"
-    },
-    {
-      "year": 1985,
-      "text": "שלום חנוך מוציא את האלבום 'חתונה לבנה' שהופך לקלאסיקה המהווה אבן דרך במוזיקה הישראלית",
-      "category": "culture"
-    },
-    {
-      "year": 1993,
-      "text": "הסרט 'רשימת שינדלר' של סטיבן ספילברג יוצא לאקרנים",
-      "category": "culture"
-    },
-    {
-      "year": 2016,
-      "text": "צוות LIGO מכריז על גילוי גלי כבידה, אישוש לתחזית של איינשטיין מ-1916",
-      "category": "science"
-    },
-    {
-      "year": 1970,
-      "text": "יפן משגרת את הלוויין הראשון שלה, 'אוסומי', לחלל",
-      "category": "science"
-    },
-    {
-      "year": -660,
-      "text": "הקיסר הראשון של יפן, ג'ימו, עולה לכס הקיסרות לפי המסורת",
-      "category": "world"
-    },
-    {
-      "year": 1752,
-      "text": "בית החולים הראשון בארצות הברית נפתח בפילדלפיה",
-      "category": "world"
-    },
-    {
-      "year": 1861,
-      "text": "אברהם לינקולן נבחר לנשיא ה-16 של ארצות הברית",
-      "category": "politics"
-    }
-  ],
-  "births": [
-    {
-      "year": 1847,
-      "text": "תומאס אדיסון, ממציא אמריקאי"
-    },
-    {
-      "year": 1969,
-      "text": "ג'ניפר אניסטון, שחקנית אמריקאית"
-    },
-    {
-      "year": 1979,
-      "text": "שרית חדד, זמרת ישראלית"
-    }
-  ],
-  "deaths": [
-    {
-      "year": 1650,
-      "text": "רנה דקארט, פילוסוף ומתמטיקאי צרפתי"
-    }
-  ],
-  "selected": [
-    {
-      "year": 1990,
-      "text": "נלסון מנדלה משוחרר מהכלא לאחר 27 שנות מאסר",
-      "category": "world",
-      "thumbnail": ""
-    }
-  ],
+  "date": "2026-02-20",
+  "generatedAt": "2026-02-20T06:00:00.000Z",
+  "hebrewDate": "ב׳ באדר תשפ״ו",
+  "translationMode": "static",
   "headline": {
-    "year": 1949,
-    "text": "כינוס היסטורי: הכנסת הראשונה של מדינת ישראל נפתחת בירושלים",
+    "year": 1947,
+    "text": "בריטניה מכריזה על כוונתה להעביר את שאלת ארץ ישראל לאומות המאוחדות",
     "category": "israel",
-    "extract": "לאחר הבחירות הראשונות במדינה החדשה, התכנסו 120 חברי הכנסת הנבחרים לישיבת הפתיחה החגיגית בבניין הסוכנות היהודית בירושלים. דוד בן-גוריון נשא דברים וציין את האירוע כרגע היסטורי בחיי האומה המתחדשת.",
+    "extract": "ממשלת בריטניה הודיעה כי תפנה לעצרת האומות המאוחדות בבקשה להמליץ על פתרון לסכסוך בארץ ישראל. החלטה זו סללה את הדרך להצבעה ההיסטורית על תוכנית החלוקה בנובמבר 1947, שהובילה להקמת מדינת ישראל.",
+    "thumbnail": null,
+    "headlineScore": 75,
+    "source": "כאן חדשות",
     "socialPost": {
       "author": "דוד בן-גוריון",
       "handle": "@BenGurionOfficial",
       "platform": "twitter",
-      "content": "היום היסטורי! הכנסת הראשונה נפתחה. 120 חברי כנסת, ייצוג לכל חלקי העם. תחילתה של דמוקרטיה אמיתית במולדתנו. 🇮🇱",
-      "likes": 19480,
+      "content": "הבריטים מעבירים את הסוגיה לאו\"ם. זו ההזדמנות שלנו. עם ישראל מוכן למדינה עצמאית! #ארץ_ישראל #עצמאות",
+      "likes": 19470,
       "retweets": 4800,
       "replies": 1200
     }
   },
-  "sections": {},
+  "events": [
+    {
+      "year": 1947,
+      "text": "בריטניה מכריזה על כוונתה להעביר את שאלת ארץ ישראל לאומות המאוחדות",
+      "lang": "he",
+      "category": "israel",
+      "source": "כאן חדשות",
+      "headlineScore": 75
+    },
+    {
+      "year": 1962,
+      "text": "ג'ון גלן הופך לאמריקאי הראשון שמקיף את כדור הארץ בחללית",
+      "lang": "he",
+      "category": "science",
+      "source": "ynet",
+      "headlineScore": 50
+    },
+    {
+      "year": 1943,
+      "text": "הר הגעש פריקוטין מתפרץ לראשונה במקסיקו",
+      "lang": "he",
+      "category": "world",
+      "source": "הארץ",
+      "headlineScore": 30
+    },
+    {
+      "year": 1986,
+      "text": "ברית המועצות משגרת את תחנת החלל מיר",
+      "lang": "he",
+      "category": "science",
+      "source": "ynet",
+      "headlineScore": 45
+    },
+    {
+      "year": 2005,
+      "text": "ממשלת ישראל מאשרת את תוכנית ההתנתקות מרצועת עזה",
+      "lang": "he",
+      "category": "israel",
+      "source": "ישראל היום",
+      "headlineScore": 60
+    },
+    {
+      "year": 1792,
+      "text": "נשיא ארצות הברית ג'ורג' וושינגטון חותם על חוק שירות הדואר האמריקאי",
+      "lang": "he",
+      "category": "politics",
+      "source": "הארץ",
+      "headlineScore": 25
+    },
+    {
+      "year": 1952,
+      "text": "הכנסת מאשרת את הסכם השילומים עם גרמניה, למרות הפגנות סוערות",
+      "lang": "he",
+      "category": "israel",
+      "source": "מעריב-NRG",
+      "headlineScore": 65
+    },
+    {
+      "year": 1816,
+      "text": "האופרה 'הספר מסביליה' של רוסיני מוצגת לראשונה ברומא",
+      "lang": "he",
+      "category": "culture",
+      "source": "מאקו",
+      "headlineScore": 20
+    },
+    {
+      "year": 1935,
+      "text": "הקרולינה חוקקה חוק נגד הפליה גזעית — אחד הראשונים בארצות הברית",
+      "lang": "he",
+      "category": "politics",
+      "source": "ynet",
+      "headlineScore": 25
+    },
+    {
+      "year": 1998,
+      "text": "טניה הארדינג מודחת מאליפות ארצות הברית בהחלקה על הקרח",
+      "lang": "he",
+      "category": "sports",
+      "source": "ספורט5",
+      "headlineScore": 15
+    },
+    {
+      "year": 1974,
+      "text": "גולדה מאיר נואמת בכנסת על מלחמת יום הכיפורים ולקחיה",
+      "lang": "he",
+      "category": "israel",
+      "source": "ישראל היום",
+      "headlineScore": 55
+    },
+    {
+      "year": 2003,
+      "text": "שריפה במועדון 'סטיישן' ברוד איילנד, 100 הרוגים",
+      "lang": "he",
+      "category": "world",
+      "source": "כאן חדשות",
+      "headlineScore": 20
+    }
+  ],
+  "births": [
+    {
+      "year": 1924,
+      "text": "חיים גורי, משורר, סופר ועיתונאי ישראלי",
+      "lang": "he",
+      "category": "israel",
+      "source": "ynet"
+    },
+    {
+      "year": 1927,
+      "text": "סידני פואטייה, שחקן אמריקאי, הראשון הזוכה באוסקר",
+      "lang": "he",
+      "category": "culture",
+      "source": "מאקו"
+    },
+    {
+      "year": 1966,
+      "text": "סיני בהרגאווה, מנהיג רוחני הודי",
+      "lang": "he",
+      "category": "world",
+      "source": "ynet"
+    },
+    {
+      "year": 1988,
+      "text": "ריהאנה, זמרת ויוצרת בינלאומית מברבדוס",
+      "lang": "he",
+      "category": "culture",
+      "source": "מאקו"
+    }
+  ],
+  "deaths": [
+    {
+      "year": 1895,
+      "text": "פרדריק דאגלס, סופר ופעיל זכויות אדם אפרו-אמריקאי",
+      "lang": "he",
+      "category": "politics",
+      "source": "הארץ"
+    },
+    {
+      "year": 2005,
+      "text": "האנטר תומפסון, עיתונאי וסופר אמריקאי",
+      "lang": "he",
+      "category": "culture",
+      "source": "מאקו"
+    }
+  ],
+  "selected": [
+    {
+      "year": 1962,
+      "text": "ג'ון גלן מקיף את כדור הארץ בחללית מרקורי-אטלס",
+      "lang": "he",
+      "category": "science",
+      "thumbnail": null,
+      "source": "ynet"
+    }
+  ],
+  "holidays": [],
+  "socialPosts": [
+    {
+      "author": "מערכת דברי הימים",
+      "handle": "@HistoryDeskIL",
+      "platform": "twitter",
+      "content": "בדיוק היום בשנת 1947: בריטניה מכריזה על כוונתה להעביר את שאלת א\"י לאו\"ם. #היסטוריה_יומית",
+      "year": 1947,
+      "eventYear": 1947,
+      "likes": 8500,
+      "retweets": 2300,
+      "replies": 890,
+      "source": "template"
+    },
+    {
+      "author": "הארכיון הלאומי",
+      "handle": "@NationalArchiveIL",
+      "platform": "facebook",
+      "content": "פלאשבק היסטורי: ג'ון גלן הופך לאמריקאי הראשון שמקיף את כדור הארץ (1962). רגע ענק לחקר החלל!",
+      "year": 1962,
+      "eventYear": 1962,
+      "likes": 6200,
+      "retweets": 1800,
+      "replies": 650,
+      "source": "template"
+    },
+    {
+      "author": "כרוניקה בזמן",
+      "handle": "@ChronicleToday",
+      "platform": "instagram",
+      "content": "רגע אחד ששווה תמונה: הכנסת מאשרת את הסכם השילומים עם גרמניה (1952). #OnThisDay #זיכרון_היסטורי",
+      "year": 1952,
+      "eventYear": 1952,
+      "likes": 4100,
+      "retweets": 1200,
+      "replies": 450,
+      "source": "template"
+    },
+    {
+      "author": "כתב מהעבר",
+      "handle": "@PastReporter",
+      "platform": "twitter",
+      "content": "דיווח מתגלגל מ-1986: ברית המועצות משגרת את תחנת החלל מיר. הכותרות משתנות, הדרמות נשארות.",
+      "year": 1986,
+      "eventYear": 1986,
+      "likes": 3500,
+      "retweets": 950,
+      "replies": 320,
+      "source": "template"
+    },
+    {
+      "author": "מערכת דברי הימים",
+      "handle": "@HistoryDeskIL",
+      "platform": "twitter",
+      "content": "בדיוק היום בשנת 2005: ממשלת ישראל מאשרת את תוכנית ההתנתקות. #היסטוריה_יומית",
+      "year": 2005,
+      "eventYear": 2005,
+      "likes": 7200,
+      "retweets": 2100,
+      "replies": 980,
+      "source": "template"
+    },
+    {
+      "author": "הארכיון הלאומי",
+      "handle": "@NationalArchiveIL",
+      "platform": "facebook",
+      "content": "פלאשבק היסטורי: גולדה מאיר נואמת בכנסת על לקחי מלחמת יום הכיפורים (1974). רגע מכונן בפוליטיקה הישראלית.",
+      "year": 1974,
+      "eventYear": 1974,
+      "likes": 5400,
+      "retweets": 1600,
+      "replies": 720,
+      "source": "template"
+    }
+  ],
+  "sections": {
+    "israel": [
+      {
+        "year": 1947,
+        "text": "בריטניה מכריזה על כוונתה להעביר את שאלת ארץ ישראל לאומות המאוחדות",
+        "lang": "he",
+        "category": "israel",
+        "source": "כאן חדשות"
+      },
+      {
+        "year": 2005,
+        "text": "ממשלת ישראל מאשרת את תוכנית ההתנתקות מרצועת עזה",
+        "lang": "he",
+        "category": "israel",
+        "source": "ישראל היום"
+      },
+      {
+        "year": 1952,
+        "text": "הכנסת מאשרת את הסכם השילומים עם גרמניה, למרות הפגנות סוערות",
+        "lang": "he",
+        "category": "israel",
+        "source": "מעריב-NRG"
+      },
+      {
+        "year": 1974,
+        "text": "גולדה מאיר נואמת בכנסת על מלחמת יום הכיפורים ולקחיה",
+        "lang": "he",
+        "category": "israel",
+        "source": "ישראל היום"
+      }
+    ],
+    "science": [
+      {
+        "year": 1962,
+        "text": "ג'ון גלן הופך לאמריקאי הראשון שמקיף את כדור הארץ בחללית",
+        "lang": "he",
+        "category": "science",
+        "source": "ynet"
+      },
+      {
+        "year": 1986,
+        "text": "ברית המועצות משגרת את תחנת החלל מיר",
+        "lang": "he",
+        "category": "science",
+        "source": "ynet"
+      }
+    ],
+    "politics": [
+      {
+        "year": 1792,
+        "text": "נשיא ארצות הברית ג'ורג' וושינגטון חותם על חוק שירות הדואר האמריקאי",
+        "lang": "he",
+        "category": "politics",
+        "source": "הארץ"
+      },
+      {
+        "year": 1935,
+        "text": "הקרולינה חוקקה חוק נגד הפליה גזעית — אחד הראשונים בארצות הברית",
+        "lang": "he",
+        "category": "politics",
+        "source": "ynet"
+      }
+    ],
+    "culture": [
+      {
+        "year": 1816,
+        "text": "האופרה 'הספר מסביליה' של רוסיני מוצגת לראשונה ברומא",
+        "lang": "he",
+        "category": "culture",
+        "source": "מאקו"
+      }
+    ],
+    "sports": [
+      {
+        "year": 1998,
+        "text": "טניה הארדינג מודחת מאליפות ארצות הברית בהחלקה על הקרח",
+        "lang": "he",
+        "category": "sports",
+        "source": "ספורט5"
+      }
+    ],
+    "world": [
+      {
+        "year": 1943,
+        "text": "הר הגעש פריקוטין מתפרץ לראשונה במקסיקו",
+        "lang": "he",
+        "category": "world",
+        "source": "הארץ"
+      },
+      {
+        "year": 2003,
+        "text": "שריפה במועדון 'סטיישן' ברוד איילנד, 100 הרוגים",
+        "lang": "he",
+        "category": "world",
+        "source": "כאן חדשות"
+      }
+    ]
+  },
+  "sectionNames": {
+    "israel": "ישראל",
+    "politics": "מדיני",
+    "military": "צבאי ובטחוני",
+    "science": "מדע וטכנולוגיה",
+    "culture": "תרבות ובידור",
+    "sports": "ספורט",
+    "economy": "כלכלה",
+    "religion": "דת ומסורת",
+    "world": "עולמי",
+    "general": "כללי"
+  },
+  "categories": {
+    "israel": 4,
+    "science": 2,
+    "politics": 2,
+    "culture": 1,
+    "sports": 1,
+    "world": 2
+  },
   "stats": {
-    "total": 12,
-    "israelEvents": 2,
     "he": 12,
-    "en": 0
+    "en": 0,
+    "translated": 0,
+    "total": 18,
+    "israelEvents": 4,
+    "llmProvider": "static-fallback"
   }
 }

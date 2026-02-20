@@ -2,8 +2,8 @@
 set -e
 
 echo "[entrypoint] Exporting environment for cron..."
-# Write env vars so cron jobs can access API keys
-printenv | grep -E '^(DEEPSEEK_|OPENROUTER_)' > /etc/collector.env 2>/dev/null || true
+# Write env vars with export so cron jobs can access API keys
+printenv | grep -E '^(DEEPSEEK_|OPENROUTER_)' | sed 's/^/export /' > /etc/collector.env 2>/dev/null || true
 
 # Show API key status in docker logs
 if [ -n "$OPENROUTER_API_KEY" ]; then
@@ -26,11 +26,9 @@ fi
 echo "[entrypoint] Starting cron daemon..."
 crond -b -l 2
 
-echo "[entrypoint] Running initial data collection in background..."
-echo "[entrypoint] Output will appear in docker logs below..."
+echo "[entrypoint] Running initial data collection (foreground, blocks until done)..."
 cd /usr/share/nginx/html
-# Pipe output to BOTH docker logs (stdout) AND log file
-(node data-collector.js 2>&1 | tee /var/log/collector.log) &
+node data-collector.js 2>&1 | tee /var/log/collector.log || echo "[entrypoint] Collector finished with errors, using fallback data"
 
-echo "[entrypoint] Starting nginx..."
+echo "[entrypoint] Data collection done. Starting nginx..."
 exec nginx -g 'daemon off;'
