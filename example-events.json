@@ -1,96 +1,116 @@
 {
   "date": "2026-02-11",
-  "categories": {
-    "politics": [
-      "1949 - הכנסת הראשונה של מדינת ישראל מתכנסת לישיבתה הראשונה בירושלים",
-      "1990 - נלסון מנדלה משתחרר מכלא בדרום אפריקה אחרי 27 שנים",
-      "1979 - המהפכה האיסלאמית באיראן: האייתוללה ח'ומייני משתלט על השלטון",
-      "1929 - חתימת ההסכמים הלטרניים בין איטליה לכס הקדוש"
-    ],
-    "sports": [
-      "1998 - מכבי תל אביב בכדורסל מנצחת את פנאתינאיקוס היוונית 81-78 במסגרת היורוליג",
-      "1978 - הפועל תל אביב זוכה בגביע המדינה בכדורגל לאחר ניצחון 2-1 על בני יהודה",
-      "2013 - ליונל מסי קובע שיא חדש של הבקעת שערים ב-13 משחקי ליגה רצופים"
-    ],
-    "culture": [
-      "1985 - שלום חנוך מוציא את האלבום 'חתונה לבנה' שהופך לקלאסיקה ישראלית",
-      "1993 - הסרט 'רשימת שינדלר' של סטיבן ספילברג יוצא לאקרנים",
-      "2010 - הסרט 'אווטאר' הופך לסרט הרווחי ביותר בכל הזמנים"
-    ],
-    "science": [
-      "2016 - צוות LIGO מכריז על גילוי גלי כבידה, אישוש לתחזית של איינשטיין מ-1916",
-      "1970 - יפן משגרת את הלוויין הראשון שלה, 'אוסומי', לחלל",
-      "1858 - ברנאדט סובירו טוענת כי הבתולה מריה נגלתה לה בלורדס, צרפת"
-    ],
-    "world": [
-      "660 לפנה\"ס - הקיסר הראשון של יפן, ג'ימו, עולה לכס הקיסרות לפי המסורת",
-      "1752 - בית החולים הראשון בארצות הברית נפתח בפילדלפיה",
-      "1861 - אברהם לינקולן נבחר לנשיא ה-16 של ארצות הברית"
-    ],
-    "israel": [
-      "1949 - הכנסת הראשונה מתכנסת",
-      "1991 - פיגוע מכונית התופת בבני ברק: מחבל מתאבד פוגע במעבר חצייה",
-      "2007 - ראש הממשלה אהוד אולמרט ונשיא הרשות הפלסטינית מחמוד עבאס נפגשים בירושלים"
-    ],
-    "other": [
-      "1531 - הנרי השמיני מוכר כראש הכנסייה האנגליקנית",
-      "1814 - נורווגיה מכריזה על עצמאות משוודיה",
-      "1938 - ה-BBC משדר לראשונה את תוכנית הטלוויזיה למדע בדיוני 'הדבר'"
-    ]
-  },
-  "birthdays": [
+  "hebrewDate": "כ״ד בִּשְׁבָט תשפ״ו",
+  "events": [
     {
-      "name": "ג'ניפר אניסטון",
-      "year": 1969,
-      "age": 57,
-      "category": "תרבות"
+      "year": 1949,
+      "text": "הכנסת הראשונה של מדינת ישראל מתכנסת לישיבתה הראשונה בירושלים",
+      "category": "israel"
     },
     {
-      "name": "שרית חדד",
+      "year": 1990,
+      "text": "נלסון מנדלה משתחרר מכלא בדרום אפריקה אחרי 27 שנים",
+      "category": "politics"
+    },
+    {
       "year": 1979,
-      "age": 47,
-      "category": "תרבות"
+      "text": "המהפכה האיסלאמית באיראן: האייתוללה ח'ומייני משתלט על השלטון",
+      "category": "politics"
     },
     {
-      "name": "תום הולנד",
-      "year": 1996,
-      "age": 30,
-      "category": "תרבות"
+      "year": 1998,
+      "text": "מכבי תל אביב בכדורסל מנצחת את פנאתינאיקוס היוונית 81-78 במסגרת היורוליג",
+      "category": "sports"
     },
     {
-      "name": "תומאס אדיסון",
-      "year": 1847,
-      "age": 179,
-      "category": "מדע"
+      "year": 2013,
+      "text": "ליונל מסי קובע שיא חדש של הבקעת שערים ב-13 משחקי ליגה רצופים",
+      "category": "sports"
+    },
+    {
+      "year": 1985,
+      "text": "שלום חנוך מוציא את האלבום 'חתונה לבנה' שהופך לקלאסיקה המהווה אבן דרך במוזיקה הישראלית",
+      "category": "culture"
+    },
+    {
+      "year": 1993,
+      "text": "הסרט 'רשימת שינדלר' של סטיבן ספילברג יוצא לאקרנים",
+      "category": "culture"
+    },
+    {
+      "year": 2016,
+      "text": "צוות LIGO מכריז על גילוי גלי כבידה, אישוש לתחזית של איינשטיין מ-1916",
+      "category": "science"
+    },
+    {
+      "year": 1970,
+      "text": "יפן משגרת את הלוויין הראשון שלה, 'אוסומי', לחלל",
+      "category": "science"
+    },
+    {
+      "year": -660,
+      "text": "הקיסר הראשון של יפן, ג'ימו, עולה לכס הקיסרות לפי המסורת",
+      "category": "world"
+    },
+    {
+      "year": 1752,
+      "text": "בית החולים הראשון בארצות הברית נפתח בפילדלפיה",
+      "category": "world"
+    },
+    {
+      "year": 1861,
+      "text": "אברהם לינקולן נבחר לנשיא ה-16 של ארצות הברית",
+      "category": "politics"
     }
   ],
-  "historicalTweets": [
+  "births": [
     {
+      "year": 1847,
+      "text": "תומאס אדיסון, ממציא אמריקאי"
+    },
+    {
+      "year": 1969,
+      "text": "ג'ניפר אניסטון, שחקנית אמריקאית"
+    },
+    {
+      "year": 1979,
+      "text": "שרית חדד, זמרת ישראלית"
+    }
+  ],
+  "deaths": [
+    {
+      "year": 1650,
+      "text": "רנה דקארט, פילוסוף ומתמטיקאי צרפתי"
+    }
+  ],
+  "selected": [
+    {
+      "year": 1990,
+      "text": "נלסון מנדלה משוחרר מהכלא לאחר 27 שנות מאסר",
+      "category": "world",
+      "thumbnail": ""
+    }
+  ],
+  "headline": {
+    "year": 1949,
+    "text": "כינוס היסטורי: הכנסת הראשונה של מדינת ישראל נפתחת בירושלים",
+    "category": "israel",
+    "extract": "לאחר הבחירות הראשונות במדינה החדשה, התכנסו 120 חברי הכנסת הנבחרים לישיבת הפתיחה החגיגית בבניין הסוכנות היהודית בירושלים. דוד בן-גוריון נשא דברים וציין את האירוע כרגע היסטורי בחיי האומה המתחדשת.",
+    "socialPost": {
       "author": "דוד בן-גוריון",
       "handle": "@BenGurionOfficial",
-      "content": "היום היסטורי! הכנסת הראשונה נפתחה. 120 חברי כנסת, ייצוג לכל חלקי העם. תחילתה של דמוקרטיה אמיתית. #כנסתראשונה #מדינתישראל",
-      "likes": 2300,
-      "retweets": 850,
-      "replies": 420,
-      "year": 1949
-    },
-    {
-      "author": "נלסון מנדלה",
-      "handle": "@NelsonMandela",
-      "content": "חירות לא ניתנת בקלות - הדור שלנו הבין זאת. הזמן לשינוי הגיע. היום יצאתי לחופשי אחרי 27 שנים. #חירות #שוויון",
-      "likes": 15000,
-      "retweets": 5200,
-      "replies": 3200,
-      "year": 1990
-    },
-    {
-      "author": "שלום חנוך",
-      "handle": "@ShalomHanoch",
-      "content": "הוצאתי היום את האלבום 'חתונה לבנה'. זה האלבום הכי אישי שלי עד כה. מקווה שתאהבו. #חתונהלבנה #מוזיקהישראלית",
-      "likes": 1200,
-      "retweets": 450,
-      "replies": 280,
-      "year": 1985
+      "platform": "twitter",
+      "content": "היום היסטורי! הכנסת הראשונה נפתחה. 120 חברי כנסת, ייצוג לכל חלקי העם. תחילתה של דמוקרטיה אמיתית במולדתנו. 🇮🇱",
+      "likes": 19480,
+      "retweets": 4800,
+      "replies": 1200
     }
-  ]
+  },
+  "sections": {},
+  "stats": {
+    "total": 12,
+    "israelEvents": 2,
+    "he": 12,
+    "en": 0
+  }
 }
