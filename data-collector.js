@@ -651,12 +651,11 @@ async function translateAllEnglishEntries(data) {
     let totalEN = 0;
 
     if (!hasLLMKey()) {
-        console.log('  No LLM key available, keeping English entries as-is');
-        for (const cat of categories) {
-            const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
-            enEntries.forEach(applyFallbackTranslation);
+        console.log('  No LLM key available, dropping English entries to prevent gibberish');
+        for (const cat of [...categories, ...skipCategories]) {
+            data[cat] = (data[cat] || []).filter(e => e.lang !== 'en');
         }
-        data.translationMode = 'fallback';
+        data.translationMode = 'none';
         return data;
     }
 
@@ -693,10 +692,14 @@ async function translateAllEnglishEntries(data) {
         }
     }
 
-    // Mark remaining untranslated entries (keep English, don't gibberish-ify)
+    // Final fallback: drop any entries that remained untranslated
     for (const cat of [...categories, ...skipCategories]) {
-        const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
-        stillEN.forEach(applyFallbackTranslation);
+        data[cat] = (data[cat] || []).filter(e => e.lang !== 'en');
+    }
+
+    // Secondary filter: Make sure the translated text is actually Hebrew
+    for (const cat of categories) {
+        data[cat] = (data[cat] || []).filter(e => isProbablyHebrew(e.text) && (!e.extract || isProbablyHebrew(e.extract)));
     }
 
     data.translationMode = hasLLMKey() ? 'openrouter' : 'none';

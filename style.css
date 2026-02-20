@@ -8,9 +8,9 @@
 
 body {
     font-family: 'Heebo', 'Arial Hebrew', sans-serif;
-    background: #c5bfb3;
+    background: #e6e6e6;
     color: #1a1a1a;
-    line-height: 1.6;
+    line-height: 1.5;
     direction: rtl;
     -webkit-font-smoothing: antialiased;
 }
@@ -19,14 +19,13 @@ body {
 .top-bar {
     background: linear-gradient(to left, #b71c1c, #c62828, #d32f2f);
     color: #fff;
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 0.88rem;
+    font-weight: 700;
 }
 .top-bar-inner {
     max-width: 1140px;
     margin: 0 auto;
-    padding: 5px 24px;
+    padding: 7px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -35,12 +34,12 @@ body {
 /* === Masthead === */
 .masthead {
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.masthead-inner {
     max-width: 1140px;
     margin: 0 auto;
-    padding: 14px 24px 10px;
+    border-bottom: 5px solid #000;
+}
+.masthead-inner {
+    padding: 18px 24px 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -49,27 +48,26 @@ body {
 
 .newspaper-title {
     font-family: 'Frank Ruhl Libre', 'David Libre', serif;
-    font-size: 3.6rem;
+    font-size: 5rem;
     font-weight: 900;
-    color: #111;
+    color: #000;
     letter-spacing: -2px;
     line-height: 1;
-    text-shadow: 1px 1px 0 rgba(0,0,0,0.05);
+    margin-bottom: 4px;
 }
 .newspaper-subtitle {
-    font-size: 0.82rem;
-    color: #888;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #d32f2f;
     margin-top: 4px;
-    font-weight: 300;
-    letter-spacing: 1px;
 }
 .masthead-date {
     font-family: 'David Libre', serif;
-    font-size: 0.95rem;
-    color: #333;
+    font-size: 1rem;
+    color: #000;
+    font-weight: 700;
     min-width: 150px;
     line-height: 1.5;
-    font-weight: 500;
 }
 .masthead-date-right { text-align: right; }
 .masthead-date-left { text-align: left; }
@@ -83,20 +81,21 @@ body {
 
 /* === Ticker === */
 .ticker-bar {
-    background: #111;
+    background: #000;
     color: #fff;
     display: flex;
     align-items: center;
     overflow: hidden;
     max-width: 1140px;
     margin: 0 auto;
+    border-bottom: 1px solid #ccc;
 }
 .ticker-label {
     background: #d32f2f;
     color: #fff;
     padding: 8px 18px;
     font-weight: 800;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     white-space: nowrap;
     flex-shrink: 0;
     text-transform: uppercase;
@@ -112,13 +111,13 @@ body {
     display: flex;
     align-items: center;
     white-space: nowrap;
-    animation: tickerScroll 80s linear infinite;
+    animation: tickerScroll 60s linear infinite;
     position: absolute;
     height: 100%;
 }
-.ticker-item { padding: 0 20px; font-size: 0.84rem; line-height: 36px; }
+.ticker-item { padding: 0 18px; font-size: 0.88rem; font-weight: 500; line-height: 36px; }
 .ticker-item b { color: #ef5350; }
-.ticker-sep { color: #d32f2f; padding: 0 6px; font-size: 0.5rem; line-height: 36px; }
+.ticker-sep { color: #d32f2f; padding: 0 5px; font-size: 0.6rem; line-height: 36px; }
 
 @keyframes tickerScroll {
     0% { transform: translateX(0); }
@@ -143,66 +142,62 @@ body {
 }
 .headline-wrap {
     display: flex;
-    gap: 24px;
+    gap: 28px;
     align-items: stretch;
 }
 .headline-img {
     flex-shrink: 0;
-    width: 360px;
-    min-height: 240px;
+    width: 420px;
+    min-height: 260px;
     overflow: hidden;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    border: 1px solid #000;
 }
 .headline-img img { width: 100%; height: 100%; object-fit: cover; }
 .headline-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
 .headline-badge {
     display: inline-block;
-    color: #fff;
-    font-size: 0.78rem;
+    color: #fff !important;
+    font-size: 0.85rem;
     font-weight: 800;
     padding: 4px 14px;
-    border-radius: 3px;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    margin-bottom: 12px;
     align-self: flex-start;
 }
 .main-headline {
     font-family: 'Frank Ruhl Libre', 'David Libre', serif;
-    font-size: 2.4rem;
+    font-size: 3rem;
     font-weight: 900;
-    line-height: 1.2;
-    color: #111;
-    margin-bottom: 10px;
+    line-height: 1.15;
+    color: #000;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
 }
 .headline-meta {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 12px;
+    gap: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 14px;
     flex-wrap: wrap;
 }
 .headline-year {
     font-weight: 800;
-    color: #d32f2f;
-    font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.1rem;
-    background: #fff3f3;
+    font-size: 1.15rem;
+    color: #fff;
+    background: #d32f2f;
     padding: 2px 10px;
-    border-radius: 3px;
-    border: 1px solid #ffcdd2;
+    font-family: 'Frank Ruhl Libre', serif;
 }
-.meta-sep { color: #ddd; }
-.headline-ago { color: #888; font-style: italic; }
-.headline-source { color: #1565c0; font-weight: 600; }
+.meta-sep { color: #ccc; }
+.headline-ago { color: #666; font-style: italic; }
+.headline-source { color: #0038b8; font-weight: 700; }
 .headline-extract {
-    font-size: 1rem;
-    color: #333;
-    line-height: 1.75;
+    font-size: 1.05rem;
+    color: #222;
+    line-height: 1.7;
     border-right: 3px solid #d32f2f;
     padding-right: 14px;
     margin: 8px 0;
@@ -210,102 +205,100 @@ body {
 
 /* === Secondary Headlines === */
 .secondary-headlines {
-    padding: 16px 24px 20px;
-    border-bottom: 1px solid #e0e0e0;
+    padding: 20px 24px;
+    border-bottom: 2px solid #000;
 }
 .secondary-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
+    gap: 20px;
 }
 .secondary-card {
     border: 1px solid #e0e0e0;
     border-top: 4px solid #333;
     padding: 14px;
-    border-radius: 0 0 4px 4px;
     background: #fafafa;
     transition: box-shadow 0.2s;
 }
 .secondary-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
 .secondary-img {
     width: 100%;
-    height: 130px;
+    height: 150px;
     object-fit: cover;
-    border-radius: 3px;
+    border: 1px solid #ddd;
     margin-bottom: 10px;
 }
 .secondary-badge {
     display: inline-block;
-    color: #fff;
-    font-size: 0.68rem;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 2px;
+    color: #fff !important;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 10px;
     margin-bottom: 6px;
 }
 .secondary-title {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.35;
-    color: #111;
+    font-size: 1.2rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #000;
     margin-bottom: 6px;
 }
-.secondary-year { font-size: 0.78rem; color: #999; }
+.secondary-year { font-size: 0.82rem; color: #d32f2f; font-weight: 700; }
 
 /* === Section Rule === */
 .section-rule {
     border: none;
-    height: 6px;
-    background: linear-gradient(to bottom, #222 0%, #222 40%, transparent 40%, transparent 60%, #222 60%, #222 100%);
+    height: 4px;
+    background: #000;
 }
 
 /* === Newspaper Body (Two Columns) === */
 .newspaper-body {
     display: grid;
-    grid-template-columns: 1fr 2px 1fr;
+    grid-template-columns: 1fr 1px 1fr;
     padding: 0 24px 24px;
-    gap: 0;
+    min-height: 400px;
 }
-.column { padding: 20px 0; }
-.column-right { padding-left: 20px; }
-.column-left { padding-right: 20px; }
+.column { padding: 22px 0; }
+.column-right { padding-left: 22px; }
+.column-left { padding-right: 22px; }
 .column-divider {
-    background: linear-gradient(to bottom, #bbb, #ddd, #bbb);
-    width: 2px;
-    margin: 20px 0;
+    background: #000;
+    width: 1px;
+    margin: 22px 0;
 }
 
 /* === Section Blocks — COLORED HEADERS === */
-.section-block { margin-bottom: 28px; }
+.section-block { margin-bottom: 30px; }
 .section-hdr {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 8px 14px;
     margin-bottom: 16px;
-    border-radius: 3px;
-    /* Override: colored backgrounds set via inline style in JS */
+    /* color is set via inline style per category in JS */
+    /* background: currentColor picks up that color for the bg */
     background: currentColor;
-    position: relative;
 }
 .section-hdr-text {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     font-weight: 800;
     color: #fff !important;
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .section-count {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: rgba(255,255,255,0.7) !important;
+    font-weight: 500;
 }
 
 /* === Article Cards === */
 .article {
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #ddd;
 }
 .article:last-child { border-bottom: none; }
 .article-top {
@@ -317,26 +310,25 @@ body {
 .article-year-badge {
     background: #d32f2f;
     color: #fff;
-    font-size: 0.76rem;
+    font-size: 0.82rem;
     font-weight: 800;
-    padding: 3px 10px;
-    border-radius: 3px;
+    padding: 2px 10px;
     font-family: 'Frank Ruhl Libre', serif;
 }
-.article-ago { font-size: 0.72rem; color: #aaa; font-style: italic; }
+.article-ago { font-size: 0.78rem; color: #888; font-style: italic; }
 .article-title {
     font-family: 'Frank Ruhl Libre', 'David Libre', serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    line-height: 1.4;
-    color: #111;
+    font-size: 1.2rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #000;
     margin-bottom: 6px;
 }
 .article-title:hover { color: #d32f2f; }
 .article-body {
-    font-size: 0.88rem;
-    color: #555;
-    line-height: 1.7;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.6;
     margin-bottom: 8px;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -345,48 +337,41 @@ body {
 }
 .article-img {
     margin: 10px 0;
-    border-radius: 4px;
+    border: 1px solid #ddd;
     overflow: hidden;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
 }
 .article-img img {
     width: 100%;
-    height: 150px;
+    height: 160px;
     object-fit: cover;
     display: block;
 }
 .article-bottom { display: flex; justify-content: flex-start; margin-top: 6px; }
 .article-source {
-    font-size: 0.75rem;
-    color: #1565c0;
-    font-weight: 600;
+    font-size: 0.78rem;
+    color: #0038b8;
+    font-weight: 700;
     background: #e3f2fd;
     padding: 2px 8px;
-    border-radius: 2px;
 }
 .article-sep { border-top: 1px dashed #e0e0e0; margin: 4px 0; }
 
 /* === Embedded Social Posts === */
 .social-embed {
-    background: #f8f9fb;
-    border: 1px solid #e0e4ea;
-    border-radius: 10px;
+    background: #f5f6f8;
+    border: 1px solid #ddd;
+    border-right: 4px solid #1da1f2;
     padding: 14px 16px;
     margin: 12px 0;
-    font-size: 0.88rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    font-family: 'Heebo', sans-serif;
 }
-.social-embed.twitter { border-right: 4px solid #1da1f2; background: #f5faff; }
-.social-embed.facebook { border-right: 4px solid #1877f2; background: #f5f8ff; }
-.social-embed.instagram {
-    border-right: 4px solid transparent;
-    border-image: linear-gradient(to bottom, #833ab4, #fd1d1d, #fcb045) 1;
-    background: #fffaf5;
-}
+.social-embed.twitter { border-right-color: #1da1f2; background: #f5faff; }
+.social-embed.facebook { border-right-color: #1877f2; background: #f5f8ff; }
+.social-embed.instagram { border-right-color: #e1306c; background: #fffaf5; }
 .social-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 8px;
 }
 .social-icon {
@@ -398,41 +383,53 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     font-weight: 800;
     flex-shrink: 0;
 }
 .social-embed.facebook .social-icon { background: #1877f2; }
-.social-embed.instagram .social-icon { background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); }
-.social-author { font-weight: 700; color: #111; font-size: 0.88rem; }
-.social-handle { color: #999; font-size: 0.78rem; }
-.social-text { color: #222; line-height: 1.6; margin-bottom: 8px; }
+.social-embed.instagram .social-icon { background: #e1306c; }
+.social-author { font-weight: 800; color: #000; font-size: 0.92rem; }
+.social-handle {
+    color: #666;
+    font-size: 0.82rem;
+    font-weight: 500;
+    direction: ltr;
+    display: inline-block;
+}
+.social-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #111;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
 .social-stats {
     display: flex;
-    gap: 18px;
-    font-size: 0.75rem;
-    color: #999;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
     border-top: 1px solid #eee;
     padding-top: 6px;
 }
 
 /* === People Section === */
 .people-section {
-    padding: 20px 24px 24px;
-    border-top: 3px solid #222;
+    padding: 22px 24px 24px;
+    border-top: 4px solid #000;
 }
 .people-wrap {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    gap: 28px;
 }
 .people-hdr {
     padding: 8px 14px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     font-family: 'Frank Ruhl Libre', serif;
     font-weight: 800;
-    font-size: 1.05rem;
-    border-radius: 3px;
+    font-size: 1.15rem;
 }
 .births-hdr { background: #27ae60; color: #fff; }
 .deaths-hdr { background: #555; color: #fff; }
@@ -440,46 +437,46 @@ body {
 .person-card {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 6px 8px;
-    border-bottom: 1px solid #f0f0f0;
-    border-radius: 4px;
+    border-bottom: 1px solid #eee;
     transition: background 0.15s;
 }
 .person-card:hover { background: #f8f8f8; }
 .person-thumb {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid #e0e0e0;
+    border: 1px solid #ccc;
 }
 .person-thumb-placeholder {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #e0ddd5, #d5d0c5);
+    background: #e0e0e0;
     flex-shrink: 0;
 }
 .person-info { display: flex; flex-direction: column; min-width: 0; }
 .person-name {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #111;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #000;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.person-year { font-size: 0.75rem; color: #aaa; }
+.person-year { font-size: 0.82rem; color: #d32f2f; font-weight: 700; }
 
 /* === Footer === */
 .newspaper-footer {
     max-width: 1140px;
     margin: 0 auto;
-    background: #1a1a1a;
-    color: #999;
-    font-size: 0.78rem;
+    background: #000;
+    color: #ccc;
+    font-size: 0.82rem;
+    font-weight: 500;
 }
 .footer-inner {
     padding: 14px 24px;
@@ -492,20 +489,21 @@ body {
 .loading-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(255,255,255,0.97);
+    background: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.3rem;
-    color: #555;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #000;
 }
 .loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid #eee;
+    width: 50px;
+    height: 50px;
+    border: 4px solid #ddd;
     border-top-color: #d32f2f;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
@@ -515,24 +513,25 @@ body {
 
 /* === Mobile Responsive === */
 @media (max-width: 768px) {
-    .masthead-inner { flex-direction: column; gap: 4px; }
-    .masthead-date { text-align: center !important; min-width: auto; font-size: 0.8rem; }
-    .newspaper-title { font-size: 2.4rem; }
-    .headline-wrap { flex-direction: column; }
-    .headline-img { width: 100%; height: 200px; }
-    .main-headline { font-size: 1.6rem; }
-    .secondary-grid { grid-template-columns: 1fr; }
-    .newspaper-body { grid-template-columns: 1fr; }
+    .masthead-inner { flex-direction: column; gap: 6px; }
+    .masthead-date { text-align: center !important; min-width: auto; font-size: 0.88rem; }
+    .newspaper-title { font-size: 3.2rem; }
+    .headline-wrap { flex-direction: column; gap: 16px; }
+    .headline-img { width: 100%; height: auto; aspect-ratio: 16/9; min-height: auto; }
+    .main-headline { font-size: 2rem; }
+    .secondary-grid { grid-template-columns: 1fr; gap: 16px; }
+    .newspaper-body { grid-template-columns: 1fr; padding: 0 16px 16px; }
     .column-divider { display: none; }
     .column-right, .column-left { padding: 12px 0; }
-    .people-wrap { grid-template-columns: 1fr; }
-    .footer-inner { flex-direction: column; gap: 4px; text-align: center; }
+    .people-wrap { grid-template-columns: 1fr; gap: 20px; }
+    .ticker-bar { display: none; }
+    .footer-inner { flex-direction: column; gap: 6px; text-align: center; }
 }
 
 @media (max-width: 480px) {
     .top-bar-inner { font-size: 0.72rem; }
-    .newspaper-title { font-size: 2rem; }
-    .main-headline { font-size: 1.35rem; }
+    .newspaper-title { font-size: 2.4rem; }
+    .main-headline { font-size: 1.5rem; }
     .headline-section, .secondary-headlines,
     .newspaper-body, .people-section { padding-right: 14px; padding-left: 14px; }
 }
