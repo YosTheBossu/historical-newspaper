@@ -8,6 +8,7 @@ services:
       - "${APP_PORT:-8080}:80"
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
 
   # Manual data collection (run with: docker compose --profile collect run --rm collector)
   collector:
@@ -18,6 +19,7 @@ services:
       - ./:/app
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     command: node data-collector.js
     profiles:
       - collect
