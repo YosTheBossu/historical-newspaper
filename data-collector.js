@@ -1,6 +1,6 @@
 // data-collector.js — Daily data pipeline
-// Fetches from HE + EN Wikipedia, translates with DeepSeek, generates social posts
-// Classifies events into categories, prioritizes Israeli content
+// Fetches from HE + EN Wikipedia, translates with OpenRouter/DeepSeek
+// Classifies events into newspaper sections, generates social posts per article
 // Runs server-side via cron — no API keys exposed to client
 
 const https = require('https');
@@ -8,18 +8,16 @@ const fs = require('fs');
 
 // ====== Configuration ======
 const CONFIG = {
+    // LLM APIs — OpenRouter (primary, free models), DeepSeek (fallback)
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
+    OPENROUTER_URL: 'https://openrouter.ai/api/v1/chat/completions',
     DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || '',
     DEEPSEEK_MODEL: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+    // Data sources
     WIKI_HE: 'https://he.wikipedia.org/api/rest_v1/feed/onthisday/all',
     WIKI_EN: 'https://en.wikipedia.org/api/rest_v1/feed/onthisday/all',
     HEBCAL: 'https://www.hebcal.com/converter',
-    // Israeli news sources
-    YNET_RSS: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
-    WALLA_RSS: 'https://rss.walla.co.il/feed/1',
-    GOOGLE_NEWS_IL_RSS: 'https://news.google.com/rss?hl=he&gl=IL&ceid=IL:he',
-    MAARIV_RSS: 'https://www.maariv.co.il/Rss/RssChad498',
-    ISRAEL_HAYOM_RSS: 'https://www.israelhayom.co.il/rss.xml',
-    CALCALIST_RSS: 'https://www.calcalist.co.il/GeneralRss/0,16335,L-8,00.xml',
     USER_AGENT: 'HistoricalNewspaperBot/1.0 (educational project)',
     TRANSLATE_BATCH_SIZE: 7,
     MAX_EVENTS: 60,
@@ -27,6 +25,39 @@ const CONFIG = {
     MAX_DEATHS: 25,
     ANCIENT_EVENT_SLOTS: 8,
     MIN_HISTORICAL_YEARS: Math.max(1, parseInt(process.env.MIN_HISTORICAL_YEARS || '25', 10) || 25)
+};
+
+// Helper: check if any LLM API key is available
+function hasLLMKey() {
+    return !!(CONFIG.OPENROUTER_API_KEY || CONFIG.DEEPSEEK_API_KEY);
+}
+
+// Newspaper section names in Hebrew
+const SECTION_NAMES = {
+    israel: 'ישראל',
+    politics: 'מדיני',
+    military: 'צבאי ובטחוני',
+    science: 'מדע וטכנולוגיה',
+    culture: 'תרבות ובידור',
+    sports: 'ספורט',
+    economy: 'כלכלה',
+    religion: 'דת ומסורת',
+    world: 'עולמי',
+    general: 'כללי'
+};
+
+// Decorative source attribution by category (for newspaper look)
+const SOURCE_BY_CATEGORY = {
+    israel: ['ynet', 'ישראל היום', 'כאן חדשות', 'מעריב-NRG'],
+    politics: ['הארץ', 'ynet', 'מעריב-NRG', 'כאן חדשות'],
+    military: ['ynet', 'ישראל היום', 'כאן חדשות', 'מעריב-NRG'],
+    sports: ['ספורט5', 'ONE', 'ynet', 'מאקו'],
+    culture: ['מאקו', 'וואלה', 'ynet', 'הארץ'],
+    economy: ['כלכליסט', 'גלובס', 'הארץ', 'ynet'],
+    science: ['ynet', 'הארץ', 'מאקו', 'וואלה'],
+    religion: ['כאן חדשות', 'ynet', 'מעריב-NRG', 'וואלה'],
+    general: ['ynet', 'מאקו', 'וואלה', 'ישראל היום'],
+    world: ['ynet', 'הארץ', 'כאן חדשות', 'מעריב-NRG']
 };
 
 const HEADLINE_WEIGHTS = {
@@ -418,98 +449,70 @@ function isProbablyHebrew(text) {
     return (hebLetters / letters) >= 0.3;
 }
 
-// ====== DeepSeek API ======
-const DEEPSEEK_URLS = [
-    'https://api.deepseek.com/chat/completions',
-    'https://api.deepseek.com/v1/chat/completions'
-];
-let workingDeepSeekUrl = null;
-
-async function testDeepSeekConnectivity() {
-    if (!CONFIG.DEEPSEEK_API_KEY) {
-        console.log('  [DeepSeek Test] No API key, skipping connectivity test');
-        return false;
-    }
-
-    const testBody = {
-        model: CONFIG.DEEPSEEK_MODEL,
-        messages: [{ role: 'user', content: 'Say "OK" in one word' }],
-        temperature: 0,
-        max_tokens: 10
-    };
-
-    for (const url of DEEPSEEK_URLS) {
-        try {
-            console.log(`  [DeepSeek Test] Trying ${url}...`);
-            const result = await httpPost(url, testBody, {
-                'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
-            });
-            const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
-            if (content) {
-                console.log(`  [DeepSeek Test] SUCCESS with ${url} - Response: "${content.trim()}"`);
-                workingDeepSeekUrl = url;
-                return true;
-            } else {
-                console.log(`  [DeepSeek Test] ${url} returned empty content. Keys: ${Object.keys(result || {}).join(', ')}`);
-            }
-        } catch (err) {
-            console.error(`  [DeepSeek Test] ${url} FAILED: ${err.message}`);
-        }
-    }
-
-    console.error('  [DeepSeek Test] ALL URLs FAILED - translations and social posts will not work');
-    return false;
-}
-
-async function callDeepSeek(systemPrompt, userPrompt, maxTokens = 4096) {
-    if (!CONFIG.DEEPSEEK_API_KEY) {
-        console.log('  DeepSeek API key not set, skipping');
+// ====== LLM API (OpenRouter primary, DeepSeek fallback) ======
+async function callLLM(systemPrompt, userPrompt, maxTokens = 4096) {
+    if (!hasLLMKey()) {
+        console.log('  No LLM API key set (OpenRouter or DeepSeek), skipping');
         return null;
     }
 
-    const url = workingDeepSeekUrl || DEEPSEEK_URLS[0];
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+    ];
 
-    const body = {
-        model: CONFIG.DEEPSEEK_MODEL,
-        messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: maxTokens
-    };
+    // Try OpenRouter first (free models)
+    if (CONFIG.OPENROUTER_API_KEY) {
+        try {
+            const result = await httpPost(CONFIG.OPENROUTER_URL, {
+                model: CONFIG.OPENROUTER_MODEL,
+                messages,
+                temperature: 0.3,
+                max_tokens: maxTokens
+            }, {
+                'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
+                'HTTP-Referer': 'https://historical-newspaper.app',
+                'X-Title': 'Historical Newspaper'
+            });
 
-    try {
-        const result = await httpPost(url, body, {
-            'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
-        });
-
-        const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
-        if (!content) {
-            console.error('  DeepSeek returned empty content. Response keys:', Object.keys(result || {}));
-        }
-        return content || null;
-    } catch (err) {
-        console.error(`  DeepSeek API call failed (${url}): ${err.message}`);
-        // Try fallback URL if primary failed
-        if (url === DEEPSEEK_URLS[0] && DEEPSEEK_URLS[1]) {
-            console.log(`  Trying fallback URL: ${DEEPSEEK_URLS[1]}`);
-            try {
-                const result2 = await httpPost(DEEPSEEK_URLS[1], body, {
-                    'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
-                });
-                const content2 = result2.choices && result2.choices[0] && result2.choices[0].message && result2.choices[0].message.content;
-                if (content2) {
-                    workingDeepSeekUrl = DEEPSEEK_URLS[1];
-                    return content2;
-                }
-            } catch (err2) {
-                console.error(`  Fallback URL also failed: ${err2.message}`);
+            const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+            if (content) {
+                // Some models wrap output in <think> tags — strip them
+                const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                return cleaned || content;
             }
+            console.error('  OpenRouter returned empty content');
+        } catch (err) {
+            console.error(`  OpenRouter failed: ${err.message}`);
         }
-        throw err;
     }
+
+    // Fallback to DeepSeek
+    if (CONFIG.DEEPSEEK_API_KEY) {
+        try {
+            const result = await httpPost('https://api.deepseek.com/chat/completions', {
+                model: CONFIG.DEEPSEEK_MODEL,
+                messages,
+                temperature: 0.3,
+                max_tokens: maxTokens
+            }, {
+                'Authorization': `Bearer ${CONFIG.DEEPSEEK_API_KEY}`
+            });
+
+            const content = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content;
+            if (content) return content;
+            console.error('  DeepSeek returned empty content');
+        } catch (err) {
+            console.error(`  DeepSeek also failed: ${err.message}`);
+            throw err;
+        }
+    }
+
+    return null;
 }
+
+// Keep backward compat alias
+const callDeepSeek = callLLM;
 
 function extractJsonFromResponse(text) {
     if (!text) return null;
@@ -645,8 +648,8 @@ async function translateAllEnglishEntries(data) {
     const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
     let totalEN = 0;
 
-    if (!CONFIG.DEEPSEEK_API_KEY) {
-        console.log('  DeepSeek key missing, using fallback translation for English entries');
+    if (!hasLLMKey()) {
+        console.log('  No LLM key available, using fallback translation for English entries');
         for (const cat of categories) {
             const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
             enEntries.forEach(applyFallbackTranslation);
@@ -674,7 +677,7 @@ async function translateAllEnglishEntries(data) {
         const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
         untranslated += stillEN.length;
     }
-    if (untranslated > 0 && CONFIG.DEEPSEEK_API_KEY) {
+    if (untranslated > 0 && hasLLMKey()) {
         console.log(`  Retrying ${untranslated} untranslated entries...`);
         for (const cat of categories) {
             const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
@@ -835,7 +838,7 @@ function generateDeterministicSocialPosts(data) {
 }
 
 async function generateSocialPosts(data) {
-    if (!CONFIG.DEEPSEEK_API_KEY) {
+    if (!hasLLMKey()) {
         return generateDeterministicSocialPosts(data);
     }
 
@@ -910,7 +913,7 @@ Make them creative, witty, and historically accurate. ALL content MUST be in Heb
 
 // ====== Ancient/Biblical Events Generation ======
 async function generateAncientEvents(month, day) {
-    if (!CONFIG.DEEPSEEK_API_KEY) return [];
+    if (!hasLLMKey()) return [];
 
     const systemPrompt = `אתה היסטוריון מומחה בהיסטוריה עתיקה, תנ"כית ויהודית.
 צור אירועים היסטוריים שהתרחשו או מיוחסים מסורתית לתאריך הנתון.
@@ -971,7 +974,7 @@ async function collectDailyData() {
         selected: [],
         holidays: [],
         socialPosts: [],
-        news: [],
+        sections: {},
         categories: {},
         stats: { he: 0, en: 0, translated: 0, total: 0, israelEvents: 0 }
     };
@@ -1023,104 +1026,12 @@ async function collectDailyData() {
         console.error(`  Hebrew date failed: ${err.message}`);
     }
 
-    // --- Step 4: Fetch Israeli News (with retries and fallbacks) ---
-    console.log('4. Fetching Israeli news...');
-    const newsSourceConfigs = [
-        { name: 'YNET',         url: CONFIG.YNET_RSS,           source: 'ynet',        min: 2, max: 7, backupMax: 12 },
-        { name: 'Walla',        url: CONFIG.WALLA_RSS,          source: 'וואלה',       min: 1, max: 4, backupMax: 8  },
-        { name: 'Google News',  url: CONFIG.GOOGLE_NEWS_IL_RSS, source: 'Google News', min: 1, max: 4, backupMax: 7  },
-        { name: 'Maariv',       url: CONFIG.MAARIV_RSS,         source: 'מעריב',       min: 1, max: 3, backupMax: 6  },
-        { name: 'Israel Hayom', url: CONFIG.ISRAEL_HAYOM_RSS,   source: 'ישראל היום',  min: 1, max: 3, backupMax: 6  },
-        { name: 'Calcalist',    url: CONFIG.CALCALIST_RSS,      source: 'כלכליסט',     min: 1, max: 2, backupMax: 5  },
-    ];
-
-    const newsTelemetry = [];
-    const sourceBuckets = [];
-
-    for (const src of newsSourceConfigs) {
-        const telemetry = {
-            source: src.name,
-            statusCode: null,
-            parsedItems: 0,
-            parseFailureReason: null,
-            fetchFailure: null
-        };
-
-        try {
-            const response = await httpGetWithRetry(src.url, {}, false, 2);
-            telemetry.statusCode = response.statusCode;
-
-            const parsed = parseRssItems(response.body);
-            telemetry.parsedItems = parsed.items.length;
-            telemetry.parseFailureReason = parsed.telemetry.parseFailureReason;
-
-            const taggedItems = parsed.items.map(item => ({ ...item, source: src.source }));
-            sourceBuckets.push({
-                config: src,
-                primary: taggedItems.slice(0, src.max),
-                backup: taggedItems.slice(src.max, src.backupMax)
-            });
-
-            console.log(`  ${src.name}: status ${telemetry.statusCode}, parsed ${telemetry.parsedItems}, parseFailure=${telemetry.parseFailureReason || 'none'}`);
-        } catch (err) {
-            telemetry.fetchFailure = err.message;
-            telemetry.parseFailureReason = telemetry.parseFailureReason || 'fetch_failed';
-            console.error(`  ${src.name} failed: ${err.message}`);
-        }
-
-        newsTelemetry.push(telemetry);
-    }
-
-    let successfulSources = 0;
-    const leftovers = [];
-
-    for (const bucket of sourceBuckets) {
-        const guaranteed = bucket.primary.slice(0, bucket.config.min);
-        const remainingPrimary = bucket.primary.slice(bucket.config.min);
-
-        if (guaranteed.length > 0) {
-            successfulSources++;
-            data.news.push(...guaranteed);
-        }
-
-        leftovers.push(...remainingPrimary, ...bucket.backup);
-    }
-
-    // Fill the rest from remaining per-source quota and backup items without letting one source dominate first-pass selection
-    for (const bucket of sourceBuckets) {
-        const alreadySelected = data.news.filter(n => n.source === bucket.config.source).length;
-        const room = Math.max(0, bucket.config.max - alreadySelected);
-        if (room > 0) {
-            const candidates = bucket.primary.slice(bucket.config.min, bucket.config.min + room);
-            data.news.push(...candidates);
-        }
-    }
-
-    // Final fallback expansion from backup pools if some sources are empty/down
-    const targetNewsCount = newsSourceConfigs.reduce((sum, src) => sum + src.max, 0);
-    if (leftovers.length > 0 && data.news.length < targetNewsCount) {
-        const seen = new Set(data.news.map(n => n.url));
-        for (const candidate of leftovers) {
-            if (data.news.length >= targetNewsCount) break;
-            if (!seen.has(candidate.url)) {
-                data.news.push(candidate);
-                seen.add(candidate.url);
-            }
-        }
-    }
-
-    data.newsTelemetry = newsTelemetry;
-    console.log(`  Total news: ${data.news.length} from ${successfulSources} sources`);
-
-    console.log('4.1 Translating non-Hebrew news titles/summaries...');
-    await translateNewsSummaries(data.news);
-
-    // --- Step 5: Translate English entries with DeepSeek ---
-    console.log('5. Translating English content with DeepSeek...');
+    // --- Step 4: Translate English entries ---
+    console.log('4. Translating English content...');
     await translateAllEnglishEntries(data);
 
-    // --- Step 7: Classify events into categories ---
-    console.log('6. Classifying events into categories...');
+    // --- Step 5: Classify events into categories ---
+    console.log('5. Classifying events into categories...');
     const catCounts = {};
     for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
         for (const entry of (data[cat] || [])) {
@@ -1159,11 +1070,20 @@ async function collectDailyData() {
     data.births = data.births.slice(0, CONFIG.MAX_BIRTHS);
     data.deaths = data.deaths.slice(0, CONFIG.MAX_DEATHS);
 
-    // --- Step 8: Generate social media posts with DeepSeek ---
-    console.log('7. Generating social media posts with DeepSeek...');
+    // --- Step 6: Assign decorative news sources ---
+    console.log('6. Assigning news sources to events...');
+    for (const cat of ['events', 'births', 'deaths', 'selected']) {
+        for (const entry of (data[cat] || [])) {
+            const sources = SOURCE_BY_CATEGORY[entry.category] || SOURCE_BY_CATEGORY.general;
+            entry.source = sources[Math.abs(entry.year * 7) % sources.length];
+        }
+    }
+
+    // --- Step 7: Generate social media posts ---
+    console.log('7. Generating social media posts...');
     data.socialPosts = await generateSocialPosts(data);
 
-    // --- Step 9: Generate ancient/biblical events with DeepSeek ---
+    // --- Step 8: Generate ancient/biblical events ---
     console.log('8. Generating ancient/biblical events...');
     const ancientGenerated = await generateAncientEvents(month, day);
     if (ancientGenerated.length > 0) {
@@ -1191,10 +1111,35 @@ async function collectDailyData() {
         data.headline = candidateHeadlinePool[0];
     }
 
+    // --- Step 10: Organize into newspaper sections ---
+    console.log('10. Organizing into newspaper sections...');
+    const sections = {};
+    for (const entry of data.events) {
+        const sec = entry.category || 'general';
+        if (!sections[sec]) sections[sec] = [];
+        sections[sec].push(entry);
+    }
+    data.sections = sections;
+    data.sectionNames = SECTION_NAMES;
+
+    // Link social posts to events by matching year
+    const socialByYear = {};
+    for (const post of (data.socialPosts || [])) {
+        const yr = post.eventYear || post.year;
+        if (yr && !socialByYear[yr]) socialByYear[yr] = post;
+    }
+    for (const entry of [...data.events, ...data.births, ...data.deaths]) {
+        if (socialByYear[entry.year]) {
+            entry.socialPost = socialByYear[entry.year];
+            delete socialByYear[entry.year]; // each post used once
+        }
+    }
+
     // --- Final stats ---
     data.stats.total = data.events.length + data.births.length + data.deaths.length;
     data.stats.translated = [...data.events, ...data.births, ...data.deaths]
         .filter(e => e.originalLang === 'en').length;
+    data.stats.llmProvider = CONFIG.OPENROUTER_API_KEY ? 'OpenRouter' : (CONFIG.DEEPSEEK_API_KEY ? 'DeepSeek' : 'none');
 
     return data;
 }
@@ -1210,9 +1155,10 @@ function saveData(data) {
 }
 
 async function main() {
-    console.log(`[Diagnostics] DEEPSEEK_API_KEY: ${CONFIG.DEEPSEEK_API_KEY ? 'set (' + CONFIG.DEEPSEEK_API_KEY.substring(0, 8) + '...)' : 'NOT SET'}`);
-    console.log(`[Diagnostics] DEEPSEEK_MODEL: ${CONFIG.DEEPSEEK_MODEL}`);
-    console.log(`[Diagnostics] API URL: https://api.deepseek.com/chat/completions`);
+    console.log(`[Diagnostics] OPENROUTER_API_KEY: ${CONFIG.OPENROUTER_API_KEY ? 'set (' + CONFIG.OPENROUTER_API_KEY.substring(0, 12) + '...)' : 'NOT SET'}`);
+    console.log(`[Diagnostics] OPENROUTER_MODEL: ${CONFIG.OPENROUTER_MODEL}`);
+    console.log(`[Diagnostics] DEEPSEEK_API_KEY: ${CONFIG.DEEPSEEK_API_KEY ? 'set (' + CONFIG.DEEPSEEK_API_KEY.substring(0, 8) + '...)' : 'NOT SET (fallback)'}`);
+    console.log(`[Diagnostics] Primary LLM: ${CONFIG.OPENROUTER_API_KEY ? 'OpenRouter' : (CONFIG.DEEPSEEK_API_KEY ? 'DeepSeek' : 'NONE')}`);
 
     // Safety net: kill the process if collection takes longer than 5 minutes
     const globalTimeout = setTimeout(() => {
@@ -1234,7 +1180,7 @@ async function main() {
         console.log(`   Births: ${data.births.length}`);
         console.log(`   Deaths: ${data.deaths.length}`);
         console.log(`   Social Posts: ${data.socialPosts.length}`);
-        console.log(`   News: ${data.news.length}`);
+        console.log(`   Sections: ${Object.keys(data.sections || {}).join(', ')}`);
         console.log(`   Sources: ${data.stats.he} HE + ${data.stats.en} EN`);
         console.log(`   Translated: ${data.stats.translated}`);
         console.log(`   Israeli events: ${data.stats.israelEvents}`);
