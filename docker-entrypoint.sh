@@ -26,9 +26,10 @@ fi
 echo "[entrypoint] Starting cron daemon..."
 crond -b -l 2
 
-echo "[entrypoint] Running initial data collection (foreground, blocks until done)..."
+echo "[entrypoint] Running data collector in background (max 5 min)..."
 cd /usr/share/nginx/html
-node data-collector.js 2>&1 | tee /var/log/collector.log || echo "[entrypoint] Collector finished with errors, using fallback data"
+# Collector runs in background with timeout; site serves fallback data immediately
+(timeout 300 node data-collector.js 2>&1 | tee /var/log/collector.log || true) &
 
-echo "[entrypoint] Data collection done. Starting nginx..."
+echo "[entrypoint] Starting nginx (site available immediately with fallback data)..."
 exec nginx -g 'daemon off;'
