@@ -2,8 +2,8 @@
 FROM node:20-alpine AS collector
 WORKDIR /app
 COPY data-collector.js date-system.js ./
-# Create empty fallback files so COPY in stage 2 never fails
-RUN touch today.json example-events.json \
+# Try to fetch Wikipedia data during build (no API keys available here)
+RUN touch today.json \
     && node data-collector.js || true
 
 # Stage 2: Production image with nginx + cron + node for daily updates
@@ -19,9 +19,11 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 WORKDIR /usr/share/nginx/html
 COPY index.html style.css date-system.js data-collector.js ./
 
-# Copy generated data from collector stage (fallback: empty files always exist)
+# Copy example-events.json from repo (always has valid fallback data)
+COPY example-events.json ./example-events.json
+
+# Copy build-time today.json (may have Wikipedia data, may be empty)
 COPY --from=collector /app/today.json ./today.json
-COPY --from=collector /app/example-events.json ./example-events.json
 
 # Setup cron job for daily data collection at 02:00 and 14:00
 # Sources /etc/collector.env to get DEEPSEEK_API_KEY (written by entrypoint)
