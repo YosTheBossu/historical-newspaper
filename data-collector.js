@@ -25,7 +25,15 @@ const CONFIG = {
     MAX_EVENTS: 60,
     MAX_BIRTHS: 30,
     MAX_DEATHS: 25,
-    ANCIENT_EVENT_SLOTS: 8
+    ANCIENT_EVENT_SLOTS: 8,
+    MIN_HISTORICAL_YEARS: Math.max(1, parseInt(process.env.MIN_HISTORICAL_YEARS || '25', 10) || 25)
+};
+
+const HEADLINE_WEIGHTS = {
+    verifiedIsraeli: 45,
+    historicalImportance: 30,
+    descriptionDepth: 15,
+    image: 10
 };
 
 // ====== Category Classification ======
@@ -115,8 +123,33 @@ function classifyEvent(event) {
     return bestCategory;
 }
 
+function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+}
+
+function getHeadlineScore(event, nowYear) {
+    if (!event || !event.year) return 0;
+
+    const ageYears = Math.max(0, nowYear - event.year);
+    const verifiedIsraeliStrength = event.category === 'israel'
+        ? (event.lang === 'he' && event.originalLang !== 'en' ? 1 : 0.7)
+        : 0;
+    const historicalImportance = clamp(ageYears / 150, 0, 1);
+    const descriptionDepth = clamp(((event.extract || '').trim().length) / 280, 0, 1);
+    const image = event.thumbnail ? 1 : 0;
+
+    const score =
+        (verifiedIsraeliStrength * HEADLINE_WEIGHTS.verifiedIsraeli) +
+        (historicalImportance * HEADLINE_WEIGHTS.historicalImportance) +
+        (descriptionDepth * HEADLINE_WEIGHTS.descriptionDepth) +
+        (image * HEADLINE_WEIGHTS.image);
+
+    return Number(score.toFixed(2));
+}
+
 // ====== HTTP Helpers ======
-function httpGet(url, headers = {}, expectJson = true) {
+function httpGet(url, headers = {}, expectJson = true, redirectDepth = 0) {
+    const MAX_REDIRECTS = 5;
     return new Promise((resolve, reject) => {
         const parsedUrl = new URL(url);
         const options = {
@@ -128,14 +161,36 @@ function httpGet(url, headers = {}, expectJson = true) {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
+                if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+                    const location = res.headers.location;
+                    if (!location) {
+                        return reject(new Error(`HTTP ${res.statusCode} redirect without location for ${url}`));
+                    }
+                    if (redirectDepth >= MAX_REDIRECTS) {
+                        return reject(new Error(`Too many redirects (${MAX_REDIRECTS}) for ${url}`));
+                    }
+                    const redirectUrl = new URL(location, url).toString();
+                    return resolve(httpGet(redirectUrl, headers, expectJson, redirectDepth + 1));
+                }
+
                 if (res.statusCode < 200 || res.statusCode >= 300) {
                     return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
                 }
+
+                const response = {
+                    body: data,
+                    statusCode: res.statusCode,
+                    finalUrl: url
+                };
+
                 if (expectJson) {
-                    try { resolve(JSON.parse(data)); }
+                    try {
+                        response.body = JSON.parse(data);
+                        resolve(response);
+                    }
                     catch (e) { reject(new Error(`Invalid JSON from ${url}`)); }
                 } else {
-                    resolve(data);
+                    resolve(response);
                 }
             });
         });
@@ -230,12 +285,14 @@ function processWikiEntry(entry, lang) {
 async function fetchWikiData(lang, month, day) {
     const baseUrl = lang === 'he' ? CONFIG.WIKI_HE : CONFIG.WIKI_EN;
     const url = `${baseUrl}/${month}/${day}`;
-    return httpGet(url);
+    const response = await httpGet(url);
+    return response.body;
 }
 
 async function fetchHebrewDate(year, month, day) {
     const url = `${CONFIG.HEBCAL}?cfg=json&gy=${year}&gm=${parseInt(month)}&gd=${parseInt(day)}&g2h=1`;
-    return httpGet(url);
+    const response = await httpGet(url);
+    return response.body;
 }
 
 // ====== YNET RSS ======
@@ -247,39 +304,118 @@ function extractPlainText(html) {
         .trim();
 }
 
+function decodeXmlEntities(text) {
+    return (text || '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/gi, "'")
+        .trim();
+}
+
+function extractFirstMatch(text, regexList) {
+    for (const regex of regexList) {
+        const match = text.match(regex);
+        if (match && match[1]) return match[1];
+    }
+    return '';
+}
+
+function extractImageFromXml(fragment) {
+    const directPatterns = [
+        /<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image/i,
+        /<media:content[^>]+url=["']([^"']+)["']/i,
+        /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
+        /<link[^>]+rel=["']enclosure["'][^>]+href=["']([^"']+)["'][^>]*type=["']image/i,
+        /<link[^>]+href=["']([^"']+)["'][^>]*type=["']image\//i
+    ];
+
+    for (const pattern of directPatterns) {
+        const match = fragment.match(pattern);
+        if (match && match[1]) return match[1];
+    }
+
+    const mediaGroup = fragment.match(/<media:group>([\s\S]*?)<\/media:group>/i);
+    if (mediaGroup) {
+        const mediaGroupImage = extractImageFromXml(mediaGroup[1]);
+        if (mediaGroupImage) return mediaGroupImage;
+    }
+
+    const imgInHtml = fragment.match(/<img[^>]+src=["']([^"']+)["']/i);
+    return imgInHtml ? imgInHtml[1] : null;
+}
+
 function parseRssItems(xmlText) {
     const items = [];
-    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemRegex.exec(xmlText)) !== null) {
-        const xml = match[1];
-        const title = extractPlainText((xml.match(/<title>([\s\S]*?)<\/title>/i) || [])[1]);
-        const link = extractPlainText((xml.match(/<link>([\s\S]*?)<\/link>/i) || [])[1]);
-        const desc = extractPlainText((xml.match(/<description>([\s\S]*?)<\/description>/i) || [])[1]);
+    const telemetry = { format: 'unknown', parseFailureReason: null };
 
-        // Extract image from various RSS tags
-        let image = null;
-        const enclosure = xml.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image/i);
-        if (enclosure) image = enclosure[1];
-        if (!image) {
-            const mediaContent = xml.match(/<media:content[^>]+url=["']([^"']+)["']/i);
-            if (mediaContent) image = mediaContent[1];
-        }
-        if (!image) {
-            const mediaThumbnail = xml.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
-            if (mediaThumbnail) image = mediaThumbnail[1];
-        }
-        // Try image from description HTML
-        if (!image) {
-            const imgInHtml = match[1].match(/<img[^>]+src=["']([^"']+)["']/i);
-            if (imgInHtml) image = imgInHtml[1];
-        }
+    const hasRssItems = /<item[\s>]/i.test(xmlText);
+    const hasAtomEntries = /<entry[\s>]/i.test(xmlText);
 
-        if (title && link) {
-            items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
+    if (!hasRssItems && !hasAtomEntries) {
+        telemetry.parseFailureReason = 'no_item_or_entry_nodes';
+        return { items, telemetry };
+    }
+
+    if (hasRssItems) {
+        telemetry.format = 'rss';
+        const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+        let match;
+        while ((match = itemRegex.exec(xmlText)) !== null) {
+            const xml = match[1];
+            const title = extractPlainText(extractFirstMatch(xml, [/<title>([\s\S]*?)<\/title>/i]));
+            const link = decodeXmlEntities(extractPlainText(extractFirstMatch(xml, [/<link>([\s\S]*?)<\/link>/i])));
+            const desc = extractPlainText(extractFirstMatch(xml, [
+                /<content:encoded>([\s\S]*?)<\/content:encoded>/i,
+                /<description>([\s\S]*?)<\/description>/i
+            ]));
+            const image = extractImageFromXml(xml);
+
+            if (title && link) {
+                items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
+            }
         }
     }
-    return items;
+
+    if (hasAtomEntries) {
+        telemetry.format = telemetry.format === 'rss' ? 'rss+atom' : 'atom';
+        const entryRegex = /<entry\b[^>]*>([\s\S]*?)<\/entry>/gi;
+        let match;
+        while ((match = entryRegex.exec(xmlText)) !== null) {
+            const xml = match[1];
+            const title = extractPlainText(extractFirstMatch(xml, [/<title[^>]*>([\s\S]*?)<\/title>/i]));
+
+            const linkMatch = xml.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*>/i)
+                || xml.match(/<link\b[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)["'][^>]*>/i);
+            const link = decodeXmlEntities(linkMatch ? linkMatch[1] : '');
+
+            const desc = extractPlainText(extractFirstMatch(xml, [
+                /<content[^>]*>([\s\S]*?)<\/content>/i,
+                /<summary[^>]*>([\s\S]*?)<\/summary>/i
+            ]));
+            const image = extractImageFromXml(xml);
+
+            if (title && link) {
+                items.push({ title, url: link, summary: desc, source: 'unknown', image: image || null });
+            }
+        }
+    }
+
+    if (items.length === 0 && !telemetry.parseFailureReason) {
+        telemetry.parseFailureReason = 'nodes_found_but_no_valid_items';
+    }
+
+    return { items, telemetry };
+}
+
+function isProbablyHebrew(text) {
+    if (!text || !text.trim()) return true;
+    const letters = (text.match(/[A-Za-z\u0590-\u05FF]/g) || []).length;
+    if (letters === 0) return true;
+    const hebLetters = (text.match(/[\u0590-\u05FF]/g) || []).length;
+    return (hebLetters / letters) >= 0.3;
 }
 
 // ====== DeepSeek API ======
@@ -392,6 +528,48 @@ function extractJsonFromResponse(text) {
     }
 }
 
+const FALLBACK_GLOSSARY = {
+    war: 'מלחמה', battle: 'קרב', empire: 'אימפריה', king: 'מלך', queen: 'מלכה',
+    president: 'נשיא', prime: 'ראשי', minister: 'שר', israel: 'ישראל', jerusalem: 'ירושלים',
+    jews: 'יהודים', jewish: 'יהודי', independence: 'עצמאות', revolution: 'מהפכה',
+    founded: 'הוקם', established: 'הוקם',
+    born: 'נולד', died: 'נפטר', treaty: 'הסכם', law: 'חוק', state: 'מדינה',
+    city: 'עיר', army: 'צבא', science: 'מדע', university: 'אוניברסיטה',
+    olympic: 'אולימפי', football: 'כדורגל', movie: 'סרט', music: 'מוזיקה'
+};
+
+function transliterateToken(token) {
+    const map = {
+        a: 'א', b: 'ב', c: 'ק', d: 'ד', e: 'ה', f: 'פ', g: 'ג', h: 'ה', i: 'י', j: 'ג׳',
+        k: 'ק', l: 'ל', m: 'מ', n: 'נ', o: 'ו', p: 'פ', q: 'ק', r: 'ר', s: 'ס', t: 'ט',
+        u: 'ו', v: 'ו', w: 'ו', x: 'קס', y: 'י', z: 'ז'
+    };
+    return token
+        .toLowerCase()
+        .split('')
+        .map(ch => map[ch] || ch)
+        .join('');
+}
+
+function basicFallbackTranslate(text) {
+    if (!text) return '';
+    return String(text).replace(/[A-Za-z][A-Za-z'’-]*/g, (word) => {
+        const key = word.toLowerCase();
+        if (FALLBACK_GLOSSARY[key]) return FALLBACK_GLOSSARY[key];
+        if (/^[A-Z][a-z]/.test(word) || word.length > 7) return transliterateToken(word);
+        return word;
+    });
+}
+
+function applyFallbackTranslation(entry) {
+    entry.text = basicFallbackTranslate(entry.text);
+    if (entry.extract) entry.extract = basicFallbackTranslate(entry.extract);
+    entry.originalLang = 'en';
+    entry.lang = 'he';
+    entry.translationMode = 'fallback';
+    return entry;
+}
+
 // ====== Translation ======
 async function translateBatch(entries) {
     if (entries.length === 0) return entries;
@@ -429,14 +607,25 @@ Rules:
                 for (const t of translated) {
                     if (typeof t.id === 'number' && t.text && entries[t.id]) {
                         entries[t.id].text = t.text;
-                        if (t.extract && entries[t.id].extract) {
+                        if (typeof t.extract === 'string' && entries[t.id].extract) {
                             entries[t.id].extract = t.extract;
                         }
                         entries[t.id].originalLang = 'en';
                         entries[t.id].lang = 'he';
+                        entries[t.id].translationMode = 'deepseek';
                         count++;
                     }
                 }
+                // Handle partial JSON cases: translated text exists, extract missing/null
+                entries.forEach((entry, idx) => {
+                    if (entry.lang === 'en' && translated[idx] && typeof translated[idx].text === 'string') {
+                        entry.text = translated[idx].text;
+                        entry.originalLang = 'en';
+                        entry.lang = 'he';
+                        entry.translationMode = 'deepseek';
+                        count++;
+                    }
+                });
                 console.log(`    Translated ${count}/${entries.length} entries (with extracts)`);
                 return entries;
             } else {
@@ -455,6 +644,16 @@ Rules:
 async function translateAllEnglishEntries(data) {
     const categories = ['events', 'births', 'deaths', 'selected', 'holidays'];
     let totalEN = 0;
+
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        console.log('  DeepSeek key missing, using fallback translation for English entries');
+        for (const cat of categories) {
+            const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
+            enEntries.forEach(applyFallbackTranslation);
+        }
+        data.translationMode = 'fallback';
+        return data;
+    }
 
     for (const cat of categories) {
         const enEntries = (data[cat] || []).filter(e => e.lang === 'en');
@@ -485,13 +684,160 @@ async function translateAllEnglishEntries(data) {
         }
     }
 
+    // Final fallback for any entries that remained untranslated
+    for (const cat of categories) {
+        const stillEN = (data[cat] || []).filter(e => e.lang === 'en');
+        stillEN.forEach(applyFallbackTranslation);
+    }
+
+    data.translationMode = 'deepseek';
+
     console.log(`  Total processed for translation: ${totalEN} entries`);
     return data;
 }
 
+async function translateNewsSummaries(newsItems) {
+    if (!Array.isArray(newsItems) || newsItems.length === 0) return newsItems;
+
+    const candidates = newsItems
+        .map((item, idx) => ({ item, idx }))
+        .filter(({ item }) => !isProbablyHebrew(`${item.title || ''} ${item.summary || ''}`));
+
+    if (candidates.length === 0) {
+        console.log('  News translation: all items already in Hebrew');
+        return newsItems;
+    }
+
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        console.log(`  News translation: skipped ${candidates.length} non-Hebrew items (no API key)`);
+        return newsItems;
+    }
+
+    const compactSummary = (txt) => {
+        if (!txt) return '';
+        return txt.length > 350 ? txt.substring(0, 350) + '...' : txt;
+    };
+
+    const lines = candidates.map(({ item, idx }) => ({
+        id: idx,
+        title: item.title || '',
+        summary: compactSummary(item.summary || '')
+    }));
+
+    const systemPrompt = `You are a professional Hebrew news translator.
+Translate each item title and summary into natural Hebrew suitable for an Israeli news digest.
+Return ONLY valid JSON in this exact format:
+[{"id":0,"title":"...","summary":"..."}]
+Rules:
+- Keep factual meaning and tone
+- Transliterate names to accepted Hebrew forms
+- Keep numbers and dates accurate
+- If summary is empty, return an empty string`;
+
+    const userPrompt = `Translate these news items to Hebrew:\n${JSON.stringify(lines)}`;
+
+    try {
+        const response = await callDeepSeek(systemPrompt, userPrompt);
+        const translated = extractJsonFromResponse(response);
+        if (!Array.isArray(translated)) {
+            console.log('  News translation: invalid response format');
+            return newsItems;
+        }
+
+        let updated = 0;
+        for (const t of translated) {
+            if (typeof t.id !== 'number') continue;
+            const target = newsItems[t.id];
+            if (!target) continue;
+
+            target.originalTitle = target.title || '';
+            target.originalSummary = target.summary || '';
+            target.translatedTitle = (t.title || '').trim() || target.title || '';
+            target.translatedSummary = (t.summary || '').trim() || target.summary || '';
+            target.title = target.translatedTitle;
+            target.summary = target.translatedSummary;
+            target.lang = 'he';
+            updated++;
+        }
+        console.log(`  News translation: translated ${updated}/${candidates.length} non-Hebrew items`);
+    } catch (err) {
+        console.error(`  News translation failed: ${err.message}`);
+    }
+
+    return newsItems;
+}
+
 // ====== Social Media Post Generation ======
+function generateDeterministicSocialPosts(data) {
+    const preferredEvents = [
+        ...(data.events || []).filter(e => e.category === 'israel'),
+        ...(data.selected || []),
+        ...(data.events || []),
+        ...(data.births || []).filter(e => e.category === 'israel'),
+        ...(data.births || []),
+        ...(data.deaths || [])
+    ];
+
+    const seenYears = new Set();
+    const uniqueEvents = preferredEvents.filter(e => {
+        if (!e || typeof e.year !== 'number' || !e.text) return false;
+        if (seenYears.has(e.year)) return false;
+        seenYears.add(e.year);
+        return true;
+    }).slice(0, 8);
+
+    if (uniqueEvents.length === 0) return [];
+
+    const postCount = Math.min(8, Math.max(6, uniqueEvents.length));
+    const templates = [
+        {
+            platform: 'twitter',
+            author: 'מערכת דברי הימים',
+            handle: '@HistoryDeskIL',
+            buildContent: (ev) => `בדיוק היום בשנת ${ev.year}: ${ev.text}. אם זה היה קורה היום — הייתם משתפים או רק עושים לייק? #היסטוריה_יומית`
+        },
+        {
+            platform: 'facebook',
+            author: 'הארכיון הלאומי',
+            handle: '@NationalArchiveIL',
+            buildContent: (ev) => `פלאשבק היסטורי: ${ev.text} (${ev.year}). כתבו בתגובות איך האירוע הזה שינה את העולם לדעתכם.`
+        },
+        {
+            platform: 'instagram',
+            author: 'כרוניקה בזמן',
+            handle: '@ChronicleToday',
+            buildContent: (ev) => `רגע אחד ששווה תמונה: "${ev.text}" — ${ev.year}. #OnThisDay #זיכרון_היסטורי`
+        },
+        {
+            platform: 'twitter',
+            author: 'כתב מהעבר',
+            handle: '@PastReporter',
+            buildContent: (ev) => `דיווח מתגלגל מ-${ev.year}: ${ev.text}. הכותרות משתנות, הדרמות נשארות. #היום_בהיסטוריה`
+        }
+    ];
+
+    return uniqueEvents.slice(0, postCount).map((event, index) => {
+        const template = templates[index % templates.length];
+        const seed = Math.abs((event.year * 37) + (index * 101));
+        return {
+            author: template.author,
+            handle: template.handle,
+            platform: template.platform,
+            content: template.buildContent(event).slice(0, 200),
+            year: event.year,
+            eventYear: event.year,
+            likes: 500 + (seed % 14501),
+            retweets: 100 + (seed % 4901),
+            replies: 50 + (seed % 1951),
+            source: 'template'
+        };
+    });
+}
+
 async function generateSocialPosts(data) {
-    if (!CONFIG.DEEPSEEK_API_KEY) return [];
+    if (!CONFIG.DEEPSEEK_API_KEY) {
+        return generateDeterministicSocialPosts(data);
+    }
 
     // Prefer Israeli events, then selected, then general events
     const israelEvents = (data.events || []).filter(e => e.category === 'israel').slice(0, 3);
@@ -544,14 +890,22 @@ Make them creative, witty, and historically accurate. ALL content MUST be in Heb
         const response = await callDeepSeek(systemPrompt, userPrompt);
         const posts = extractJsonFromResponse(response);
         if (Array.isArray(posts) && posts.length > 0) {
-            console.log(`  Generated ${posts.length} social posts`);
-            return posts;
+            const normalizedPosts = posts.map(post => ({
+                ...post,
+                source: 'ai'
+            }));
+            console.log(`  Generated ${normalizedPosts.length} social posts (AI)`);
+            return normalizedPosts;
         }
     } catch (err) {
         console.error(`  Social post generation failed: ${err.message}`);
     }
 
-    return [];
+    const fallbackPosts = generateDeterministicSocialPosts(data);
+    if (fallbackPosts.length > 0) {
+        console.log(`  Generated ${fallbackPosts.length} social posts (template fallback)`);
+    }
+    return fallbackPosts;
 }
 
 // ====== Ancient/Biblical Events Generation ======
@@ -672,47 +1026,101 @@ async function collectDailyData() {
     // --- Step 4: Fetch Israeli News (with retries and fallbacks) ---
     console.log('4. Fetching Israeli news...');
     const newsSourceConfigs = [
-        { name: 'YNET',         url: CONFIG.YNET_RSS,           source: 'ynet',        max: 10 },
-        { name: 'Walla',        url: CONFIG.WALLA_RSS,          source: 'וואלה',       max: 5  },
-        { name: 'Google News',  url: CONFIG.GOOGLE_NEWS_IL_RSS, source: 'Google News',  max: 5  },
-        { name: 'Maariv',       url: CONFIG.MAARIV_RSS,         source: 'מעריב',       max: 4  },
-        { name: 'Israel Hayom', url: CONFIG.ISRAEL_HAYOM_RSS,   source: 'ישראל היום',  max: 4  },
-        { name: 'Calcalist',    url: CONFIG.CALCALIST_RSS,      source: 'כלכליסט',     max: 3  },
+        { name: 'YNET',         url: CONFIG.YNET_RSS,           source: 'ynet',        min: 2, max: 7, backupMax: 12 },
+        { name: 'Walla',        url: CONFIG.WALLA_RSS,          source: 'וואלה',       min: 1, max: 4, backupMax: 8  },
+        { name: 'Google News',  url: CONFIG.GOOGLE_NEWS_IL_RSS, source: 'Google News', min: 1, max: 4, backupMax: 7  },
+        { name: 'Maariv',       url: CONFIG.MAARIV_RSS,         source: 'מעריב',       min: 1, max: 3, backupMax: 6  },
+        { name: 'Israel Hayom', url: CONFIG.ISRAEL_HAYOM_RSS,   source: 'ישראל היום',  min: 1, max: 3, backupMax: 6  },
+        { name: 'Calcalist',    url: CONFIG.CALCALIST_RSS,      source: 'כלכליסט',     min: 1, max: 2, backupMax: 5  },
     ];
 
-    let successfulSources = 0;
+    const newsTelemetry = [];
+    const sourceBuckets = [];
+
     for (const src of newsSourceConfigs) {
+        const telemetry = {
+            source: src.name,
+            statusCode: null,
+            parsedItems: 0,
+            parseFailureReason: null,
+            fetchFailure: null
+        };
+
         try {
-            const xml = await httpGetWithRetry(src.url, {}, false, 2);
-            const items = parseRssItems(xml)
-                .map(item => ({ ...item, source: src.source }))
-                .slice(0, src.max);
-            if (items.length > 0) {
-                data.news.push(...items);
-                successfulSources++;
-                console.log(`  ${src.name}: ${items.length} articles`);
-            } else {
-                console.log(`  ${src.name}: 0 articles (empty feed)`);
-            }
+            const response = await httpGetWithRetry(src.url, {}, false, 2);
+            telemetry.statusCode = response.statusCode;
+
+            const parsed = parseRssItems(response.body);
+            telemetry.parsedItems = parsed.items.length;
+            telemetry.parseFailureReason = parsed.telemetry.parseFailureReason;
+
+            const taggedItems = parsed.items.map(item => ({ ...item, source: src.source }));
+            sourceBuckets.push({
+                config: src,
+                primary: taggedItems.slice(0, src.max),
+                backup: taggedItems.slice(src.max, src.backupMax)
+            });
+
+            console.log(`  ${src.name}: status ${telemetry.statusCode}, parsed ${telemetry.parsedItems}, parseFailure=${telemetry.parseFailureReason || 'none'}`);
         } catch (err) {
+            telemetry.fetchFailure = err.message;
+            telemetry.parseFailureReason = telemetry.parseFailureReason || 'fetch_failed';
             console.error(`  ${src.name} failed: ${err.message}`);
         }
+
+        newsTelemetry.push(telemetry);
     }
+
+    let successfulSources = 0;
+    const leftovers = [];
+
+    for (const bucket of sourceBuckets) {
+        const guaranteed = bucket.primary.slice(0, bucket.config.min);
+        const remainingPrimary = bucket.primary.slice(bucket.config.min);
+
+        if (guaranteed.length > 0) {
+            successfulSources++;
+            data.news.push(...guaranteed);
+        }
+
+        leftovers.push(...remainingPrimary, ...bucket.backup);
+    }
+
+    // Fill the rest from remaining per-source quota and backup items without letting one source dominate first-pass selection
+    for (const bucket of sourceBuckets) {
+        const alreadySelected = data.news.filter(n => n.source === bucket.config.source).length;
+        const room = Math.max(0, bucket.config.max - alreadySelected);
+        if (room > 0) {
+            const candidates = bucket.primary.slice(bucket.config.min, bucket.config.min + room);
+            data.news.push(...candidates);
+        }
+    }
+
+    // Final fallback expansion from backup pools if some sources are empty/down
+    const targetNewsCount = newsSourceConfigs.reduce((sum, src) => sum + src.max, 0);
+    if (leftovers.length > 0 && data.news.length < targetNewsCount) {
+        const seen = new Set(data.news.map(n => n.url));
+        for (const candidate of leftovers) {
+            if (data.news.length >= targetNewsCount) break;
+            if (!seen.has(candidate.url)) {
+                data.news.push(candidate);
+                seen.add(candidate.url);
+            }
+        }
+    }
+
+    data.newsTelemetry = newsTelemetry;
     console.log(`  Total news: ${data.news.length} from ${successfulSources} sources`);
 
-    // --- Step 5: Test DeepSeek connectivity ---
-    console.log('5. Testing DeepSeek API connectivity...');
-    const deepseekOk = await testDeepSeekConnectivity();
-    if (deepseekOk) {
-        console.log(`  Using DeepSeek URL: ${workingDeepSeekUrl}`);
-    }
+    console.log('4.1 Translating non-Hebrew news titles/summaries...');
+    await translateNewsSummaries(data.news);
 
-    // --- Step 6: Translate English entries with DeepSeek ---
-    console.log('6. Translating English content with DeepSeek...');
+    // --- Step 5: Translate English entries with DeepSeek ---
+    console.log('5. Translating English content with DeepSeek...');
     await translateAllEnglishEntries(data);
 
     // --- Step 7: Classify events into categories ---
-    console.log('7. Classifying events into categories...');
+    console.log('6. Classifying events into categories...');
     const catCounts = {};
     for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
         for (const entry of (data[cat] || [])) {
@@ -752,11 +1160,11 @@ async function collectDailyData() {
     data.deaths = data.deaths.slice(0, CONFIG.MAX_DEATHS);
 
     // --- Step 8: Generate social media posts with DeepSeek ---
-    console.log('8. Generating social media posts with DeepSeek...');
+    console.log('7. Generating social media posts with DeepSeek...');
     data.socialPosts = await generateSocialPosts(data);
 
     // --- Step 9: Generate ancient/biblical events with DeepSeek ---
-    console.log('9. Generating ancient/biblical events...');
+    console.log('8. Generating ancient/biblical events...');
     const ancientGenerated = await generateAncientEvents(month, day);
     if (ancientGenerated.length > 0) {
         data.ancientEvents = ancientGenerated;
@@ -768,18 +1176,19 @@ async function collectDailyData() {
         }
     }
 
-    // --- Step 10: Mark Israeli headline ---
-    // Prefer natively Hebrew Israeli events (more likely truly Israeli)
-    const israelHeadlineNative = data.events.find(e =>
-        e.category === 'israel' && e.lang === 'he' && !e.isAncient && e.originalLang !== 'en'
-    );
-    const israelHeadlineAny = data.events.find(e =>
-        e.category === 'israel' && e.lang === 'he' && !e.isAncient
-    );
-    if (israelHeadlineNative) {
-        data.headline = israelHeadlineNative;
-    } else if (israelHeadlineAny) {
-        data.headline = israelHeadlineAny;
+    // --- Step 9: Compute headline scores and pick best fallback by score ---
+    const candidateHeadlinePool = [...(data.selected || []), ...(data.events || [])]
+        .filter(e => e && !e.isAncient && e.year && (year - e.year) >= CONFIG.MIN_HISTORICAL_YEARS);
+
+    for (const cat of ['events', 'births', 'deaths', 'selected']) {
+        for (const entry of (data[cat] || [])) {
+            entry.headlineScore = getHeadlineScore(entry, year);
+        }
+    }
+
+    candidateHeadlinePool.sort((a, b) => (b.headlineScore || 0) - (a.headlineScore || 0));
+    if (candidateHeadlinePool.length > 0) {
+        data.headline = candidateHeadlinePool[0];
     }
 
     // --- Final stats ---

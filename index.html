@@ -193,7 +193,17 @@
         HEBCAL: 'https://www.hebcal.com/converter'
     };
 
-    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12 };
+    const LIMITS = { EVENTS: 15, BIRTHS: 15, DEATHS: 12, NEWS: 3, SOCIAL: 8 };
+    const HEADLINE_CONFIG = {
+        minHistoricalYears: Math.max(1, Number(new URLSearchParams(window.location.search).get('minHistoricalYears')) || 25)
+    };
+
+    const HEADLINE_WEIGHTS = {
+        verifiedIsraeli: 45,
+        historicalImportance: 30,
+        descriptionDepth: 15,
+        image: 10
+    };
 
     const CATEGORY_LABELS = {
         israel: 'ישראל',
@@ -255,13 +265,40 @@
         return `<span class="category-badge" style="background-color:${colors.bg};color:${colors.text}">${escapeHtml(label)}</span>`;
     }
 
+    function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+    }
+
+    function getHeadlineScore(event) {
+        if (!event || !event.year) return 0;
+        const ageYears = Math.max(0, currentDate.getFullYear() - event.year);
+        const verifiedIsraeliStrength = event.category === 'israel'
+            ? (event.lang === 'he' && event.originalLang !== 'en' ? 1 : 0.7)
+            : 0;
+        const historicalImportance = clamp(ageYears / 150, 0, 1);
+        const descriptionDepth = clamp(((event.extract || '').trim().length / 280), 0, 1);
+        const image = event.thumbnail ? 1 : 0;
+
+        return Number((
+            (verifiedIsraeliStrength * HEADLINE_WEIGHTS.verifiedIsraeli) +
+            (historicalImportance * HEADLINE_WEIGHTS.historicalImportance) +
+            (descriptionDepth * HEADLINE_WEIGHTS.descriptionDepth) +
+            (image * HEADLINE_WEIGHTS.image)
+        ).toFixed(2));
+    }
+
     // ====== Data Fetching ======
     async function loadFromCachedJson() {
         const todayStr = currentDate.toISOString().slice(0, 10);
         const resp = await fetch('today.json?_=' + Date.now());
         if (!resp.ok) throw new Error('No cached data');
         const data = await resp.json();
-        if (data.date !== todayStr) throw new Error('Cached data is stale');
+        if (data.date !== todayStr) {
+            // Keep enriched server data even when cache date lags behind local timezone.
+            // Falling back to live APIs removes translations/social posts and hurts UX.
+            data.isStale = true;
+            console.warn(`today.json date (${data.date}) differs from local date (${todayStr}), using cached enriched data`);
+        }
         if (!data.sourceStats) {
             data.sourceStats = data.stats || { he: 0, en: 0 };
         }
@@ -310,6 +347,43 @@
             }
         }
         return 'general';
+    }
+
+    const CLIENT_TRANSLATION_GLOSSARY = {
+        war: 'מלחמה', battle: 'קרב', empire: 'אימפריה', king: 'מלך', queen: 'מלכה',
+        president: 'נשיא', minister: 'שר', israel: 'ישראל', jerusalem: 'ירושלים',
+        independence: 'עצמאות', revolution: 'מהפכה', born: 'נולד', died: 'נפטר',
+        treaty: 'הסכם', law: 'חוק', state: 'מדינה', city: 'עיר', army: 'צבא',
+        science: 'מדע', university: 'אוניברסיטה', olympic: 'אולימפי', football: 'כדורגל'
+    };
+
+    function clientTransliterateToken(token) {
+        const map = {
+            a: 'א', b: 'ב', c: 'ק', d: 'ד', e: 'ה', f: 'פ', g: 'ג', h: 'ה', i: 'י', j: 'ג׳',
+            k: 'ק', l: 'ל', m: 'מ', n: 'נ', o: 'ו', p: 'פ', q: 'ק', r: 'ר', s: 'ס', t: 'ט',
+            u: 'ו', v: 'ו', w: 'ו', x: 'קס', y: 'י', z: 'ז'
+        };
+        return token.toLowerCase().split('').map(ch => map[ch] || ch).join('');
+    }
+
+    function clientTranslateText(text) {
+        if (!text) return '';
+        return String(text).replace(/[A-Za-z][A-Za-z'’-]*/g, (word) => {
+            const key = word.toLowerCase();
+            if (CLIENT_TRANSLATION_GLOSSARY[key]) return CLIENT_TRANSLATION_GLOSSARY[key];
+            if (/^[A-Z][a-z]/.test(word) || word.length > 7) return clientTransliterateToken(word);
+            return word;
+        });
+    }
+
+    function clientTranslateEntry(entry) {
+        if (!entry || entry.lang !== 'en') return entry;
+        entry.text = clientTranslateText(entry.text);
+        if (entry.extract) entry.extract = clientTranslateText(entry.extract);
+        entry.originalLang = 'en';
+        entry.lang = 'he';
+        entry.translationMode = 'fallback';
+        return entry;
     }
 
     async function loadFromLiveAPIs() {
@@ -363,6 +437,14 @@
                 data.sourceStats.en += addUnique(data[cat], en[cat] || [], 'en');
             }
         }
+
+        for (const cat of ['events', 'births', 'deaths', 'selected', 'holidays']) {
+            for (const entry of data[cat]) {
+                clientTranslateEntry(entry);
+            }
+        }
+
+        data.translationMode = 'fallback';
 
         // Classify and sort client-side
         for (const cat of ['events', 'births', 'deaths', 'selected']) {
@@ -556,11 +638,14 @@
     function renderStatsBar() {
         const bar = document.getElementById('statsBar');
         const israelCount = (allData.events || []).filter(e => e.category === 'israel').length;
+        const translationMode = allData.translationMode || (allData.stats && allData.stats.translated > 0 ? 'deepseek' : 'fallback');
+        const translationLabel = translationMode === 'deepseek' ? 'DeepSeek' : 'Fallback';
         bar.innerHTML = `
             <span><i class="fas fa-star-of-david"></i> ${israelCount} ישראל</span>
             <span><i class="fas fa-landmark"></i> ${allData.events.length} אירועים</span>
             <span><i class="fas fa-birthday-cake"></i> ${allData.births.length} לידות</span>
             <span><i class="fas fa-star-of-life"></i> ${allData.deaths.length} פטירות</span>
+            <span><i class="fas fa-language"></i> תרגום: ${translationLabel}</span>
             ${(allData.socialPosts || []).length > 0 ? `<span><i class="fab fa-x-twitter"></i> ${allData.socialPosts.length} ציוצים</span>` : ''}
             ${(allData.news || []).length > 0 ? `<span><i class="fas fa-newspaper"></i> ${allData.news.length} חדשות</span>` : ''}
         `;
@@ -590,33 +675,15 @@
     function renderMainHeadline() {
         const el = document.getElementById('mainHeadline');
 
-        let ev = null;
+        const pool = [...(allData.selected || []), ...(allData.events || [])];
+        const minYear = currentDate.getFullYear() - HEADLINE_CONFIG.minHistoricalYears;
+        const eligiblePool = pool.filter(e => e && !e.isAncient && e.year && e.year <= minYear);
+        const fallbackPool = pool.filter(e => e && !e.isAncient);
+        const scoredPool = (eligiblePool.length > 0 ? eligiblePool : fallbackPool)
+            .map(e => ({ ...e, headlineScore: typeof e.headlineScore === 'number' ? e.headlineScore : getHeadlineScore(e) }))
+            .sort((a, b) => b.headlineScore - a.headlineScore);
 
-        if (allData.headline) {
-            ev = allData.headline;
-        }
-
-        if (!ev) {
-            const israelHebrew = [...(allData.selected || []), ...(allData.events || [])]
-                .filter(e => e.category === 'israel' && e.lang === 'he' && !e.isAncient);
-            if (israelHebrew.length > 0) {
-                ev = israelHebrew.find(e => e.thumbnail) || israelHebrew[0];
-            }
-        }
-
-        if (!ev) {
-            const israelAny = [...(allData.selected || []), ...(allData.events || [])]
-                .filter(e => e.category === 'israel' && !e.isAncient);
-            if (israelAny.length > 0) {
-                ev = israelAny.find(e => e.thumbnail) || israelAny[0];
-            }
-        }
-
-        if (!ev) {
-            const pool = allData.selected.length > 0 ? allData.selected : allData.events;
-            const nonAncient = pool.filter(e => !e.isAncient);
-            ev = (nonAncient.find(e => e.thumbnail) || nonAncient[0] || pool[0]);
-        }
+        const ev = scoredPool[0] || null;
 
         if (!ev) {
             el.innerHTML = '<h2>לא נמצאו אירועים בולטים לתאריך זה</h2>';
@@ -642,6 +709,7 @@
                     <div class="headline-meta">
                         <span class="byline"><i class="fas fa-book"></i> ${ev.lang === 'he' ? 'ויקיפדיה העברית' : 'ויקיפדיה'}</span>
                         <span class="time">${ago || ''}</span>
+                        <span class="time"><i class="fas fa-chart-line"></i> ציון: ${ev.headlineScore || getHeadlineScore(ev)}</span>
                     </div>
                     ${ev.extract ? `<p class="headline-extract">${escapeHtml(ev.extract)}</p>` : ''}
                 </div>
@@ -695,14 +763,15 @@
         const container = document.getElementById('socialContent');
         const posts = allData.socialPosts || [];
 
+        section.style.display = '';
+
         if (posts.length === 0) {
-            section.style.display = 'none';
+            container.innerHTML = '<p class="no-events">פוסטים חברתיים עדיין לא זמינים. ננסה לרענן בקרוב.</p>';
             return;
         }
 
-        section.style.display = '';
         container.innerHTML = '<div class="social-posts-grid">' +
-            posts.map(post => buildSocialPostHtml(post)).join('') +
+            posts.slice(0, LIMITS.SOCIAL).map(post => buildSocialPostHtml(post)).join('') +
             '</div>';
     }
 
@@ -796,9 +865,11 @@
         };
 
         container.innerHTML = '<div class="news-list">' +
-            news.slice(0, 10).map(n => {
+            news.slice(0, LIMITS.NEWS).map(n => {
                 const srcIcon = sourceIcons[n.source] || sourceIcons['default'];
                 const hasImage = n.image && n.image.startsWith('http');
+                const displayTitle = n.translatedTitle || n.title || '';
+                const displaySummary = n.translatedSummary || n.summary || '';
 
                 if (hasImage) {
                     return `
@@ -807,9 +878,9 @@
                             <img src="${escapeHtml(n.image)}" class="news-card-image" alt="" onerror="this.style.display='none'">
                             <div class="news-card-text">
                                 <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                                    ${escapeHtml(n.title)}
+                                    ${escapeHtml(displayTitle)}
                                 </a>
-                                ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 100))}${n.summary.length > 100 ? '...' : ''}</p>` : ''}
+                                ${displaySummary ? `<p class="news-summary">${escapeHtml(displaySummary.substring(0, 100))}${displaySummary.length > 100 ? '...' : ''}</p>` : ''}
                                 <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
                             </div>
                         </div>
@@ -819,9 +890,9 @@
                 return `
                 <div class="news-card">
                     <a href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
-                        ${escapeHtml(n.title)}
+                        ${escapeHtml(displayTitle)}
                     </a>
-                    ${n.summary ? `<p class="news-summary">${escapeHtml(n.summary.substring(0, 120))}${n.summary.length > 120 ? '...' : ''}</p>` : ''}
+                    ${displaySummary ? `<p class="news-summary">${escapeHtml(displaySummary.substring(0, 120))}${displaySummary.length > 120 ? '...' : ''}</p>` : ''}
                     <span class="news-source"><i class="${srcIcon}"></i> ${escapeHtml(n.source || '')}</span>
                 </div>`;
             }).join('') +

@@ -25,7 +25,7 @@ COPY --from=collector /app/example-events.json ./example-events.json
 
 # Setup cron job for daily data collection at 02:00 and 14:00
 # Sources /etc/collector.env to get DEEPSEEK_API_KEY (written by entrypoint)
-RUN echo '0 2,14 * * * . /etc/collector.env; cd /usr/share/nginx/html && node data-collector.js >> /var/log/collector.log 2>&1' \
+RUN echo '0 2,14 * * * . /etc/collector.env; cd /usr/share/nginx/html && node data-collector.js 2>&1 | tee /var/log/collector.log' \
     > /etc/crontabs/root
 
 # Create empty env file (entrypoint will populate it)
