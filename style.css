@@ -1,144 +1,240 @@
 /* ========================================
    דברי הימים — עיתון היסטורי יומי
-   בהשראת ישראל היום / ידיעות אחרונות / ynet
+   עיצוב וינטג׳ אותנטי בהשראת עיתונים עבריים היסטוריים
    ======================================== */
+
+/* === CSS Variables === */
+:root {
+    --ink:            #1a1a0e;
+    --ink-light:      #3d3527;
+    --ink-faded:      #6b5d4d;
+    --accent:         #5c1a1a;
+    --accent-light:   #8b3a3a;
+    --rule:           #2a2218;
+    --rule-medium:    #8a7b65;
+    --rule-light:     #c4b898;
+    --rule-faint:     #ddd4be;
+    --paper:          #faf6eb;
+    --paper-dark:     #f0e8d4;
+    --paper-darker:   #e6dcc4;
+    --section-israel:     #1a3a5c;
+    --section-politics:   #5c1a1a;
+    --section-military:   #2a3a2a;
+    --section-science:    #1a4a3a;
+    --section-culture:    #4a2a4a;
+    --section-sports:     #5c3a1a;
+    --section-economy:    #3a2a1a;
+    --section-religion:   #2a1a4a;
+    --section-world:      #1a2a4a;
+    --section-general:    #3a3a3a;
+}
 
 /* === Reset & Base === */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Heebo', 'Arial Hebrew', sans-serif;
-    background: #f4efe6;
-    color: #1a1a1a;
-    line-height: 1.5;
+    font-family: 'David Libre', 'Frank Ruhl Libre', 'Noto Serif Hebrew', serif;
+    background:
+        /* Vignette edges */
+        radial-gradient(ellipse at center, transparent 50%, rgba(42,34,24,0.12) 100%),
+        /* Subtle noise pattern */
+        repeating-conic-gradient(rgba(120,100,70,0.03) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px,
+        /* Base color */
+        #ede5d0;
+    color: var(--ink);
+    line-height: 1.55;
     direction: rtl;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: auto;
+    text-rendering: optimizeLegibility;
 }
 
-/* === Top Red Bar === */
-.top-bar {
-    background: linear-gradient(to left, #8b0000, #b71c1c, #c62828, #d32f2f);
-    color: #fff;
-    font-size: 0.88rem;
-    font-weight: 700;
+/* === Newspaper Page Wrapper === */
+.newspaper-page {
+    max-width: 1100px;
+    margin: 20px auto;
+    background: var(--paper);
+    border: 2px solid var(--rule);
+    outline: 1px solid var(--rule);
+    outline-offset: 4px;
+    box-shadow:
+        0 0 0 6px var(--paper-dark),
+        0 0 0 7px var(--rule-light),
+        0 4px 30px rgba(42,34,24,0.2),
+        0 1px 3px rgba(42,34,24,0.1);
+    position: relative;
 }
-.top-bar-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 7px 24px;
+
+/* Fold line effect */
+.newspaper-page::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(42,34,24,0.04) 10%,
+        rgba(42,34,24,0.06) 50%,
+        rgba(42,34,24,0.04) 90%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* === Edition Bar (Top) === */
+.edition-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 16px;
+    padding: 6px 24px;
+    font-family: 'David Libre', serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-faded);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--rule-light);
+    background: var(--paper);
+}
+.edition-bar .ornament {
+    color: var(--rule-medium);
+    font-size: 0.6rem;
 }
 
 /* === Masthead === */
-.masthead {
-    background: #fff;
-    max-width: 1280px;
-    margin: 0 auto;
+.masthead-double-rule {
+    height: 8px;
+    border-top: 3px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
 }
-.masthead-double-rule-top {
-    border-top: 3px solid #000;
-    border-bottom: 1px solid #000;
-    height: 6px;
-    background: #000;
-    margin-bottom: 0;
-    box-shadow: 0 2px 0 #fff, 0 4px 0 #000;
-    padding-top: 2px;
+
+.masthead {
+    background: var(--paper);
+    padding: 0;
 }
 .masthead-inner {
-    padding: 16px 24px 10px;
+    padding: 14px 28px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-top: 4px solid #000;
-    border-bottom: 1px solid #ccc;
 }
-.masthead-center { text-align: center; flex: 1; }
+.masthead-center {
+    text-align: center;
+    flex: 1;
+}
+
+.masthead-ornament {
+    font-size: 1.2rem;
+    color: var(--rule-medium);
+    letter-spacing: 8px;
+    line-height: 1;
+    margin: 2px 0;
+}
 
 .newspaper-title {
     font-family: 'Frank Ruhl Libre', 'David Libre', serif;
-    font-size: 6.5rem;
+    font-size: 7rem;
     font-weight: 900;
-    color: #000;
+    color: var(--ink);
     letter-spacing: -3px;
-    line-height: 0.95;
-    margin-bottom: 4px;
+    line-height: 0.9;
+    margin: 2px 0 4px;
 }
 .newspaper-subtitle {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #d32f2f;
-    margin-top: 6px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    font-family: 'David Libre', serif;
+    font-size: 0.88rem;
+    font-weight: 400;
+    color: var(--ink-faded);
+    margin-top: 4px;
+    letter-spacing: 3px;
 }
 .masthead-date {
     font-family: 'David Libre', serif;
-    font-size: 0.95rem;
-    color: #000;
+    font-size: 0.88rem;
+    color: var(--ink);
     font-weight: 700;
-    min-width: 170px;
-    line-height: 1.6;
+    min-width: 150px;
+    line-height: 1.5;
+    padding: 6px 10px;
+    border: 1px solid var(--rule-light);
 }
 .masthead-date-right { text-align: right; }
 .masthead-date-left { text-align: left; }
 .masthead-date-label {
     display: block;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 500;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: var(--ink-faded);
+    letter-spacing: 2px;
     margin-bottom: 2px;
+    text-transform: uppercase;
 }
 
 .masthead-rule {
-    max-width: 1280px;
-    margin: 0 auto;
-    height: 5px;
-    background: linear-gradient(to left, #8b0000, #b71c1c, #d32f2f);
+    height: 4px;
+    border-top: 2px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
 }
 
-/* === Ticker === */
+/* === Ticker — "מברק חדשות" === */
 .ticker-bar {
-    background: #111;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
     display: flex;
     align-items: center;
     overflow: hidden;
-    max-width: 1280px;
-    margin: 0 auto;
-    border-bottom: 1px solid #333;
+    border-top: 1px solid var(--rule-medium);
+    border-bottom: 2px solid var(--rule);
 }
 .ticker-label {
-    background: #d32f2f;
-    color: #fff;
-    padding: 9px 18px;
-    font-weight: 800;
-    font-size: 0.9rem;
+    background: var(--accent);
+    color: var(--paper);
+    padding: 8px 16px;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-weight: 700;
+    font-size: 0.82rem;
     white-space: nowrap;
     flex-shrink: 0;
-    text-transform: uppercase;
     letter-spacing: 2px;
+    border-left: 1px solid var(--rule-medium);
 }
 .ticker-track {
     overflow: hidden;
     flex: 1;
     position: relative;
-    height: 38px;
+    height: 36px;
 }
 .ticker-scroll {
     display: flex;
     align-items: center;
     white-space: nowrap;
-    animation: tickerScroll 80s linear infinite;
+    animation: tickerScroll 90s linear infinite;
     position: absolute;
     height: 100%;
 }
-.ticker-item { padding: 0 20px; font-size: 0.88rem; font-weight: 500; line-height: 38px; }
-.ticker-item b { color: #f9a825; }
-.ticker-sep { color: #d32f2f; padding: 0 5px; font-size: 0.6rem; line-height: 38px; }
+.ticker-item {
+    padding: 0 18px;
+    font-family: 'David Libre', serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 36px;
+    color: var(--paper-dark);
+}
+.ticker-item b {
+    color: var(--rule-light);
+    font-weight: 700;
+}
+.ticker-sep {
+    color: var(--accent-light);
+    padding: 0 5px;
+    font-size: 0.5rem;
+    line-height: 36px;
+}
 
 @keyframes tickerScroll {
     0% { transform: translateX(0); }
@@ -147,27 +243,26 @@ body {
 
 /* === Holiday Strip === */
 .holiday-strip {
-    background: linear-gradient(135deg, #1a237e, #283593);
-    color: #fff;
-    padding: 10px 24px;
+    background: var(--paper-dark);
+    color: var(--ink);
+    padding: 8px 24px;
     display: flex;
     align-items: center;
     gap: 14px;
     flex-wrap: wrap;
-    max-width: 1280px;
-    margin: 0 auto;
-    border-bottom: 3px solid #000;
+    border-bottom: 1px solid var(--rule-light);
+    border-top: 1px solid var(--rule-light);
 }
 .holiday-strip-label {
-    font-weight: 800;
-    font-size: 0.82rem;
-    background: #fff;
-    color: #1a237e;
-    padding: 3px 12px;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--ink-light);
+    padding: 2px 10px;
     white-space: nowrap;
     flex-shrink: 0;
-    text-transform: uppercase;
     letter-spacing: 1px;
+    border: 1px solid var(--rule-light);
 }
 #holiday-tags {
     display: flex;
@@ -176,31 +271,31 @@ body {
     align-items: center;
 }
 .holiday-tag {
-    background: rgba(255,255,255,0.18);
-    border: 1px solid rgba(255,255,255,0.45);
-    padding: 4px 14px;
-    font-size: 0.88rem;
-    font-weight: 600;
+    border: 1px solid var(--rule-light);
+    padding: 3px 12px;
+    font-family: 'David Libre', serif;
+    font-size: 0.82rem;
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    color: var(--ink-light);
+    background: var(--paper);
 }
 
-/* === Shared content background === */
+/* === Shared Content Area === */
 .headline-section,
 .secondary-headlines,
 .section-rule,
 .newspaper-body,
 .people-section {
-    max-width: 1280px;
-    margin: 0 auto;
-    background: #fff;
+    background: var(--paper);
 }
 
-/* === Headline — Dramatic Hero === */
+/* === Headline Section === */
 .headline-section {
     padding: 0;
-    border-bottom: 4px double #000;
+    border-bottom: 3px double var(--rule);
 }
 .headline-wrap {
     display: flex;
@@ -208,9 +303,9 @@ body {
 }
 .headline-img {
     width: 100%;
-    height: 420px;
+    max-height: 380px;
     overflow: hidden;
-    border-bottom: 2px solid #000;
+    border-bottom: 1px solid var(--rule);
     position: relative;
 }
 .headline-img img {
@@ -218,453 +313,542 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
+    filter: sepia(15%) contrast(1.05);
 }
 .headline-img-placeholder {
     width: 100%;
-    height: 420px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 5rem;
-    opacity: 0.25;
+    background: var(--paper-dark);
     position: relative;
     overflow: hidden;
+    border-bottom: 1px solid var(--rule-light);
 }
+/* Crosshatch pattern for placeholder */
 .headline-img-placeholder::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(
-        -45deg,
-        rgba(255,255,255,0.05) 0px,
-        rgba(255,255,255,0.05) 10px,
-        transparent 10px,
-        transparent 20px
-    );
+    background:
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 8px,
+            rgba(42,34,24,0.04) 8px,
+            rgba(42,34,24,0.04) 9px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 8px,
+            rgba(42,34,24,0.04) 8px,
+            rgba(42,34,24,0.04) 9px
+        );
 }
+.headline-img-placeholder span {
+    font-size: 3rem;
+    opacity: 0.15;
+    z-index: 1;
+}
+
 .headline-body {
-    padding: 22px 28px 20px;
-    display: flex;
-    flex-direction: column;
+    padding: 18px 28px 16px;
 }
 .headline-kicker {
     display: inline-block;
-    font-size: 0.82rem;
-    font-weight: 800;
-    padding: 3px 14px;
-    margin-bottom: 12px;
-    align-self: flex-start;
-    text-transform: uppercase;
+    font-family: 'David Libre', serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    margin-bottom: 10px;
+    color: var(--ink);
+    border: 1px solid var(--rule-medium);
+    background: transparent;
     letter-spacing: 1px;
-    color: #fff;
-}
-.headline-badge {
-    display: none; /* replaced by kicker */
 }
 .main-headline {
     font-family: 'Frank Ruhl Libre', 'David Libre', serif;
-    font-size: 4.5rem;
+    font-size: 3.8rem;
     font-weight: 900;
-    line-height: 1.1;
-    color: #000;
-    margin-bottom: 14px;
+    line-height: 1.05;
+    color: var(--ink);
+    margin-bottom: 12px;
     letter-spacing: -2px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 14px;
+    border-bottom: 3px double var(--rule);
+    padding-bottom: 12px;
 }
 .headline-meta {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 16px;
+    gap: 10px;
+    font-family: 'David Libre', serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--ink-faded);
+    margin-bottom: 14px;
     flex-wrap: wrap;
 }
 .headline-year {
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: #fff;
-    padding: 2px 12px;
     font-family: 'Frank Ruhl Libre', serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--ink);
+    padding: 1px 10px;
+    border: 1px solid var(--rule-medium);
+    background: transparent;
 }
-.meta-sep { color: #ccc; }
-.headline-ago { color: #666; font-style: italic; font-size: 0.92rem; }
-.headline-source { color: #0038b8; font-weight: 700; font-size: 0.88rem; }
+.meta-sep { color: var(--rule-light); }
+.headline-source {
+    color: var(--ink-faded);
+    font-weight: 700;
+    font-size: 0.82rem;
+    font-style: italic;
+}
 .headline-extract {
-    font-size: 1.05rem;
-    color: #222;
+    font-family: 'David Libre', serif;
+    font-size: 1rem;
+    color: var(--ink-light);
     line-height: 1.75;
-    border-right: 4px solid #d32f2f;
+    border-right: 3px solid var(--rule);
     padding-right: 16px;
-    margin: 8px 0;
+    margin: 6px 0;
     columns: 2;
-    column-gap: 28px;
+    column-gap: 24px;
+    column-rule: 1px solid var(--rule-faint);
+    text-align: justify;
+}
+
+/* Drop cap for headline extract */
+.headline-extract::first-letter {
+    float: right;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 3.8em;
+    line-height: 0.75;
+    font-weight: 900;
+    color: var(--ink);
+    padding-left: 8px;
+    padding-bottom: 2px;
+    margin-top: 4px;
 }
 
 /* === Secondary Headlines === */
 .secondary-headlines {
-    padding: 20px 24px;
-    border-bottom: 3px solid #000;
-    background: #fff;
+    padding: 14px 28px 16px;
+    border-bottom: 2px solid var(--rule);
 }
 .secondary-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: 1fr 1px 1fr 1px 1fr;
+    gap: 0;
+}
+.secondary-divider {
+    background: var(--rule-light);
+    width: 1px;
 }
 .secondary-card {
-    border: 1px solid #e0e0e0;
-    border-top: 5px solid #333;
-    padding: 0;
-    background: #fafafa;
-    transition: box-shadow 0.2s;
-    overflow: hidden;
+    padding: 0 16px;
+    background: transparent;
     display: flex;
     flex-direction: column;
 }
-.secondary-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
-.secondary-card-body { padding: 14px; flex: 1; }
+.secondary-card:first-child { padding-right: 0; }
+.secondary-card:last-child { padding-left: 0; }
+.secondary-card-body { flex: 1; }
 .secondary-img {
     width: 100%;
-    height: 180px;
+    height: 140px;
     object-fit: cover;
-    border-bottom: 1px solid #ddd;
+    border: 1px solid var(--rule-light);
     display: block;
+    margin-bottom: 10px;
+    filter: sepia(10%) contrast(1.02);
 }
 .secondary-img-placeholder {
-    width: 100%;
-    height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    opacity: 0.2;
+    display: none;
 }
 .secondary-badge {
     display: inline-block;
-    color: #fff !important;
-    font-size: 0.72rem;
-    font-weight: 800;
-    padding: 3px 10px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
+    font-family: 'David Libre', serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 8px;
+    margin-bottom: 6px;
+    color: var(--ink-faded);
+    border: 1px solid var(--rule-light);
+    background: transparent;
     letter-spacing: 0.5px;
 }
 .secondary-title {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.22rem;
+    font-size: 1.15rem;
     font-weight: 800;
-    line-height: 1.3;
-    color: #000;
-    margin-bottom: 8px;
+    line-height: 1.25;
+    color: var(--ink);
+    margin-bottom: 6px;
 }
-.secondary-year { font-size: 0.82rem; font-weight: 700; }
-.secondary-social { padding: 10px 14px 14px; background: #f5f5f5; border-top: 1px solid #eee; }
+.secondary-year {
+    font-family: 'David Libre', serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-faded);
+}
+.secondary-social { padding: 8px 0 0; }
 
 /* === Section Rule === */
 .section-rule {
     border: none;
-    height: 5px;
-    background: #000;
+    height: 6px;
+    border-top: 2px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
 }
 
 /* === Newspaper Body (Three Columns) === */
 .newspaper-body {
     display: grid;
     grid-template-columns: 2fr 1px 1.5fr 1px 1.5fr;
-    padding: 0 24px 28px;
+    padding: 0 28px 24px;
     min-height: 400px;
 }
-.column { padding: 22px 0; }
-.column-right { padding-left: 20px; }
-.column-center { padding: 22px 20px; }
-.column-left { padding-right: 20px; }
+.column { padding: 18px 0; }
+.column-right { padding-left: 18px; }
+.column-center { padding: 18px 18px; }
+.column-left { padding-right: 18px; }
 .column-divider {
-    background: #000;
+    background: var(--rule-light);
     width: 1px;
-    margin: 22px 0;
+    margin: 18px 0;
 }
 
-/* === Section Blocks — COLORED HEADERS === */
-.section-block { margin-bottom: 32px; }
+/* === Section Blocks === */
+.section-block { margin-bottom: 24px; }
 .section-hdr {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 9px 14px;
-    margin-bottom: 18px;
-    background: currentColor;
-    border-bottom: 2px solid currentColor;
+    gap: 8px;
+    margin-bottom: 14px;
+    color: var(--ink);
+}
+.section-hdr::before,
+.section-hdr::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule-medium);
 }
 .section-hdr-text {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.2rem;
+    font-size: 0.95rem;
     font-weight: 800;
-    color: #fff !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: var(--ink) !important;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    padding: 0 4px;
+    background: transparent !important;
+    text-shadow: none;
 }
 .section-count {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.7) !important;
-    font-weight: 500;
+    display: none;
 }
 
 /* === Article Cards === */
 .article {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #ddd;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--rule-faint);
 }
 .article:last-child { border-bottom: none; }
 .article-top {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 7px;
+    gap: 8px;
+    margin-bottom: 5px;
 }
 .article-year-badge {
-    color: #fff;
-    font-size: 0.8rem;
-    font-weight: 800;
-    padding: 2px 10px;
     font-family: 'Frank Ruhl Libre', serif;
+    color: var(--ink);
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 1px 8px;
+    border: 1px solid var(--rule-medium);
+    background: transparent;
     flex-shrink: 0;
 }
-.article-ago { font-size: 0.78rem; color: #888; font-style: italic; }
+.article-ago {
+    font-family: 'David Libre', serif;
+    font-size: 0.72rem;
+    color: var(--ink-faded);
+    font-style: italic;
+}
 .article-title {
     font-family: 'Frank Ruhl Libre', 'David Libre', serif;
     font-size: 1.2rem;
     font-weight: 800;
     line-height: 1.3;
-    color: #000;
-    margin-bottom: 6px;
-    cursor: default;
+    color: var(--ink);
+    margin-bottom: 5px;
 }
-.article-title:hover { color: #d32f2f; }
 .article-body {
-    font-size: 0.95rem;
-    color: #333;
+    font-family: 'David Libre', serif;
+    font-size: 0.9rem;
+    color: var(--ink-light);
     line-height: 1.65;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    text-align: justify;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* Drop cap for first article in each section */
+.section-block:first-child .article:first-child .article-body::first-letter {
+    float: right;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 3em;
+    line-height: 0.75;
+    font-weight: 900;
+    color: var(--ink);
+    padding-left: 6px;
+    padding-bottom: 2px;
+    margin-top: 3px;
+}
+
 .article-img {
-    margin: 10px 0;
-    border: 1px solid #ddd;
+    margin: 8px 0;
+    border: 1px solid var(--rule-light);
     overflow: hidden;
 }
 .article-img img {
     width: 100%;
-    height: 160px;
+    height: 140px;
     object-fit: cover;
     display: block;
+    filter: sepia(10%) contrast(1.02);
 }
-.article-bottom { display: flex; justify-content: flex-start; margin-top: 8px; }
+.article-bottom { display: flex; justify-content: flex-start; margin-top: 6px; }
 .article-source {
-    font-size: 0.78rem;
-    color: #0038b8;
-    font-weight: 700;
-    background: #e3f2fd;
-    padding: 2px 8px;
+    font-family: 'David Libre', serif;
+    font-size: 0.72rem;
+    color: var(--ink-faded);
+    font-weight: 500;
+    font-style: italic;
+    background: transparent;
+    padding: 0;
 }
-.article-sep { border-top: 1px dashed #e0e0e0; margin: 4px 0; }
+.article-sep {
+    border-top: none;
+    margin: 4px 0;
+    text-align: center;
+    font-size: 0.55rem;
+    color: var(--rule-medium);
+    line-height: 1;
+}
+.article-sep::before {
+    content: '✦';
+}
 
-/* === Embedded Social Posts === */
+/* === Telegram / Social Posts === */
 .social-embed {
-    border-radius: 3px;
-    padding: 14px 16px;
-    margin: 14px 0;
-    font-family: 'Heebo', sans-serif;
+    padding: 12px 14px;
+    margin: 10px 0;
+    font-family: 'David Libre', serif;
     position: relative;
-    border: 1px solid #ddd;
+    border: 1px dashed var(--rule-light);
+    background: var(--paper-dark);
+    border-radius: 0;
+}
+.social-embed.twitter,
+.social-embed.facebook,
+.social-embed.instagram {
+    background: var(--paper-dark);
+    border: 1px dashed var(--rule-light);
+    border-right: 3px solid var(--rule-medium);
+    border-left: none;
+    padding: 12px 14px;
 }
 .social-imagined-label {
     display: inline-block;
-    font-size: 0.65rem;
+    font-family: 'David Libre', serif;
+    font-size: 0.62rem;
     font-weight: 700;
-    color: #fff;
-    padding: 2px 8px;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    opacity: 0.85;
+    color: var(--ink-faded);
+    padding: 1px 8px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    border: 1px solid var(--rule-light);
+    background: transparent;
 }
-.social-embed.twitter {
-    background: #f0f8ff;
-    border-right: 4px solid #1da1f2;
-    border-left: none;
-    border-top: none;
-    border-bottom: none;
-    border: none;
-    border-right: 4px solid #1da1f2;
-    background: #f0f8ff;
-    padding: 14px 16px;
-}
-.social-embed.twitter .social-imagined-label { background: #1da1f2; }
-.social-embed.facebook {
-    background: #f0f4ff;
-    border-right: 4px solid #1877f2;
-}
-.social-embed.facebook .social-imagined-label { background: #1877f2; }
-.social-embed.instagram {
-    background: #fff5f8;
-    border-right: 4px solid #e1306c;
-}
-.social-embed.instagram .social-imagined-label { background: #e1306c; }
 .social-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 .social-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #1da1f2;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.88rem;
-    font-weight: 800;
-    flex-shrink: 0;
+    display: none;
 }
-.social-embed.facebook .social-icon { background: #1877f2; }
-.social-embed.instagram .social-icon { background: #e1306c; }
-.social-author { font-weight: 800; color: #000; font-size: 0.92rem; }
+.social-author {
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 0.88rem;
+}
 .social-handle {
-    color: #666;
-    font-size: 0.82rem;
-    font-weight: 500;
+    color: var(--ink-faded);
+    font-size: 0.78rem;
+    font-weight: 400;
     direction: ltr;
     display: inline-block;
+    font-style: italic;
 }
 .social-text {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #111;
+    font-family: 'David Libre', serif;
+    font-size: 0.92rem;
+    font-weight: 400;
+    color: var(--ink-light);
     line-height: 1.55;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    font-style: italic;
 }
 .social-stats {
     display: flex;
-    gap: 16px;
-    font-size: 0.8rem;
-    color: #666;
-    font-weight: 500;
-    border-top: 1px solid #e4e4e4;
-    padding-top: 7px;
+    gap: 14px;
+    font-size: 0.72rem;
+    color: var(--ink-faded);
+    font-weight: 400;
+    border-top: 1px dotted var(--rule-light);
+    padding-top: 5px;
 }
 
 /* === People Section === */
 .people-section {
-    padding: 22px 24px 28px;
-    border-top: 5px solid #000;
+    padding: 18px 28px 22px;
+    border-top: 3px double var(--rule);
 }
 .people-wrap {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    gap: 28px;
 }
 .people-hdr {
-    padding: 9px 14px;
-    margin-bottom: 16px;
+    padding: 0;
+    margin-bottom: 12px;
     font-family: 'Frank Ruhl Libre', serif;
     font-weight: 800;
-    font-size: 1.1rem;
-    text-transform: uppercase;
+    font-size: 1rem;
     letter-spacing: 1px;
+    text-align: center;
+    color: var(--ink);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.births-hdr { background: #1b5e20; color: #fff; }
-.deaths-hdr { background: #333; color: #fff; }
-.people-list { display: flex; flex-direction: column; gap: 8px; }
+.people-hdr::before,
+.people-hdr::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule-medium);
+}
+.births-hdr { color: var(--section-military); background: transparent; }
+.deaths-hdr { color: var(--ink); background: transparent; }
+.people-list { display: flex; flex-direction: column; gap: 4px; }
 .person-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 7px 8px;
-    border-bottom: 1px solid #eee;
-    transition: background 0.15s;
+    gap: 10px;
+    padding: 5px 4px;
+    border-bottom: 1px dotted var(--rule-faint);
 }
-.person-card:hover { background: #f8f8f8; }
 .person-thumb {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    border-radius: 0;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid #ddd;
+    border: 1px solid var(--rule-light);
+    filter: sepia(15%) contrast(1.02);
 }
 .person-thumb-placeholder {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    background: #e0e0e0;
+    width: 40px;
+    height: 40px;
+    border-radius: 0;
+    background: var(--paper-dark);
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #999;
-    font-size: 1.2rem;
+    color: var(--rule-light);
+    font-size: 1rem;
+    border: 1px solid var(--rule-light);
 }
 .person-info { display: flex; flex-direction: column; min-width: 0; }
 .person-name {
-    font-size: 0.95rem;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 0.88rem;
     font-weight: 700;
-    color: #000;
+    color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.person-year { font-size: 0.82rem; color: #d32f2f; font-weight: 700; }
+.person-year {
+    font-family: 'David Libre', serif;
+    font-size: 0.75rem;
+    color: var(--ink-faded);
+    font-weight: 500;
+}
 
 /* === Footer === */
 .newspaper-footer {
-    max-width: 1280px;
-    margin: 0 auto;
-    background: #111;
-    color: #aaa;
-    font-size: 0.82rem;
-    font-weight: 500;
+    background: transparent;
+    color: var(--ink-faded);
+    font-family: 'David Libre', serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    border-top: 2px solid var(--rule);
 }
 .footer-inner {
-    padding: 14px 24px;
+    padding: 10px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+.footer-ornament {
+    text-align: center;
+    padding: 4px 0;
+    font-size: 0.7rem;
+    color: var(--rule-medium);
+    letter-spacing: 6px;
+    border-bottom: 1px solid var(--rule);
 }
 
 /* === Loading === */
 .loading-overlay {
     position: fixed;
     inset: 0;
-    background: #fff;
+    background: var(--paper);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 800;
-    color: #000;
+    color: var(--ink);
 }
 .loading-spinner {
-    width: 52px;
-    height: 52px;
-    border: 4px solid #ddd;
-    border-top-color: #d32f2f;
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--rule-light);
+    border-top-color: var(--ink);
     border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin-bottom: 22px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 18px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -674,34 +858,56 @@ body {
         grid-template-columns: 1fr 1px 1fr;
     }
     .column-center { display: none; }
-    /* Hide second divider when center is hidden */
     .newspaper-body .column-divider:nth-child(4) { display: none; }
 }
 
 @media (max-width: 768px) {
+    .newspaper-page {
+        margin: 0;
+        border: none;
+        outline: none;
+        box-shadow: none;
+    }
+    .newspaper-page::after { display: none; }
     .masthead-inner { flex-direction: column; gap: 6px; }
-    .masthead-date { text-align: center !important; min-width: auto; font-size: 0.88rem; }
+    .masthead-date { text-align: center !important; min-width: auto; font-size: 0.82rem; }
     .newspaper-title { font-size: 3.5rem; letter-spacing: -1px; }
-    .headline-img { height: 260px; }
-    .headline-img-placeholder { height: 260px; }
+    .headline-img { max-height: 240px; }
+    .headline-img-placeholder { height: 120px; }
     .main-headline { font-size: 2.2rem; letter-spacing: -1px; }
     .headline-extract { columns: 1; }
-    .secondary-grid { grid-template-columns: 1fr; gap: 16px; }
-    .newspaper-body { grid-template-columns: 1fr; padding: 0 16px 16px; }
+    .headline-body { padding: 14px 18px; }
+    .secondary-grid { grid-template-columns: 1fr; gap: 12px; }
+    .secondary-divider { display: none; }
+    .secondary-card { padding: 0 !important; border-bottom: 1px solid var(--rule-faint); padding-bottom: 12px !important; }
+    .newspaper-body { grid-template-columns: 1fr; padding: 0 18px 16px; }
     .column-divider { display: none; }
     .column-center { display: block; padding: 12px 0; }
     .column-right, .column-left { padding: 12px 0; }
-    .people-wrap { grid-template-columns: 1fr; gap: 24px; }
+    .people-wrap { grid-template-columns: 1fr; gap: 20px; }
+    .people-section { padding: 14px 18px 18px; }
     .ticker-bar { display: none; }
-    .footer-inner { flex-direction: column; gap: 6px; text-align: center; }
-    .holiday-strip { padding: 8px 16px; gap: 10px; }
-    .headline-body { padding: 16px; }
+    .footer-inner { flex-direction: column; gap: 4px; text-align: center; }
+    .holiday-strip { padding: 6px 18px; gap: 8px; }
+    .edition-bar { font-size: 0.7rem; gap: 10px; }
+    .secondary-headlines { padding: 12px 18px; }
 }
 
 @media (max-width: 480px) {
-    .top-bar-inner { font-size: 0.72rem; }
-    .newspaper-title { font-size: 2.5rem; }
-    .main-headline { font-size: 1.7rem; }
+    .newspaper-title { font-size: 2.6rem; }
+    .main-headline { font-size: 1.8rem; }
     .headline-section, .secondary-headlines,
     .newspaper-body, .people-section { padding-right: 14px; padding-left: 14px; }
+}
+
+/* === Print Styles === */
+@media print {
+    body { background: white; }
+    .newspaper-page {
+        box-shadow: none;
+        border: none;
+        outline: none;
+        margin: 0;
+    }
+    .ticker-bar, .loading-overlay { display: none; }
 }
