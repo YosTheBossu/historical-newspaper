@@ -5,16 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>דברי הימים — עיתון היסטורי יומי</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=David+Libre:wght@400;500;700&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=David+Libre:wght@400;500;700&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;700;800;900&family=Noto+Serif+Hebrew:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Top red accent bar -->
-    <div class="top-bar">
-        <div class="top-bar-inner">
-            <span>גיליון מיוחד — היום בהיסטוריה</span>
-            <span id="edition-text">מהדורת בוקר</span>
-        </div>
+
+<div class="newspaper-page">
+
+    <!-- Edition Bar -->
+    <div class="edition-bar">
+        <span id="volume-text">כרך פ״ו</span>
+        <span class="ornament">◆</span>
+        <span id="edition-text">מהדורת בוקר</span>
+        <span class="ornament">◆</span>
+        <span>גיליון מיוחד — היום בהיסטוריה</span>
     </div>
+
+    <!-- Masthead Double Rule Top -->
+    <div class="masthead-double-rule"></div>
 
     <!-- Masthead -->
     <header class="masthead">
@@ -24,20 +31,25 @@
                 <span id="hebrew-date"></span>
             </div>
             <div class="masthead-center">
+                <div class="masthead-ornament">❦ ✦ ❦</div>
                 <h1 class="newspaper-title">דברי הימים</h1>
                 <div class="newspaper-subtitle">אירועים שעיצבו את ישראל והעולם — היום בהיסטוריה</div>
+                <div class="masthead-ornament">❦ ✦ ❦</div>
             </div>
             <div class="masthead-date masthead-date-left" id="gregorian-date-wrap">
                 <span class="masthead-date-label">לוח גרגוריאני</span>
                 <span id="gregorian-date"></span>
             </div>
         </div>
-        <div class="masthead-rule"></div>
     </header>
 
-    <!-- Breaking news ticker -->
+    <!-- Masthead Double Rule Bottom -->
+    <div class="masthead-double-rule"></div>
+    <div class="masthead-rule"></div>
+
+    <!-- Ticker — news telegram -->
     <div class="ticker-bar">
-        <span class="ticker-label">פלאשבק</span>
+        <span class="ticker-label">מברק ◆ פלאשבק</span>
         <div class="ticker-track">
             <div class="ticker-scroll" id="ticker-scroll"></div>
         </div>
@@ -71,17 +83,20 @@
 
     <!-- Footer -->
     <footer class="newspaper-footer">
+        <div class="footer-ornament">✦ ✦ ✦</div>
         <div class="footer-inner">
             <span>© דברי הימים — עיתון היסטורי יומי | נתונים מוויקיפדיה</span>
             <span id="stats-bar"></span>
         </div>
     </footer>
 
-    <!-- Loading overlay -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-spinner"></div>
-        <p>טוען את גיליון היום...</p>
-    </div>
+</div><!-- /.newspaper-page -->
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>טוען את גיליון היום...</p>
+</div>
 
 <script>
 // ====== Section Config ======
@@ -91,9 +106,9 @@ var SECTION_NAMES = {
     economy:'כלכלה', religion:'דת ומסורת', world:'עולמי', general:'כללי'
 };
 var SECTION_COLORS = {
-    israel:'#0038b8', politics:'#8B0000', military:'#2F4F4F',
-    science:'#006400', culture:'#800080', sports:'#FF8C00',
-    economy:'#8B4513', religion:'#4B0082', world:'#191970', general:'#444'
+    israel:'#1a3a5c', politics:'#5c1a1a', military:'#2a3a2a',
+    science:'#1a4a3a', culture:'#4a2a4a', sports:'#5c3a1a',
+    economy:'#3a2a1a', religion:'#2a1a4a', world:'#1a2a4a', general:'#3a3a3a'
 };
 
 // ====== Data Loading ======
@@ -110,10 +125,30 @@ function loadData() {
 
 // ====== Helpers ======
 function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n||0); }
-function fmtYear(y) { return y < 0 ? Math.abs(y)+' לפנה"ס' : String(y); }
+function fmtYear(y) { return y < 0 ? Math.abs(y)+' לפנה\"ס' : String(y); }
 function calcYearsAgo(y) { return Math.abs(new Date().getFullYear() - y); }
 function esc(s) { if (!s) return ''; var d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
-function catColor(cat) { return SECTION_COLORS[cat] || '#d32f2f'; }
+function catColor(cat) { return SECTION_COLORS[cat] || '#3a3a3a'; }
+
+// Hebrew numerals for volume number
+function toHebrewYear(year) {
+    var hebrewNumerals = {
+        1:'א', 2:'ב', 3:'ג', 4:'ד', 5:'ה', 6:'ו', 7:'ז', 8:'ח', 9:'ט',
+        10:'י', 20:'כ', 30:'ל', 40:'מ', 50:'נ', 60:'ס', 70:'ע', 80:'פ', 90:'צ',
+        100:'ק', 200:'ר', 300:'ש', 400:'ת'
+    };
+    // Simple approximation: use last 2 digits of Hebrew year
+    var hy = year + 3760; // approximate Hebrew year
+    var tens = Math.floor((hy % 100) / 10) * 10;
+    var ones = hy % 10;
+    var result = '';
+    if (tens > 0 && hebrewNumerals[tens]) result += hebrewNumerals[tens];
+    if (ones > 0 && hebrewNumerals[ones]) result += hebrewNumerals[ones];
+    if (result.length === 0) result = 'פ״ו';
+    if (result.length === 1) result += '׳';
+    else result = result.slice(0, -1) + '״' + result.slice(-1);
+    return result;
+}
 
 // ====== Render Functions ======
 function renderDates(data) {
@@ -122,6 +157,10 @@ function renderDates(data) {
         var d = new Date(data.date + 'T00:00:00');
         document.getElementById('gregorian-date').textContent =
             d.toLocaleDateString('he-IL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+        // Volume number from year
+        var vol = toHebrewYear(d.getFullYear());
+        document.getElementById('volume-text').textContent = 'כרך ' + vol;
     }
     var h = new Date().getHours();
     document.getElementById('edition-text').textContent =
@@ -132,10 +171,9 @@ function renderTicker(data) {
     var el = document.getElementById('ticker-scroll');
     var items = [].concat(data.selected||[], data.events||[]).slice(0, 14);
     var html = items.map(function(e) {
-        var color = catColor(e.category);
-        return '<span class="ticker-item"><b style="color:'+color+'">'+fmtYear(e.year)+'</b>: '+esc(e.text)+'</span>';
+        return '<span class="ticker-item"><b>'+fmtYear(e.year)+'</b> — '+esc(e.text)+'</span>';
     }).join('<span class="ticker-sep">◆</span>');
-    el.innerHTML = html + html; // duplicate for seamless scroll
+    el.innerHTML = html + html;
 }
 
 function renderHolidays(data) {
@@ -144,56 +182,50 @@ function renderHolidays(data) {
     var tagsEl = document.getElementById('holiday-tags');
     if (!holidays.length) { strip.style.display = 'none'; return; }
     strip.style.display = 'flex';
-    var HOLIDAY_EMOJIS = { religion: '✡️', world: '🌍', general: '📅', culture: '🎭', military: '🕊️' };
     tagsEl.innerHTML = holidays.map(function(h) {
-        var emoji = HOLIDAY_EMOJIS[h.category] || '📅';
-        return '<span class="holiday-tag">'+emoji+' '+esc(h.text || h.title)+'</span>';
+        return '<span class="holiday-tag">'+esc(h.text || h.title)+'</span>';
     }).join('');
 }
 
 function renderSocialPost(post) {
     if (!post) return '';
-    var icons = {twitter:'𝕏', facebook:'f', instagram:'📷'};
-    var pName = post.platform || 'twitter';
-    return '<div class="social-embed '+pName+'">'
-        + '<span class="social-imagined-label">ציוץ מדומה מהעבר</span>'
+    return '<div class="social-embed">'
+        + '<span class="social-imagined-label">✉ מברק מדומה מהעבר</span>'
         + '<div class="social-header">'
-        + '<span class="social-icon">'+(icons[pName]||'💬')+'</span>'
         + '<span class="social-author">'+esc(post.author)+'</span>'
-        + '<span class="social-handle dir-ltr">'+esc(post.handle)+'</span>'
+        + '<span class="social-handle">'+esc(post.handle)+'</span>'
         + '</div>'
         + '<p class="social-text">'+esc(post.content)+'</p>'
         + '<div class="social-stats">'
-        + '<span>❤️ '+fmtNum(post.likes)+'</span>'
-        + '<span>🔄 '+fmtNum(post.retweets)+'</span>'
-        + '<span>💬 '+fmtNum(post.replies)+'</span>'
+        + '<span>תגובות: '+fmtNum(post.replies)+'</span>'
+        + '<span>הדים: '+fmtNum(post.retweets)+'</span>'
+        + '<span>אהבו: '+fmtNum(post.likes)+'</span>'
         + '</div></div>';
 }
 
 function renderHeadline(data) {
     var sec = document.getElementById('headline-section');
     var h = data.headline;
-    if (!h) { sec.innerHTML = '<h2 class="main-headline" style="padding:24px">דף חלק</h2>'; return; }
+    if (!h) { sec.innerHTML = '<div class="headline-body"><h2 class="main-headline">דף חלק</h2></div>'; return; }
     var catName = SECTION_NAMES[h.category] || 'היסטוריה';
-    var color = catColor(h.category);
     var yearsAgo = calcYearsAgo(h.year);
 
     var imgHtml = '';
     if (h.thumbnail) {
         imgHtml = '<div class="headline-img"><img src="'+esc(h.thumbnail)+'" alt="'+esc(h.text)+'"></div>';
     } else {
-        imgHtml = '<div class="headline-img-placeholder" style="background: linear-gradient(135deg, '+color+'22, '+color+'44)">'
-            + '<span style="font-size:6rem;opacity:0.35">📰</span>'
+        imgHtml = '<div class="headline-img-placeholder">'
+            + '<span>⚐</span>'
             + '</div>';
     }
 
     sec.innerHTML = '<div class="headline-wrap">'
         + imgHtml
         + '<div class="headline-body">'
-        + '<span class="headline-kicker" style="background:'+color+'">'+esc(catName)+' · '+fmtYear(h.year)+'</span>'
+        + '<span class="headline-kicker">'+esc(catName)+' · '+fmtYear(h.year)+'</span>'
         + '<h2 class="main-headline">'+esc(h.text)+'</h2>'
         + '<div class="headline-meta">'
-        + '<span class="headline-year" style="background:'+color+'">לפני '+yearsAgo+' שנים</span>'
+        + '<span class="headline-year">לפני '+yearsAgo+' שנים</span>'
         + (h.source ? '<span class="meta-sep">|</span><span class="headline-source">'+esc(h.source)+'</span>' : '')
         + '</div>'
         + (h.extract ? '<p class="headline-extract">'+esc(h.extract)+'</p>' : '')
@@ -215,33 +247,39 @@ function renderSecondaryHeadlines(data) {
     }
     if (!picked.length) { sec.style.display='none'; return; }
 
-    sec.innerHTML = '<div class="secondary-grid">' + picked.map(function(e) {
+    var items = picked.map(function(e, idx) {
         var catName = SECTION_NAMES[e.category]||'';
-        var color = catColor(e.category);
         var imgHtml = '';
         if (e.thumbnail) {
             imgHtml = '<img src="'+esc(e.thumbnail)+'" alt="" class="secondary-img" loading="lazy">';
-        } else {
-            imgHtml = '<div class="secondary-img-placeholder" style="background:'+color+'18">'
-                + '<span>📷</span></div>';
         }
-        return '<div class="secondary-card" style="border-top-color:'+color+'">'
-            + imgHtml
+        return '<div class="secondary-card">'
             + '<div class="secondary-card-body">'
-            + '<span class="secondary-badge" style="background:'+color+'">'+esc(catName)+'</span>'
+            + '<span class="secondary-badge">'+esc(catName)+'</span>'
+            + imgHtml
             + '<h3 class="secondary-title">'+esc(e.text)+'</h3>'
-            + '<span class="secondary-year" style="color:'+color+'">'+fmtYear(e.year)+' — לפני '+calcYearsAgo(e.year)+' שנים</span>'
+            + '<span class="secondary-year">'+fmtYear(e.year)+' — לפני '+calcYearsAgo(e.year)+' שנים</span>'
             + '</div>'
             + (e.socialPost ? '<div class="secondary-social">'+renderSocialPost(e.socialPost)+'</div>' : '')
             + '</div>';
-    }).join('') + '</div>';
+    });
+
+    // Insert dividers between items
+    var html = '';
+    for (var k = 0; k < items.length; k++) {
+        html += items[k];
+        if (k < items.length - 1) {
+            html += '<div class="secondary-divider"></div>';
+        }
+    }
+
+    sec.innerHTML = '<div class="secondary-grid">' + html + '</div>';
 }
 
 function renderArticle(ev) {
-    var color = catColor(ev.category);
     return '<article class="article">'
         + '<div class="article-top">'
-        + '<span class="article-year-badge" style="background:'+color+'">'+fmtYear(ev.year)+'</span>'
+        + '<span class="article-year-badge">'+fmtYear(ev.year)+'</span>'
         + '<span class="article-ago">לפני '+calcYearsAgo(ev.year)+' שנים</span>'
         + '</div>'
         + '<h3 class="article-title">'+esc(ev.text)+'</h3>'
@@ -254,13 +292,11 @@ function renderArticle(ev) {
 }
 
 function renderSection(cat, events) {
-    var color = SECTION_COLORS[cat]||'#333';
     var name = SECTION_NAMES[cat]||cat;
     var items = events.slice(0, 6);
     return '<div class="section-block">'
-        + '<div class="section-hdr" style="color:'+color+'">'
+        + '<div class="section-hdr">'
         + '<span class="section-hdr-text">'+esc(name)+'</span>'
-        + '<span class="section-count">'+events.length+' אירועים</span>'
         + '</div>'
         + items.map(function(e) { return renderArticle(e); }).join('<div class="article-sep"></div>')
         + '</div>';
@@ -268,7 +304,6 @@ function renderSection(cat, events) {
 
 function renderSections(data) {
     var sections = data.sections || {};
-    // Build from events if sections not provided
     if (Object.keys(sections).length === 0 && data.events) {
         data.events.forEach(function(e) {
             var cat = e.category || 'general';
@@ -276,7 +311,6 @@ function renderSections(data) {
             sections[cat].push(e);
         });
     }
-    // Three-column distribution
     var rightCats  = ['israel', 'politics', 'military', 'religion'];
     var centerCats = ['world', 'science', 'economy'];
     var leftCats   = ['sports', 'culture', 'general'];
@@ -296,7 +330,7 @@ function personCard(p) {
     return '<div class="person-card">'
         + (p.thumbnail
             ? '<img src="'+esc(p.thumbnail)+'" alt="" class="person-thumb" loading="lazy">'
-            : '<div class="person-thumb-placeholder">👤</div>')
+            : '<div class="person-thumb-placeholder">✦</div>')
         + '<div class="person-info">'
         + '<span class="person-name">'+esc(p.text)+'</span>'
         + '<span class="person-year">'+fmtYear(p.year)+'</span>'
@@ -318,7 +352,7 @@ function renderPeople(data) {
 function renderStats(data) {
     var s = data.stats||{};
     document.getElementById('stats-bar').textContent =
-        (s.total||0)+' אירועים | '+(s.israelEvents||0)+' ישראליים | '+(s.he||0)+' עברית '+(s.en||0)+' אנגלית | '+(s.llmProvider||'');
+        (s.total||0)+' אירועים | '+(s.israelEvents||0)+' ישראליים | '+(s.he||0)+' עברית '+(s.en||0)+' אנגלית';
 }
 
 // ====== Main ======
@@ -339,9 +373,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data) { renderNewspaper(data); }
         else {
             document.getElementById('loading-overlay').innerHTML =
-                '<p style="color:#8B0000;font-size:1.2em">לא נמצאו נתונים. ממתין לאיסוף ראשוני...</p>';
+                '<p style="color:#5c1a1a;font-size:1.2em;font-family:Frank Ruhl Libre,serif">לא נמצאו נתונים. ממתין לאיסוף ראשוני...</p>';
         }
-        // Auto-refresh every 30 seconds
         var lastGen = data ? (data.generatedAt||'') : '';
         setInterval(function() {
             loadData().then(function(fresh) {
